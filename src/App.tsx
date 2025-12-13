@@ -33,6 +33,10 @@ import StudentPortal from "./pages/StudentPortal";
 import AboutCollege from "./pages/AboutCollege";
 import AboutCOHSSA from "./pages/AboutCOHSSA";
 import Editorial from "./pages/Editorial";
+import ContentManagement from "./pages/admin/ContentManagement";
+import ResourceManagement from "./pages/admin/ResourceManagement";
+import TextbookManagement from "./pages/admin/TextbookManagement";
+import EventsManagement from "./pages/admin/EventsManagement";
 
 const queryClient = new QueryClient();
 
@@ -125,6 +129,37 @@ const App = () => (
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/admin/content" 
+            element={
+              <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                <ContentManagement />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/resources" 
+            element={
+              <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                <ResourceManagement />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/textbooks" 
+            element={
+              <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                <TextbookManagement />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/events" 
+            element={
+              <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                <EventsManagement />
+              </ProtectedRoute>
+            }
           <Route path="/committee" element={<Committee />} />
           <Route path="/voter/register" element={<VoterRegister />} />
           <Route path="/voter/login" element={<VoterLogin />} />

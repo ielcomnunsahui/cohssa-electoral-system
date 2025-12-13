@@ -11,6 +11,10 @@ import {
   Menu,
   BookOpen,
   Activity,
+  Crown,
+  GraduationCap,
+  BookMarked,
+  Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/NavLink";
@@ -36,7 +40,7 @@ interface AdminLayoutProps {
   onStartTour?: () => void;
 }
 
-const menuItems = [
+const electionMenuItems = [
   {
     title: "Dashboard",
     icon: BarChart3,
@@ -93,6 +97,33 @@ const menuItems = [
   },
 ];
 
+const contentMenuItems = [
+  {
+    title: "Content Management",
+    icon: Crown,
+    url: "/admin/content",
+    color: "text-pink-600",
+  },
+  {
+    title: "Academic Resources",
+    icon: BookMarked,
+    url: "/admin/resources",
+    color: "text-teal-600",
+  },
+  {
+    title: "Textbook Marketplace",
+    icon: BookOpen,
+    url: "/admin/textbooks",
+    color: "text-emerald-600",
+  },
+  {
+    title: "Events & Gallery",
+    icon: Image,
+    url: "/admin/events",
+    color: "text-violet-600",
+  },
+];
+
 function AdminSidebar({ onStartTour }: { onStartTour?: () => void }) {
   const { state } = useSidebar();
   const location = useLocation();
@@ -116,10 +147,36 @@ function AdminSidebar({ onStartTour }: { onStartTour?: () => void }) {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Elections</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {electionMenuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className="hover:bg-muted/50 transition-colors"
+                        activeClassName="bg-muted text-primary font-medium"
+                      >
+                        <Icon className={`h-4 w-4 ${item.color}`} />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Portal Content</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {contentMenuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.url;
                 return (

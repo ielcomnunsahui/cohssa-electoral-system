@@ -152,7 +152,7 @@ const Index = () => {
     { icon: Users, title: "Meet the Candidates", description: "View candidate profiles & manifestos", action: () => navigate("/candidates"), color: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
     { icon: Shield, title: "Electoral Committee", description: "Meet the organizing team", action: () => navigate("/committee"), color: "bg-purple-500/10 text-purple-600 dark:text-purple-400" },
     { icon: BookOpen, title: "Rules & Constitution", description: "Read election guidelines", action: () => navigate("/rules"), color: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-    { icon: GraduationCap, title: "Student Portal", description: "Academic resources", action: () => navigate("/portal"), color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400" },
+    { icon: GraduationCap, title: "Student Portal", description: "Academic resources & mock tests", action: () => navigate("/portal"), color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400" },
     { icon: HelpCircle, title: "Support & Help", description: "Get assistance anytime", action: () => navigate("/support"), color: "bg-green-500/10 text-green-600 dark:text-green-400" },
   ];
 
@@ -164,7 +164,11 @@ const Index = () => {
     { label: "View Results", action: () => { setIsMenuOpen(false); navigate("/results"); }, showWhen: () => isStageActive("results") },
     { label: "View Candidates", action: () => { setIsMenuOpen(false); navigate("/candidates"); }, alwaysShow: true },
     { label: "Electoral Committee", action: () => { setIsMenuOpen(false); navigate("/committee"); }, alwaysShow: true },
+    { label: "About the College", action: () => { setIsMenuOpen(false); navigate("/about/college"); }, alwaysShow: true },
+    { label: "About COHSSA", action: () => { setIsMenuOpen(false); navigate("/about/cohssa"); }, alwaysShow: true },
+    { label: "Editorial", action: () => { setIsMenuOpen(false); navigate("/editorial"); }, alwaysShow: true },
     { label: "Rules & Constitution", action: () => { setIsMenuOpen(false); navigate("/rules"); }, alwaysShow: true },
+    { label: "Student Portal", action: () => { setIsMenuOpen(false); navigate("/portal"); }, alwaysShow: true },
     { label: "Support & Help", action: () => { setIsMenuOpen(false); navigate("/support"); }, alwaysShow: true },
     { label: "Try Demo", action: () => { setIsMenuOpen(false); navigate("/demo"); }, alwaysShow: true },
     { label: "Admin Access", action: () => { setIsMenuOpen(false); navigate("/admin/login"); }, alwaysShow: true },

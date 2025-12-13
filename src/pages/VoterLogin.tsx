@@ -285,16 +285,22 @@ const VoterLogin = () => {
           </Card>
         )}
 
-        {/* Step: Authentication */}
+        {/* Step: Authentication - Biometric First */}
         {currentStep === 'auth' && voterInfo && (
           <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
             <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
                 <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Shield className="h-10 w-10 text-primary" />
+                  {hasWebAuthn && isSupported ? (
+                    <Fingerprint className="h-10 w-10 text-primary" />
+                  ) : (
+                    <Shield className="h-10 w-10 text-primary" />
+                  )}
                 </div>
               </div>
-              <CardTitle className="text-2xl">Choose Login Method</CardTitle>
+              <CardTitle className="text-2xl">
+                {hasWebAuthn && isSupported ? "Biometric Login" : "Verify Your Identity"}
+              </CardTitle>
               <CardDescription>Welcome back, {voterInfo.name}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -304,15 +310,22 @@ const VoterLogin = () => {
                 <p className="text-sm text-muted-foreground">{voterInfo.matric}</p>
               </div>
 
-              {/* Biometric Option */}
-              {hasWebAuthn && isSupported && (
+              {/* Biometric First - Primary Option */}
+              {hasWebAuthn && isSupported && !otpSent && (
                 <>
+                  <Alert className="border-primary/30 bg-primary/5">
+                    <Fingerprint className="h-4 w-4" />
+                    <AlertDescription>
+                      Use your fingerprint or face recognition for quick, secure login.
+                    </AlertDescription>
+                  </Alert>
+                  
                   <Button 
-                    className="w-full h-14 text-base gap-3" 
+                    className="w-full h-16 text-lg gap-3 animate-pulse hover:animate-none" 
                     onClick={handleBiometricLogin}
                     disabled={loading || webAuthnLoading}
                   >
-                    <Fingerprint className="h-6 w-6" />
+                    <Fingerprint className="h-7 w-7" />
                     {loading ? "Authenticating..." : "Login with Biometric"}
                   </Button>
                   
@@ -321,16 +334,25 @@ const VoterLogin = () => {
                       <span className="w-full border-t" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-4 text-muted-foreground">Or use email code</span>
+                      <span className="bg-card px-4 text-muted-foreground">Or use email code instead</span>
                     </div>
                   </div>
+                  
+                  <Button 
+                    variant="outline"
+                    className="w-full h-12 text-base gap-3" 
+                    onClick={sendOTP}
+                    disabled={loading}
+                  >
+                    <Mail className="h-5 w-5" />
+                    {loading ? "Sending..." : "Send Login Code to Email"}
+                  </Button>
                 </>
               )}
 
-              {/* Email OTP */}
-              {!otpSent ? (
+              {/* No Biometric - Email OTP Primary */}
+              {(!hasWebAuthn || !isSupported) && !otpSent && (
                 <Button 
-                  variant={hasWebAuthn ? "outline" : "default"}
                   className="w-full h-14 text-base gap-3" 
                   onClick={sendOTP}
                   disabled={loading}
@@ -338,7 +360,10 @@ const VoterLogin = () => {
                   <Mail className="h-5 w-5" />
                   {loading ? "Sending..." : "Send Login Code to Email"}
                 </Button>
-              ) : (
+              )}
+
+              {/* OTP Input Section */}
+              {otpSent && (
                 <div className="space-y-4">
                   <div className="text-center">
                     <Label className="text-base">Enter 6-digit code sent to</Label>
@@ -369,14 +394,26 @@ const VoterLogin = () => {
                     {loading ? "Verifying..." : "Verify & Login"}
                   </Button>
 
-                  <Button 
-                    variant="ghost" 
-                    onClick={handleResendOTP}
-                    disabled={loading}
-                    className="w-full"
-                  >
-                    Resend Code
-                  </Button>
+                  <div className="flex gap-2">
+                    {hasWebAuthn && isSupported && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => { setOtpSent(false); setOtp(""); }}
+                        className="flex-1 gap-2"
+                      >
+                        <Fingerprint className="h-4 w-4" />
+                        Use Biometric
+                      </Button>
+                    )}
+                    <Button 
+                      variant="ghost" 
+                      onClick={handleResendOTP}
+                      disabled={loading}
+                      className="flex-1"
+                    >
+                      Resend Code
+                    </Button>
+                  </div>
                 </div>
               )}
 

@@ -110,6 +110,36 @@ export const useAdminTour = () => {
           },
         },
         {
+          element: 'a[href="/admin/content"]',
+          popover: {
+            title: "📚 Content Management",
+            description:
+              "Manage all portal content: university leaders, COHSSA executives, senate members, alumni profiles, and editorial content. Add photos, contact details, and biographical information.",
+            side: "right",
+            align: "start",
+          },
+        },
+        {
+          element: 'a[href="/admin/resources"]',
+          popover: {
+            title: "📖 Academic Resources",
+            description:
+              "Upload and manage academic materials: course outlines, past questions, e-materials, mock tests, and revision notes. Add Google Drive links, YouTube videos, and documents.",
+            side: "right",
+            align: "start",
+          },
+        },
+        {
+          element: 'a[href="/admin/textbooks"]',
+          popover: {
+            title: "📕 Textbook Marketplace",
+            description:
+              "Review student textbook listings for sale. Approve, add commission, and manage the buyer-seller workflow. Facilitate delivery and payment for sold textbooks.",
+            side: "right",
+            align: "start",
+          },
+        },
+        {
           popover: {
             title: "🔒 Security Notes",
             description:
