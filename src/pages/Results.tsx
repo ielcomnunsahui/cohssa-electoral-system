@@ -73,16 +73,16 @@ const Results = () => {
     try {
       // Get voter stats
       const { data: voterData } = await supabase
-        .from('voter_profiles')
-        .select('voted, verified');
+        .from('voters')
+        .select('has_voted, verified');
 
       const verified = voterData?.filter(v => v.verified) || [];
       setTotalVoters(verified.length);
-      setVotedCount(verified.filter(v => v.voted).length);
+      setVotedCount(verified.filter(v => v.has_voted).length);
 
       // Get positions
       const { data: positions } = await supabase
-        .from('voting_positions')
+        .from('positions')
         .select('*')
         .eq('is_active', true)
         .order('display_order');
@@ -90,20 +90,20 @@ const Results = () => {
       // Get candidates with their votes
       const { data: candidates } = await supabase
         .from('candidates')
-        .select('*, voting_position_id');
+        .select('*, position_id');
 
       // Get vote counts
       const { data: votes } = await supabase
         .from('votes')
-        .select('candidate_id, voting_position_id');
+        .select('aspirant_id, position_id');
 
       const positionResults: PositionResult[] = (positions || []).map(position => {
-        const positionCandidates = (candidates || []).filter(c => c.voting_position_id === position.id);
-        const positionVotes = (votes || []).filter(v => v.voting_position_id === position.id);
+        const positionCandidates = (candidates || []).filter(c => c.position_id === position.id);
+        const positionVotes = (votes || []).filter(v => v.position_id === position.id);
         const totalVotes = positionVotes.length;
 
         const candidatesWithVotes = positionCandidates.map(candidate => {
-          const candidateVotes = positionVotes.filter(v => v.candidate_id === candidate.id).length;
+          const candidateVotes = positionVotes.filter(v => v.aspirant_id === candidate.id).length;
           return {
             id: candidate.id,
             name: candidate.name,
@@ -116,7 +116,7 @@ const Results = () => {
 
         return {
           position_id: position.id,
-          position_name: position.position_name,
+          position_name: position.position_name || position.title,
           candidates: candidatesWithVotes,
           total_votes: totalVotes
         };

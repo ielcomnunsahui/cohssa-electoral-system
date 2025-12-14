@@ -59,7 +59,7 @@ const Editorial = () => {
       const { data } = await supabase
         .from('editorial_content')
         .select('*')
-        .eq('is_published', true)
+        .eq('status', 'published')
         .order('published_at', { ascending: false });
 
       if (data) setContent(data);
@@ -88,9 +88,13 @@ const Editorial = () => {
     setSubmitting(true);
     try {
       const { error } = await supabase.from('editorial_content').insert({
-        ...formData,
-        submitted_by: user.id,
-        is_published: false
+        title: formData.title,
+        content: formData.content,
+        content_type: formData.content_type,
+        author_name: formData.author_name,
+        department: formData.author_department,
+        user_id: user.id,
+        status: 'pending'
       });
 
       if (error) throw error;

@@ -53,8 +53,8 @@ const StudentPortal = () => {
   const fetchData = async () => {
     try {
       const [resourcesRes, eventsRes] = await Promise.all([
-        supabase.from('academic_resources').select('*').eq('is_active', true),
-        supabase.from('events_gallery').select('*').eq('is_published', true).order('event_date', { ascending: false })
+        supabase.from('resources').select('*').eq('status', 'approved'),
+        supabase.from('events').select('*').eq('is_published', true).order('start_date', { ascending: false })
       ]);
 
       if (resourcesRes.data) setResources(resourcesRes.data);
@@ -203,8 +203,8 @@ const StudentPortal = () => {
                     )}
                     <CardContent className="p-4">
                       <h3 className="font-semibold mb-2">{event.title}</h3>
-                      {event.event_date && (
-                        <p className="text-sm text-muted-foreground">{new Date(event.event_date).toLocaleDateString()}</p>
+                      {event.start_date && (
+                        <p className="text-sm text-muted-foreground">{new Date(event.start_date).toLocaleDateString()}</p>
                       )}
                       {event.description && (
                         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{event.description}</p>

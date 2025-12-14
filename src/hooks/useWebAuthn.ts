@@ -121,9 +121,9 @@ export const useWebAuthn = () => {
   ): Promise<boolean> => {
     try {
       const { error } = await supabase
-        .from('voter_profiles')
+        .from('voters')
         .update({ webauthn_credential: credential as any })
-        .ilike('matric', matric);
+        .ilike('matric_number', matric);
 
       if (error) throw error;
       return true;
@@ -136,7 +136,7 @@ export const useWebAuthn = () => {
   const getCredential = useCallback(async (email: string): Promise<WebAuthnCredential | null> => {
     try {
       const { data, error } = await supabase
-        .from('voter_profiles')
+        .from('voters')
         .select('webauthn_credential')
         .eq('email', email)
         .maybeSingle();
