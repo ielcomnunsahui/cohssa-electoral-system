@@ -159,7 +159,8 @@ const App = () => (
               <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
                 <EventsManagement />
               </ProtectedRoute>
-            }
+            } 
+          />
           <Route path="/committee" element={<Committee />} />
           <Route path="/voter/register" element={<VoterRegister />} />
           <Route path="/voter/login" element={<VoterLogin />} />

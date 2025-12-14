@@ -356,7 +356,7 @@ const TextbookManagement = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Final Price (Buyer Pays)</p>
                     <p className="text-xl font-bold text-green-600">
-                      ₦{(parseFloat(selectedTextbook.price || 0) + parseFloat(commission || 0)).toLocaleString()}
+                      ₦{(parseFloat(selectedTextbook.price || '0') + parseFloat(commission || '0')).toLocaleString()}
                     </p>
                   </div>
                 </div>
