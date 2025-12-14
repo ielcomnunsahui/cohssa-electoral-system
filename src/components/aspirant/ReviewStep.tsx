@@ -38,10 +38,12 @@ const ReviewStep = ({ formData, applicationId }: ReviewStepProps) => {
       // For now, we'll just update the application status
 
       const { error } = await supabase
-        .from('aspirant_applications')
+        .from('aspirants')
         .update({
+          name: step_data.personal.full_name,
           full_name: step_data.personal.full_name,
           matric: step_data.personal.matric,
+          matric_number: step_data.personal.matric,
           department: step_data.personal.department,
           level: step_data.personal.level,
           date_of_birth: step_data.personal.date_of_birth,

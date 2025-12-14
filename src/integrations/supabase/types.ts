@@ -14,16 +14,877 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      aspirants: {
+        Row: {
+          application_data: Json | null
+          cgpa: number | null
+          created_at: string | null
+          date_of_birth: string | null
+          department: string
+          email: string | null
+          full_name: string | null
+          gender: string | null
+          id: string
+          leadership_history: string | null
+          level: string
+          manifesto: string | null
+          matric: string | null
+          matric_number: string
+          name: string
+          payment_proof_url: string | null
+          phone: string | null
+          photo_url: string | null
+          position_id: string | null
+          status: string | null
+          step_data: Json | null
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string | null
+          why_running: string | null
+        }
+        Insert: {
+          application_data?: Json | null
+          cgpa?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          department: string
+          email?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          leadership_history?: string | null
+          level: string
+          manifesto?: string | null
+          matric?: string | null
+          matric_number: string
+          name: string
+          payment_proof_url?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          position_id?: string | null
+          status?: string | null
+          step_data?: Json | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          why_running?: string | null
+        }
+        Update: {
+          application_data?: Json | null
+          cgpa?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          department?: string
+          email?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          leadership_history?: string | null
+          level?: string
+          manifesto?: string | null
+          matric?: string | null
+          matric_number?: string
+          name?: string
+          payment_proof_url?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          position_id?: string | null
+          status?: string | null
+          step_data?: Json | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          why_running?: string | null
+        }
+        Relationships: []
+      }
+      candidates: {
+        Row: {
+          application_id: string | null
+          created_at: string | null
+          department: string
+          id: string
+          is_active: boolean | null
+          manifesto: string | null
+          matric: string
+          name: string
+          photo_url: string | null
+          position_id: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          created_at?: string | null
+          department: string
+          id?: string
+          is_active?: boolean | null
+          manifesto?: string | null
+          matric: string
+          name: string
+          photo_url?: string | null
+          position_id?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          created_at?: string | null
+          department?: string
+          id?: string
+          is_active?: boolean | null
+          manifesto?: string | null
+          matric?: string
+          name?: string
+          photo_url?: string | null
+          position_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidates_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "aspirants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidates_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cohssa_alumni: {
+        Row: {
+          administration_number: number | null
+          created_at: string | null
+          current_workplace: string | null
+          department: string | null
+          display_order: number | null
+          email: string | null
+          graduation_year: number | null
+          id: string
+          name: string
+          phone: string | null
+          photo_url: string | null
+          position: string
+        }
+        Insert: {
+          administration_number?: number | null
+          created_at?: string | null
+          current_workplace?: string | null
+          department?: string | null
+          display_order?: number | null
+          email?: string | null
+          graduation_year?: number | null
+          id?: string
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          position: string
+        }
+        Update: {
+          administration_number?: number | null
+          created_at?: string | null
+          current_workplace?: string | null
+          department?: string | null
+          display_order?: number | null
+          email?: string | null
+          graduation_year?: number | null
+          id?: string
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          position?: string
+        }
+        Relationships: []
+      }
+      cohssa_executives: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          email: string | null
+          id: string
+          level: string | null
+          name: string
+          phone: string | null
+          photo_url: string | null
+          position: string
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          level?: string | null
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          position: string
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          level?: string | null
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          position?: string
+        }
+        Relationships: []
+      }
+      cohssa_senate: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          email: string | null
+          id: string
+          level: string | null
+          name: string
+          phone: string | null
+          photo_url: string | null
+          position: string
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          level?: string | null
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          position: string
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          level?: string | null
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          position?: string
+        }
+        Relationships: []
+      }
+      college_departments: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          faculty: string | null
+          head_of_department: string | null
+          hod_photo_url: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          faculty?: string | null
+          head_of_department?: string | null
+          hod_photo_url?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          faculty?: string | null
+          head_of_department?: string | null
+          hod_photo_url?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      editorial_content: {
+        Row: {
+          author_email: string | null
+          author_name: string | null
+          content: string | null
+          content_type: string
+          created_at: string | null
+          department: string | null
+          id: string
+          image_url: string | null
+          pdf_url: string | null
+          published_at: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          author_email?: string | null
+          author_name?: string | null
+          content?: string | null
+          content_type: string
+          created_at?: string | null
+          department?: string | null
+          id?: string
+          image_url?: string | null
+          pdf_url?: string | null
+          published_at?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          author_email?: string | null
+          author_name?: string | null
+          content?: string | null
+          content_type?: string
+          created_at?: string | null
+          department?: string | null
+          id?: string
+          image_url?: string | null
+          pdf_url?: string | null
+          published_at?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      election_timeline: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          end_time: string | null
+          id: string
+          is_active: boolean | null
+          is_publicly_visible: boolean | null
+          stage_name: string | null
+          start_date: string
+          start_time: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_publicly_visible?: boolean | null
+          stage_name?: string | null
+          start_date: string
+          start_time?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          end_time?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_publicly_visible?: boolean | null
+          stage_name?: string | null
+          start_date?: string
+          start_time?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      electoral_committee: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          email: string | null
+          id: string
+          is_staff_adviser: boolean | null
+          level: string | null
+          name: string
+          phone: string | null
+          photo_url: string | null
+          position: string
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          is_staff_adviser?: boolean | null
+          level?: string | null
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          position: string
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          is_staff_adviser?: boolean | null
+          level?: string | null
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          position?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          event_type: string | null
+          highlights: string | null
+          id: string
+          image_url: string | null
+          is_published: boolean | null
+          location: string | null
+          start_date: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          event_type?: string | null
+          highlights?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean | null
+          location?: string | null
+          start_date?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          event_type?: string | null
+          highlights?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean | null
+          location?: string | null
+          start_date?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      positions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          eligible_departments: string[] | null
+          eligible_gender: string | null
+          eligible_levels: string[] | null
+          fee: number | null
+          id: string
+          is_active: boolean | null
+          max_candidates: number | null
+          min_cgpa: number | null
+          position_name: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          eligible_departments?: string[] | null
+          eligible_gender?: string | null
+          eligible_levels?: string[] | null
+          fee?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_candidates?: number | null
+          min_cgpa?: number | null
+          position_name?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          eligible_departments?: string[] | null
+          eligible_gender?: string | null
+          eligible_levels?: string[] | null
+          fee?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_candidates?: number | null
+          min_cgpa?: number | null
+          position_name?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      presidential_appointments: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          id: string
+          name: string
+          photo_url: string | null
+          position: string
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          photo_url?: string | null
+          position: string
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          photo_url?: string | null
+          position?: string
+        }
+        Relationships: []
+      }
+      resources: {
+        Row: {
+          admin_commission: number | null
+          created_at: string | null
+          department: string | null
+          description: string | null
+          external_link: string | null
+          file_url: string | null
+          id: string
+          is_sold: boolean | null
+          level: string | null
+          price: number | null
+          resource_type: string
+          seller_id: string | null
+          seller_name: string | null
+          seller_phone: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          admin_commission?: number | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          external_link?: string | null
+          file_url?: string | null
+          id?: string
+          is_sold?: boolean | null
+          level?: string | null
+          price?: number | null
+          resource_type: string
+          seller_id?: string | null
+          seller_name?: string | null
+          seller_phone?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          admin_commission?: number | null
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          external_link?: string | null
+          file_url?: string | null
+          id?: string
+          is_sold?: boolean | null
+          level?: string | null
+          price?: number | null
+          resource_type?: string
+          seller_id?: string | null
+          seller_name?: string | null
+          seller_phone?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      standing_committees: {
+        Row: {
+          chairman: string | null
+          committee_name: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          members: string[] | null
+        }
+        Insert: {
+          chairman?: string | null
+          committee_name: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          members?: string[] | null
+        }
+        Update: {
+          chairman?: string | null
+          committee_name?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          members?: string[] | null
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          created_at: string | null
+          department: string
+          email: string | null
+          faculty: string | null
+          id: string
+          level: string
+          matric_number: string
+          name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department: string
+          email?: string | null
+          faculty?: string | null
+          id?: string
+          level: string
+          matric_number: string
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string
+          email?: string | null
+          faculty?: string | null
+          id?: string
+          level?: string
+          matric_number?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_value: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_value?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      university_leaders: {
+        Row: {
+          bio: string | null
+          category: string | null
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          faculty: string | null
+          id: string
+          name: string
+          photo_url: string | null
+          position: string
+          updated_at: string | null
+        }
+        Insert: {
+          bio?: string | null
+          category?: string | null
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          faculty?: string | null
+          id?: string
+          name: string
+          photo_url?: string | null
+          position: string
+          updated_at?: string | null
+        }
+        Update: {
+          bio?: string | null
+          category?: string | null
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          faculty?: string | null
+          id?: string
+          name?: string
+          photo_url?: string | null
+          position?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      voters: {
+        Row: {
+          created_at: string | null
+          department: string
+          email: string | null
+          has_voted: boolean | null
+          id: string
+          level: string
+          matric_number: string
+          name: string
+          phone: string | null
+          user_id: string | null
+          verified: boolean | null
+          webauthn_credential: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          department: string
+          email?: string | null
+          has_voted?: boolean | null
+          id?: string
+          level: string
+          matric_number: string
+          name: string
+          phone?: string | null
+          user_id?: string | null
+          verified?: boolean | null
+          webauthn_credential?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string
+          email?: string | null
+          has_voted?: boolean | null
+          id?: string
+          level?: string
+          matric_number?: string
+          name?: string
+          phone?: string | null
+          user_id?: string | null
+          verified?: boolean | null
+          webauthn_credential?: Json | null
+        }
+        Relationships: []
+      }
+      votes: {
+        Row: {
+          aspirant_id: string | null
+          created_at: string | null
+          id: string
+          position_id: string | null
+          voter_id: string | null
+        }
+        Insert: {
+          aspirant_id?: string | null
+          created_at?: string | null
+          id?: string
+          position_id?: string | null
+          voter_id?: string | null
+        }
+        Update: {
+          aspirant_id?: string | null
+          created_at?: string | null
+          id?: string
+          position_id?: string | null
+          voter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_aspirant_id_fkey"
+            columns: ["aspirant_id"]
+            isOneToOne: false
+            referencedRelation: "aspirants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "voters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +1011,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

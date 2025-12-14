@@ -33,9 +33,9 @@ const AdminDashboard = () => {
     loadChartData();
 
     const channels = [
-      supabase.channel('student-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'student_list' }, () => { loadStats(); loadChartData(); }).subscribe(),
-      supabase.channel('voter-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'voter_profiles' }, () => { loadStats(); loadChartData(); }).subscribe(),
-      supabase.channel('application-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'aspirant_applications' }, () => { loadStats(); loadChartData(); }).subscribe(),
+      supabase.channel('student-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => { loadStats(); loadChartData(); }).subscribe(),
+      supabase.channel('voter-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'voters' }, () => { loadStats(); loadChartData(); }).subscribe(),
+      supabase.channel('application-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'aspirants' }, () => { loadStats(); loadChartData(); }).subscribe(),
       supabase.channel('candidate-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'candidates' }, () => { loadStats(); loadChartData(); }).subscribe(),
     ];
 
@@ -47,11 +47,11 @@ const AdminDashboard = () => {
   const loadStats = async () => {
     try {
       const [studentsRes, votersRes, applicationsRes, candidatesRes, votesRes] = await Promise.all([
-        supabase.from('student_list').select('id', { count: 'exact', head: true }),
-        supabase.from('voter_profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('aspirant_applications').select('id', { count: 'exact', head: true }),
+        supabase.from('students').select('id', { count: 'exact', head: true }),
+        supabase.from('voters').select('id', { count: 'exact', head: true }),
+        supabase.from('aspirants').select('id', { count: 'exact', head: true }),
         supabase.from('candidates').select('id', { count: 'exact', head: true }),
-        supabase.from('voter_profiles').select('voted', { count: 'exact' }).eq('voted', true)
+        supabase.from('voters').select('has_voted', { count: 'exact' }).eq('has_voted', true)
       ]);
 
       const totalVoters = votersRes.count || 0;
@@ -76,13 +76,13 @@ const AdminDashboard = () => {
   const loadChartData = async () => {
     try {
       // Voter turnout data
-      const { data: voters } = await supabase.from('voter_profiles').select('voted, verified');
+      const { data: voters } = await supabase.from('voters').select('has_voted, verified');
       const verified = voters?.filter(v => v.verified) || [];
-      const voted = verified.filter(v => v.voted).length;
+      const voted = verified.filter(v => v.has_voted).length;
       const notVoted = verified.length - voted;
 
       // Application status data
-      const { data: applications } = await supabase.from('aspirant_applications').select('status');
+      const { data: applications } = await supabase.from('aspirants').select('status');
       const statusCounts = applications?.reduce((acc, app) => {
         acc[app.status || 'pending'] = (acc[app.status || 'pending'] || 0) + 1;
         return acc;
@@ -92,8 +92,8 @@ const AdminDashboard = () => {
       const { data: timeline } = await supabase.from('election_timeline').select('*').order('start_time');
       const now = new Date();
       const timelineProgress = (timeline || []).map(stage => {
-        const start = new Date(stage.start_time);
-        const end = new Date(stage.end_time);
+        const start = new Date(stage.start_time || stage.start_date);
+        const end = new Date(stage.end_time || stage.end_date);
         let progress = 0;
         if (now >= end) progress = 100;
         else if (now >= start) {
@@ -101,13 +101,13 @@ const AdminDashboard = () => {
           const elapsed = now.getTime() - start.getTime();
           progress = Math.round((elapsed / total) * 100);
         }
-        return { stage: stage.stage_name.replace(' ', '\n'), progress };
+        return { stage: (stage.stage_name || stage.title).replace(' ', '\n'), progress };
       });
 
       // Department data
-      const { data: studentDepts } = await supabase.from('student_list').select('department');
-      const { data: voterDepts } = await supabase.from('voter_profiles').select('matric');
-      const { data: appDepts } = await supabase.from('aspirant_applications').select('department');
+      const { data: studentDepts } = await supabase.from('students').select('department');
+      const { data: voterDepts } = await supabase.from('voters').select('matric_number');
+      const { data: appDepts } = await supabase.from('aspirants').select('department');
 
       const deptStats: Record<string, { voters: number; applications: number }> = {};
       (studentDepts || []).forEach(s => {

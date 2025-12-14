@@ -28,10 +28,10 @@ const PositionStep = ({ data, onUpdate, personalData }: PositionStepProps) => {
 
   const loadPositions = async () => {
     const { data: positionsData, error } = await supabase
-      .from('aspirant_positions')
+      .from('positions')
       .select('*')
       .eq('is_active', true)
-      .order('position_name');
+      .order('title');
 
     if (error) {
       toast.error("Failed to load positions");
@@ -121,7 +121,7 @@ const PositionStep = ({ data, onUpdate, personalData }: PositionStepProps) => {
           <SelectContent>
             {positions.map((position) => (
               <SelectItem key={position.id} value={position.id}>
-                {position.position_name} - ₦{position.fee.toLocaleString()}
+                {position.position_name || position.title} - ₦{(position.fee || 0).toLocaleString()}
               </SelectItem>
             ))}
           </SelectContent>
@@ -131,25 +131,25 @@ const PositionStep = ({ data, onUpdate, personalData }: PositionStepProps) => {
       {selectedPosition && (
         <Card>
           <CardHeader>
-            <CardTitle>{selectedPosition.position_name}</CardTitle>
+            <CardTitle>{selectedPosition.position_name || selectedPosition.title}</CardTitle>
             <CardDescription>Position Requirements</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Application Fee:</span>
-              <span className="font-semibold">₦{selectedPosition.fee.toLocaleString()}</span>
+              <span className="font-semibold">₦{(selectedPosition.fee || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Minimum CGPA:</span>
-              <span className="font-semibold">{selectedPosition.min_cgpa}</span>
+              <span className="font-semibold">{selectedPosition.min_cgpa || 2.0}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Eligible Levels:</span>
-              <span className="font-semibold">{selectedPosition.eligible_levels.join(', ')}</span>
+              <span className="font-semibold">{(selectedPosition.eligible_levels || []).join(', ') || 'All'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Eligible Departments:</span>
-              <span className="font-semibold">{selectedPosition.eligible_departments.join(', ')}</span>
+              <span className="font-semibold">{(selectedPosition.eligible_departments || []).join(', ') || 'All'}</span>
             </div>
             {selectedPosition.eligible_gender && (
               <div className="flex justify-between">

@@ -59,9 +59,9 @@ const VoterLogin = () => {
     try {
       // Find voter profile by matric (case-insensitive)
       const { data: profile, error: profileError } = await supabase
-        .from('voter_profiles')
+        .from('voters')
         .select('*')
-        .ilike('matric', inputMatric)
+        .ilike('matric_number', inputMatric)
         .maybeSingle();
 
       if (profileError || !profile) {
@@ -76,7 +76,7 @@ const VoterLogin = () => {
         return;
       }
 
-      setVoterInfo({ name: profile.name, email: profile.email, matric: profile.matric });
+      setVoterInfo({ name: profile.name, email: profile.email || '', matric: profile.matric_number });
 
       // Check if user has WebAuthn set up
       if (isSupported && profile.webauthn_credential) {

@@ -32,7 +32,7 @@ const VoterDashboard = () => {
       }
 
       const { data: profile, error: profileError } = await supabase
-        .from('voter_profiles')
+        .from('voters')
         .select('*')
         .eq('user_id', user.id)
         .single();
@@ -45,14 +45,14 @@ const VoterDashboard = () => {
         return;
       }
 
-      if (profile.voted) {
+      if (profile.has_voted) {
         toast.info("You have already voted");
       }
 
       setVoterProfile(profile);
 
       const { data: positionsData, error: positionsError } = await supabase
-        .from('voting_positions')
+        .from('positions')
         .select(`
           *,
           candidates (
@@ -77,7 +77,7 @@ const VoterDashboard = () => {
   };
 
   const handleStartVoting = () => {
-    if (voterProfile?.voted) {
+    if (voterProfile?.has_voted) {
       toast.error("You have already cast your vote");
       return;
     }
@@ -119,9 +119,9 @@ const VoterDashboard = () => {
     setSubmitting(true);
     try {
       const votes = Object.entries(selectedCandidates).map(([positionId, candidateId]) => ({
-        voting_position_id: positionId,
-        candidate_id: candidateId,
-        issuance_token: voterProfile.issuance_token
+        position_id: positionId,
+        aspirant_id: candidateId,
+        voter_id: voterProfile.id
       }));
 
       const { error: voteError } = await supabase
@@ -131,10 +131,9 @@ const VoterDashboard = () => {
       if (voteError) throw voteError;
 
       const { error: profileError } = await supabase
-        .from('voter_profiles')
+        .from('voters')
         .update({ 
-          voted: true,
-          voted_at: new Date().toISOString()
+          has_voted: true
         })
         .eq('id', voterProfile.id);
 
@@ -180,7 +179,7 @@ const VoterDashboard = () => {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="font-semibold text-sm">{voterProfile?.name}</p>
-              <p className="text-xs text-muted-foreground">{voterProfile?.matric}</p>
+              <p className="text-xs text-muted-foreground">{voterProfile?.matric_number}</p>
             </div>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
@@ -208,7 +207,7 @@ const VoterDashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Matric Number</p>
-                  <p className="font-semibold">{voterProfile?.matric}</p>
+                  <p className="font-semibold">{voterProfile?.matric_number}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Verification Status</p>
@@ -218,13 +217,13 @@ const VoterDashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Voting Status</p>
-                  <Badge variant={voterProfile?.voted ? "secondary" : "default"}>
-                    {voterProfile?.voted ? "Already Voted" : "Not Voted"}
+                  <Badge variant={voterProfile?.has_voted ? "secondary" : "default"}>
+                    {voterProfile?.has_voted ? "Already Voted" : "Not Voted"}
                   </Badge>
                 </div>
               </div>
 
-              {voterProfile?.voted ? (
+              {voterProfile?.has_voted ? (
                 <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertDescription>
@@ -253,7 +252,7 @@ const VoterDashboard = () => {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle>{currentPosition?.position_name}</CardTitle>
+                  <CardTitle>{currentPosition?.position_name || currentPosition?.title}</CardTitle>
                   <CardDescription>
                     Position {currentPositionIndex + 1} of {positions.length}
                   </CardDescription>

@@ -40,8 +40,9 @@ const Candidates = () => {
           matric,
           department,
           manifesto,
-          voting_positions (
-            position_name,
+          position_id,
+          positions (
+            title,
             display_order
           )
         `);
@@ -53,8 +54,11 @@ const Candidates = () => {
         return;
       }
       
-      // Filter out candidates without valid voting_positions
-      const validCandidates = (data || []).filter(c => c.voting_positions !== null) as Candidate[];
+      // Transform data to expected format
+      const validCandidates = (data || []).filter(c => c.positions !== null).map(c => ({
+        ...c,
+        voting_positions: c.positions ? { position_name: c.positions.title, display_order: c.positions.display_order } : null
+      })) as Candidate[];
       setCandidates(validCandidates);
     } catch (err) {
       console.error("Fetch error:", err);
