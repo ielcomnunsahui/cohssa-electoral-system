@@ -63,13 +63,9 @@ const ResourceManagement = () => {
     resource_type: 'course_outline',
     department: '',
     level: '',
-    course_code: '',
-    external_url: '',
-    youtube_url: '',
-    drive_url: '',
-    year: '',
-    category: '',
-    is_active: true
+    external_link: '',
+    file_url: '',
+    status: 'approved'
   });
 
   useEffect(() => {
@@ -79,7 +75,7 @@ const ResourceManagement = () => {
   const fetchResources = async () => {
     try {
       const { data, error } = await supabase
-        .from('academic_resources')
+        .from('resources')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -101,13 +97,9 @@ const ResourceManagement = () => {
       resource_type: activeTab,
       department: '',
       level: '',
-      course_code: '',
-      external_url: '',
-      youtube_url: '',
-      drive_url: '',
-      year: '',
-      category: '',
-      is_active: true
+      external_link: '',
+      file_url: '',
+      status: 'approved'
     });
     setDialogOpen(true);
   };
@@ -128,15 +120,33 @@ const ResourceManagement = () => {
     try {
       if (editingItem) {
         const { error } = await supabase
-          .from('academic_resources')
-          .update(formData)
+          .from('resources')
+          .update({
+            title: formData.title,
+            description: formData.description,
+            resource_type: formData.resource_type,
+            department: formData.department,
+            level: formData.level,
+            external_link: formData.external_link,
+            file_url: formData.file_url,
+            status: formData.status
+          })
           .eq('id', editingItem.id);
         if (error) throw error;
         toast.success("Resource updated");
       } else {
         const { error } = await supabase
-          .from('academic_resources')
-          .insert(formData);
+          .from('resources')
+          .insert({
+            title: formData.title,
+            description: formData.description,
+            resource_type: formData.resource_type,
+            department: formData.department,
+            level: formData.level,
+            external_link: formData.external_link,
+            file_url: formData.file_url,
+            status: 'approved'
+          });
         if (error) throw error;
         toast.success("Resource added");
       }
@@ -155,7 +165,7 @@ const ResourceManagement = () => {
     if (!confirm("Are you sure you want to delete this resource?")) return;
     
     try {
-      const { error } = await supabase.from('academic_resources').delete().eq('id', id);
+      const { error } = await supabase.from('resources').delete().eq('id', id);
       if (error) throw error;
       toast.success("Resource deleted");
       fetchResources();
@@ -164,11 +174,12 @@ const ResourceManagement = () => {
     }
   };
 
-  const toggleActive = async (id: string, currentValue: boolean) => {
+  const toggleStatus = async (id: string, currentStatus: string) => {
     try {
+      const newStatus = currentStatus === 'approved' ? 'pending' : 'approved';
       const { error } = await supabase
-        .from('academic_resources')
-        .update({ is_active: !currentValue })
+        .from('resources')
+        .update({ status: newStatus })
         .eq('id', id);
       if (error) throw error;
       fetchResources();
@@ -232,9 +243,8 @@ const ResourceManagement = () => {
                         <TableHead>Title</TableHead>
                         <TableHead>Department</TableHead>
                         <TableHead>Level</TableHead>
-                        <TableHead>Course Code</TableHead>
                         <TableHead>Links</TableHead>
-                        <TableHead>Active</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -244,26 +254,18 @@ const ResourceManagement = () => {
                           <TableCell className="font-medium max-w-[200px] truncate">{resource.title}</TableCell>
                           <TableCell>{resource.department || '-'}</TableCell>
                           <TableCell>{resource.level || '-'}</TableCell>
-                          <TableCell>{resource.course_code || '-'}</TableCell>
                           <TableCell>
                             <div className="flex gap-1">
-                              {resource.external_url && (
+                              {resource.external_link && (
                                 <Button variant="ghost" size="icon" asChild>
-                                  <a href={resource.external_url} target="_blank" rel="noopener noreferrer">
+                                  <a href={resource.external_link} target="_blank" rel="noopener noreferrer">
                                     <Link className="h-4 w-4" />
                                   </a>
                                 </Button>
                               )}
-                              {resource.youtube_url && (
+                              {resource.file_url && (
                                 <Button variant="ghost" size="icon" asChild>
-                                  <a href={resource.youtube_url} target="_blank" rel="noopener noreferrer">
-                                    <Youtube className="h-4 w-4 text-red-500" />
-                                  </a>
-                                </Button>
-                              )}
-                              {resource.drive_url && (
-                                <Button variant="ghost" size="icon" asChild>
-                                  <a href={resource.drive_url} target="_blank" rel="noopener noreferrer">
+                                  <a href={resource.file_url} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="h-4 w-4 text-blue-500" />
                                   </a>
                                 </Button>
@@ -271,10 +273,9 @@ const ResourceManagement = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Switch 
-                              checked={resource.is_active} 
-                              onCheckedChange={() => toggleActive(resource.id, resource.is_active)}
-                            />
+                            <Badge variant={resource.status === 'approved' ? 'default' : 'secondary'}>
+                              {resource.status}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
@@ -290,7 +291,7 @@ const ResourceManagement = () => {
                       ))}
                       {getFilteredResources(type.value).length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                             No {type.label.toLowerCase()}s added yet
                           </TableCell>
                         </TableRow>
@@ -372,75 +373,27 @@ const ResourceManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Course Code</Label>
-                    <Input
-                      value={formData.course_code || ''}
-                      onChange={(e) => setFormData({ ...formData, course_code: e.target.value })}
-                      placeholder="e.g., NUS101"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Year</Label>
-                    <Input
-                      value={formData.year || ''}
-                      onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                      placeholder="e.g., 2023/2024"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {formData.resource_type === 'non_academic' && (
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select value={formData.category || ''} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {NON_ACADEMIC_CATEGORIES.map(c => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
               )}
 
               <div className="space-y-4 border-t pt-4">
                 <h4 className="font-medium">Resource Links</h4>
                 <div className="space-y-2">
-                  <Label>External URL</Label>
+                  <Label>External URL (Drive, YouTube, etc.)</Label>
                   <Input
-                    value={formData.external_url || ''}
-                    onChange={(e) => setFormData({ ...formData, external_url: e.target.value })}
+                    value={formData.external_link || ''}
+                    onChange={(e) => setFormData({ ...formData, external_link: e.target.value })}
                     placeholder="https://..."
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>YouTube URL</Label>
+                  <Label>File URL</Label>
                   <Input
-                    value={formData.youtube_url || ''}
-                    onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })}
-                    placeholder="https://youtube.com/..."
+                    value={formData.file_url || ''}
+                    onChange={(e) => setFormData({ ...formData, file_url: e.target.value })}
+                    placeholder="https://..."
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Google Drive URL</Label>
-                  <Input
-                    value={formData.drive_url || ''}
-                    onChange={(e) => setFormData({ ...formData, drive_url: e.target.value })}
-                    placeholder="https://drive.google.com/..."
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  checked={formData.is_active} 
-                  onCheckedChange={(v) => setFormData({ ...formData, is_active: v })}
-                />
-                <Label>Active (visible to students)</Label>
               </div>
 
               <Button onClick={handleSave} disabled={saving} className="w-full gap-2">

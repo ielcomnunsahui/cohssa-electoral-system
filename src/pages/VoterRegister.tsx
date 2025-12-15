@@ -83,9 +83,9 @@ const VoterRegister = () => {
     try {
       // Check if matric already registered (case-insensitive using ILIKE)
       const { data: existingProfile } = await supabase
-        .from("voter_profiles")
+        .from("voters")
         .select("id")
-        .ilike("matric", inputMatric)
+        .ilike("matric_number", inputMatric)
         .maybeSingle();
 
       if (existingProfile) {
@@ -96,9 +96,9 @@ const VoterRegister = () => {
 
       // Verify matric exists in student list (case-insensitive using ILIKE)
       const { data: student, error: studentError } = await supabase
-        .from("student_list")
+        .from("students")
         .select("*")
-        .ilike("matric", inputMatric)
+        .ilike("matric_number", inputMatric)
         .maybeSingle();
 
       if (studentError) {
@@ -115,7 +115,7 @@ const VoterRegister = () => {
       }
 
       setStudentInfo({ 
-        matric: student.matric, 
+        matric: student.matric_number, 
         name: student.name,
         department: student.department 
       });
@@ -139,7 +139,7 @@ const VoterRegister = () => {
     try {
       // Check if email already registered
       const { data: existingEmail } = await supabase
-        .from("voter_profiles")
+        .from("voters")
         .select("id")
         .eq("email", email.toLowerCase())
         .maybeSingle();
@@ -253,22 +253,22 @@ const VoterRegister = () => {
       // Create voter profile
       const profileData = {
         user_id: authData.user.id,
-        matric: studentInfo.matric,
+        matric_number: studentInfo.matric,
         name: studentInfo.name,
+        department: studentInfo.department,
+        level: '100L', // Default level
         email: email.toLowerCase(),
         verified: false,
-        voted: false
+        has_voted: false
       };
 
       const { error: profileError } = await supabase
-        .from("voter_profiles")
+        .from("voters")
         .insert(profileData);
 
       if (profileError) {
         console.error("Profile creation error:", profileError);
-        if (profileError.message?.includes("voter_profiles_matric_fkey")) {
-          toast.error("Your matric number couldn't be verified. Please contact the electoral committee.");
-        } else if (profileError.message?.includes("duplicate key") || profileError.code === "23505") {
+        if (profileError.message?.includes("duplicate key") || profileError.code === "23505") {
           toast.error("This matric number or email is already registered.");
         } else {
           toast.error("Failed to create your profile. Please try again.");
@@ -278,7 +278,7 @@ const VoterRegister = () => {
       }
 
       // Assign voter role
-      await supabase.from("user_roles").insert({ user_id: authData.user.id, role: 'voter' });
+      await supabase.from("user_roles").insert([{ user_id: authData.user.id, role: 'user' as const }]);
 
       setCurrentStep('success');
       toast.success("Registration successful!");
@@ -482,29 +482,72 @@ const VoterRegister = () => {
                     className="h-14 text-lg"
                     required
                   />
-                  <p className="text-xs text-muted-foreground">You'll receive a 6-digit code that expires in 5 minutes</p>
                 </div>
 
-                <div className="flex gap-3">
-                  <Button type="button" variant="outline" onClick={() => setCurrentStep('matric')} className="flex-1 h-12">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
-                  </Button>
-                  <Button type="submit" className="flex-1 h-12 gap-2" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        Send Code
-                        <ArrowRight className="h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <Button type="submit" className="w-full h-12 text-base gap-2" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Sending Code...
+                    </>
+                  ) : (
+                    <>
+                      Continue
+                      <ArrowRight className="h-5 w-5" />
+                    </>
+                  )}
+                </Button>
               </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step: Biometric Setup */}
+        {currentStep === 'biometric' && (
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Fingerprint className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Set Up Quick Login</CardTitle>
+              <CardDescription>Use fingerprint or face ID for faster access</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert className="border-primary/30 bg-primary/5">
+                <Fingerprint className="h-4 w-4" />
+                <AlertDescription>
+                  Setting up biometric login allows you to access your account quickly and securely without entering codes.
+                </AlertDescription>
+              </Alert>
+
+              <Button 
+                onClick={handleBiometricSetup} 
+                className="w-full h-14 text-base gap-2"
+                disabled={webAuthnLoading}
+              >
+                {webAuthnLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Setting up...
+                  </>
+                ) : (
+                  <>
+                    <Fingerprint className="h-5 w-5" />
+                    Set Up Biometric
+                  </>
+                )}
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                onClick={skipBiometric}
+                className="w-full"
+                disabled={loading}
+              >
+                Skip for now
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -523,23 +566,26 @@ const VoterRegister = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex justify-center">
-                <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                <InputOTP 
+                  maxLength={6} 
+                  value={otp} 
+                  onChange={setOtp}
+                  onComplete={handleVerifyOTP}
+                >
                   <InputOTPGroup>
-                    <InputOTPSlot index={0} className="h-14 w-12 text-xl" />
-                    <InputOTPSlot index={1} className="h-14 w-12 text-xl" />
-                    <InputOTPSlot index={2} className="h-14 w-12 text-xl" />
-                    <InputOTPSlot index={3} className="h-14 w-12 text-xl" />
-                    <InputOTPSlot index={4} className="h-14 w-12 text-xl" />
-                    <InputOTPSlot index={5} className="h-14 w-12 text-xl" />
+                    <InputOTPSlot index={0} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={1} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={2} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={3} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={4} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={5} className="w-12 h-14 text-xl" />
                   </InputOTPGroup>
                 </InputOTP>
               </div>
-              
-              <p className="text-xs text-center text-muted-foreground">Code expires in 5 minutes</p>
-              
+
               <Button 
-                className="w-full h-12 text-base gap-2" 
                 onClick={handleVerifyOTP}
+                className="w-full h-12 text-base gap-2"
                 disabled={otp.length !== 6 || otpLoading}
               >
                 {otpLoading ? (
@@ -549,53 +595,22 @@ const VoterRegister = () => {
                   </>
                 ) : (
                   <>
-                    Verify & Continue
-                    <ArrowRight className="h-5 w-5" />
+                    Verify & Complete
+                    <CheckCircle className="h-5 w-5" />
                   </>
                 )}
               </Button>
-              
-              <div className="flex flex-col gap-2">
-                <Button variant="ghost" onClick={handleResendOTP} disabled={otpLoading} className="text-sm">
-                  Didn't receive code? Resend
-                </Button>
-                <Button variant="outline" onClick={() => { setCurrentStep('email'); setOtp(""); }}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Step: Biometric Setup */}
-        {currentStep === 'biometric' && (
-          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
-            <CardHeader className="text-center pb-4">
-              <div className="flex justify-center mb-4">
-                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Fingerprint className="h-10 w-10 text-primary" />
-                </div>
-              </div>
-              <CardTitle className="text-2xl">Set Up Quick Login</CardTitle>
-              <CardDescription>Use fingerprint or face ID for faster, secure access</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Alert className="border-primary/30 bg-primary/5">
-                <Fingerprint className="h-4 w-4" />
-                <AlertDescription>
-                  Biometric login requires HTTPS. It won't work in preview mode but will work on the deployed app.
-                </AlertDescription>
-              </Alert>
-              
-              <Button className="w-full h-12 text-base gap-2" onClick={handleBiometricSetup} disabled={webAuthnLoading}>
-                <Fingerprint className="h-5 w-5" />
-                {webAuthnLoading ? "Setting up..." : "Enable Biometric Login"}
-              </Button>
-              
-              <Button variant="outline" className="w-full h-12" onClick={skipBiometric}>
-                Skip - Use Email OTP Instead
-              </Button>
+              <p className="text-sm text-center text-muted-foreground">
+                Didn't receive the code?{" "}
+                <button 
+                  onClick={handleResendOTP}
+                  disabled={otpLoading}
+                  className="text-primary hover:underline font-medium disabled:opacity-50"
+                >
+                  Resend
+                </button>
+              </p>
             </CardContent>
           </Card>
         )}
@@ -605,42 +620,30 @@ const VoterRegister = () => {
           <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
             <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
-                <div className="h-24 w-24 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center animate-scale-in">
-                  <CheckCircle className="h-12 w-12 text-green-600 dark:text-green-400" />
+                <div className="h-20 w-20 rounded-full bg-success/20 flex items-center justify-center">
+                  <CheckCircle className="h-10 w-10 text-success" />
                 </div>
               </div>
-              <CardTitle className="text-2xl text-green-600 dark:text-green-400">Registration Complete!</CardTitle>
-              <CardDescription>Your voter registration is pending admin verification</CardDescription>
+              <CardTitle className="text-2xl text-success">Registration Complete!</CardTitle>
+              <CardDescription>You're all set to participate in elections</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 text-center">
-              <div className="p-4 bg-muted/50 rounded-xl">
-                <p className="text-muted-foreground">
-                  You will receive an email once your registration is verified. After verification, you can login to vote during the voting period.
-                </p>
+            <CardContent className="space-y-6">
+              <div className="p-4 bg-muted/50 rounded-xl text-center">
+                <p className="text-sm text-muted-foreground mb-2">Registered as</p>
+                <p className="font-semibold text-lg">{studentInfo?.name}</p>
+                <p className="text-sm text-muted-foreground">{studentInfo?.matric}</p>
               </div>
-              
-              <div className="flex flex-col gap-3">
-                <Button onClick={() => navigate("/")} className="w-full h-12 text-base">
-                  Return to Home
-                </Button>
-                <Button variant="outline" onClick={() => navigate("/voter/login")} className="w-full">
-                  Go to Login
-                </Button>
-              </div>
+
+              <Button 
+                onClick={() => navigate("/voter/login")}
+                className="w-full h-12 text-base gap-2"
+              >
+                Go to Login
+                <ArrowRight className="h-5 w-5" />
+              </Button>
             </CardContent>
           </Card>
         )}
-
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Logo className="h-6 w-6" />
-            <span className="font-semibold text-sm text-foreground">ISECO</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Independent Students Electoral Committee • COHSSA
-          </p>
-        </div>
       </div>
     </div>
   );

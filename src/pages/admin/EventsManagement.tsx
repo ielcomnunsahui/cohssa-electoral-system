@@ -37,11 +37,11 @@ const EventsManagement = () => {
     title: '',
     description: '',
     event_type: 'event',
-    event_date: '',
+    start_date: '',
+    end_date: '',
+    location: '',
     image_url: '',
-    video_url: '',
     highlights: '',
-    is_upcoming: true,
     is_published: false
   });
 
@@ -52,9 +52,9 @@ const EventsManagement = () => {
   const fetchEvents = async () => {
     try {
       const { data, error } = await supabase
-        .from('events_gallery')
+        .from('events')
         .select('*')
-        .order('event_date', { ascending: false });
+        .order('start_date', { ascending: false });
 
       if (error) throw error;
       setEvents(data || []);
@@ -72,11 +72,11 @@ const EventsManagement = () => {
       title: '',
       description: '',
       event_type: activeTab,
-      event_date: '',
+      start_date: '',
+      end_date: '',
+      location: '',
       image_url: '',
-      video_url: '',
       highlights: '',
-      is_upcoming: true,
       is_published: false
     });
     setDialogOpen(true);
@@ -86,7 +86,8 @@ const EventsManagement = () => {
     setEditingItem(item);
     setFormData({
       ...item,
-      event_date: item.event_date ? new Date(item.event_date).toISOString().slice(0, 16) : ''
+      start_date: item.start_date ? new Date(item.start_date).toISOString().slice(0, 16) : '',
+      end_date: item.end_date ? new Date(item.end_date).toISOString().slice(0, 16) : ''
     });
     setDialogOpen(true);
   };
@@ -100,20 +101,27 @@ const EventsManagement = () => {
     setSaving(true);
     try {
       const dataToSave = {
-        ...formData,
-        event_date: formData.event_date ? new Date(formData.event_date).toISOString() : null
+        title: formData.title,
+        description: formData.description,
+        event_type: formData.event_type,
+        start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
+        end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null,
+        location: formData.location,
+        image_url: formData.image_url,
+        highlights: formData.highlights,
+        is_published: formData.is_published
       };
 
       if (editingItem) {
         const { error } = await supabase
-          .from('events_gallery')
+          .from('events')
           .update(dataToSave)
           .eq('id', editingItem.id);
         if (error) throw error;
         toast.success("Event updated");
       } else {
         const { error } = await supabase
-          .from('events_gallery')
+          .from('events')
           .insert(dataToSave);
         if (error) throw error;
         toast.success("Event added");
@@ -133,7 +141,7 @@ const EventsManagement = () => {
     if (!confirm("Are you sure you want to delete this item?")) return;
     
     try {
-      const { error } = await supabase.from('events_gallery').delete().eq('id', id);
+      const { error } = await supabase.from('events').delete().eq('id', id);
       if (error) throw error;
       toast.success("Item deleted");
       fetchEvents();
@@ -145,7 +153,7 @@ const EventsManagement = () => {
   const togglePublished = async (id: string, currentValue: boolean) => {
     try {
       const { error } = await supabase
-        .from('events_gallery')
+        .from('events')
         .update({ is_published: !currentValue })
         .eq('id', id);
       if (error) throw error;
@@ -156,6 +164,11 @@ const EventsManagement = () => {
   };
 
   const getFilteredEvents = (type: string) => events.filter(e => e.event_type === type);
+
+  const isUpcoming = (date: string) => {
+    if (!date) return false;
+    return new Date(date) > new Date();
+  };
 
   if (loading) {
     return (
@@ -213,6 +226,7 @@ const EventsManagement = () => {
                         <TableHead>Image</TableHead>
                         <TableHead>Title</TableHead>
                         <TableHead>Date</TableHead>
+                        <TableHead>Location</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Published</TableHead>
                         <TableHead>Actions</TableHead>
@@ -232,10 +246,11 @@ const EventsManagement = () => {
                           </TableCell>
                           <TableCell className="font-medium max-w-[200px] truncate">{event.title}</TableCell>
                           <TableCell>
-                            {event.event_date ? new Date(event.event_date).toLocaleDateString() : '-'}
+                            {event.start_date ? new Date(event.start_date).toLocaleDateString() : '-'}
                           </TableCell>
+                          <TableCell>{event.location || '-'}</TableCell>
                           <TableCell>
-                            {event.is_upcoming ? (
+                            {isUpcoming(event.start_date) ? (
                               <Badge className="bg-blue-500">Upcoming</Badge>
                             ) : (
                               <Badge variant="secondary">Past</Badge>
@@ -261,7 +276,7 @@ const EventsManagement = () => {
                       ))}
                       {getFilteredEvents(type.value).length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             No {type.label.toLowerCase()}s added yet
                           </TableCell>
                         </TableRow>
@@ -315,12 +330,31 @@ const EventsManagement = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date & Time</Label>
+                  <Input
+                    type="datetime-local"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date & Time</Label>
+                  <Input
+                    type="datetime-local"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label>Date & Time</Label>
+                <Label>Location</Label>
                 <Input
-                  type="datetime-local"
-                  value={formData.event_date}
-                  onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                  value={formData.location || ''}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Event location or online link"
                 />
               </div>
 
@@ -334,43 +368,23 @@ const EventsManagement = () => {
               </div>
 
               {(formData.event_type === 'webinar' || formData.event_type === 'event') && (
-                <>
-                  <div className="space-y-2">
-                    <Label>Video/Recording URL</Label>
-                    <Input
-                      value={formData.video_url || ''}
-                      onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                      placeholder="https://youtube.com/..."
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Highlights (after event)</Label>
-                    <Textarea
-                      value={formData.highlights || ''}
-                      onChange={(e) => setFormData({ ...formData, highlights: e.target.value })}
-                      placeholder="Key takeaways, summary, highlights..."
-                      rows={4}
-                    />
-                  </div>
-                </>
+                <div className="space-y-2">
+                  <Label>Highlights (after event)</Label>
+                  <Textarea
+                    value={formData.highlights || ''}
+                    onChange={(e) => setFormData({ ...formData, highlights: e.target.value })}
+                    placeholder="Key takeaways, summary, highlights..."
+                    rows={4}
+                  />
+                </div>
               )}
 
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    checked={formData.is_upcoming} 
-                    onCheckedChange={(v) => setFormData({ ...formData, is_upcoming: v })}
-                  />
-                  <Label>Upcoming Event</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    checked={formData.is_published} 
-                    onCheckedChange={(v) => setFormData({ ...formData, is_published: v })}
-                  />
-                  <Label>Published</Label>
-                </div>
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  checked={formData.is_published} 
+                  onCheckedChange={(v) => setFormData({ ...formData, is_published: v })}
+                />
+                <Label>Published (visible to public)</Label>
               </div>
 
               <Button onClick={handleSave} disabled={saving} className="w-full gap-2">

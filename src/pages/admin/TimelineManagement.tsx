@@ -5,27 +5,28 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Plus, Pencil, Trash2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useAuditLog } from "@/hooks/useAuditLog";
 
 type Timeline = Database['public']['Tables']['election_timeline']['Row'];
 
 const TimelineManagement = () => {
   const [timelines, setTimelines] = useState<Timeline[]>([]);
   const [loading, setLoading] = useState(true);
-  const { logAction } = useAuditLog();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Timeline | null>(null);
   const [form, setForm] = useState({
+    title: "",
     stage_name: "",
-    start_time: "",
-    end_time: "",
+    description: "",
+    start_date: "",
+    end_date: "",
   });
 
   useEffect(() => {
@@ -37,7 +38,7 @@ const TimelineManagement = () => {
       const { data, error } = await supabase
         .from('election_timeline')
         .select('*')
-        .order('start_time');
+        .order('start_date');
 
       if (error) throw error;
       setTimelines(data || []);
@@ -49,28 +50,30 @@ const TimelineManagement = () => {
   };
 
   const resetForm = () => {
-    setForm({ stage_name: "", start_time: "", end_time: "" });
+    setForm({ title: "", stage_name: "", description: "", start_date: "", end_date: "" });
     setEditing(null);
   };
 
   const openEdit = (timeline: Timeline) => {
     setEditing(timeline);
     setForm({
-      stage_name: timeline.stage_name,
-      start_time: new Date(timeline.start_time).toISOString().slice(0, 16),
-      end_time: new Date(timeline.end_time).toISOString().slice(0, 16),
+      title: timeline.title || "",
+      stage_name: timeline.stage_name || "",
+      description: timeline.description || "",
+      start_date: timeline.start_date ? new Date(timeline.start_date).toISOString().slice(0, 16) : "",
+      end_date: timeline.end_date ? new Date(timeline.end_date).toISOString().slice(0, 16) : "",
     });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.stage_name || !form.start_time || !form.end_time) {
-      toast.error("All fields are required");
+    if (!form.title || !form.start_date) {
+      toast.error("Title and start date are required");
       return;
     }
 
-    if (new Date(form.end_time) <= new Date(form.start_time)) {
-      toast.error("End time must be after start time");
+    if (form.end_date && new Date(form.end_date) <= new Date(form.start_date)) {
+      toast.error("End date must be after start date");
       return;
     }
 
@@ -79,41 +82,30 @@ const TimelineManagement = () => {
         const { error } = await supabase
           .from('election_timeline')
           .update({
-            stage_name: form.stage_name,
-            start_time: new Date(form.start_time).toISOString(),
-            end_time: new Date(form.end_time).toISOString(),
+            title: form.title,
+            stage_name: form.stage_name || null,
+            description: form.description || null,
+            start_date: new Date(form.start_date).toISOString(),
+            end_date: form.end_date ? new Date(form.end_date).toISOString() : null,
           })
           .eq('id', editing.id);
 
         if (error) throw error;
-
-        await logAction({
-          action: 'timeline_update',
-          entity_type: 'election_timeline',
-          entity_id: editing.id,
-          details: { stage_name: form.stage_name }
-        });
-
         toast.success("Timeline updated");
       } else {
         const { error } = await supabase
           .from('election_timeline')
           .insert({
-            stage_name: form.stage_name,
-            start_time: new Date(form.start_time).toISOString(),
-            end_time: new Date(form.end_time).toISOString(),
+            title: form.title,
+            stage_name: form.stage_name || null,
+            description: form.description || null,
+            start_date: new Date(form.start_date).toISOString(),
+            end_date: form.end_date ? new Date(form.end_date).toISOString() : null,
             is_active: false,
             is_publicly_visible: false,
           });
 
         if (error) throw error;
-
-        await logAction({
-          action: 'timeline_create',
-          entity_type: 'election_timeline',
-          details: { stage_name: form.stage_name }
-        });
-
         toast.success("Timeline created");
       }
 
@@ -135,14 +127,6 @@ const TimelineManagement = () => {
         .eq('id', id);
 
       if (error) throw error;
-
-      await logAction({
-        action: 'timeline_toggle',
-        entity_type: 'election_timeline',
-        entity_id: id,
-        details: { action: 'deleted', name }
-      });
-
       toast.success("Timeline deleted");
       loadTimelines();
     } catch (error: any) {
@@ -158,14 +142,6 @@ const TimelineManagement = () => {
         .eq('id', id);
 
       if (error) throw error;
-
-      await logAction({
-        action: 'timeline_toggle',
-        entity_type: 'election_timeline',
-        entity_id: id,
-        details: { is_active: !isActive }
-      });
-
       toast.success(isActive ? 'Stage deactivated' : 'Stage activated');
       loadTimelines();
     } catch (error: any) {
@@ -181,14 +157,6 @@ const TimelineManagement = () => {
         .eq('id', id);
 
       if (error) throw error;
-
-      await logAction({
-        action: 'timeline_update',
-        entity_type: 'election_timeline',
-        entity_id: id,
-        details: { is_publicly_visible: !isVisible }
-      });
-
       toast.success(isVisible ? 'Stage hidden from public' : 'Stage visible to public');
       loadTimelines();
     } catch (error: any) {
@@ -215,34 +183,51 @@ const TimelineManagement = () => {
                   Add Stage
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editing ? "Edit" : "Add"} Timeline Stage</DialogTitle>
                   <DialogDescription>Configure the election stage details</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>Stage Name</Label>
+                    <Label>Title *</Label>
                     <Input 
-                      value={form.stage_name}
-                      onChange={(e) => setForm(prev => ({ ...prev, stage_name: e.target.value }))}
+                      value={form.title}
+                      onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="e.g., Aspirant Registration"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Start Time</Label>
+                    <Label>Stage Name</Label>
                     <Input 
-                      type="datetime-local"
-                      value={form.start_time}
-                      onChange={(e) => setForm(prev => ({ ...prev, start_time: e.target.value }))}
+                      value={form.stage_name}
+                      onChange={(e) => setForm(prev => ({ ...prev, stage_name: e.target.value }))}
+                      placeholder="e.g., registration"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>End Time</Label>
+                    <Label>Description</Label>
+                    <Textarea 
+                      value={form.description}
+                      onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Brief description of this stage..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Start Date & Time *</Label>
                     <Input 
                       type="datetime-local"
-                      value={form.end_time}
-                      onChange={(e) => setForm(prev => ({ ...prev, end_time: e.target.value }))}
+                      value={form.start_date}
+                      onChange={(e) => setForm(prev => ({ ...prev, start_date: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>End Date & Time</Label>
+                    <Input 
+                      type="datetime-local"
+                      value={form.end_date}
+                      onChange={(e) => setForm(prev => ({ ...prev, end_date: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -258,9 +243,10 @@ const TimelineManagement = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Title</TableHead>
                     <TableHead>Stage Name</TableHead>
-                    <TableHead>Start Time</TableHead>
-                    <TableHead>End Time</TableHead>
+                    <TableHead>Start Date</TableHead>
+                    <TableHead>End Date</TableHead>
                     <TableHead>Active</TableHead>
                     <TableHead>Public</TableHead>
                     <TableHead>Actions</TableHead>
@@ -269,9 +255,10 @@ const TimelineManagement = () => {
                 <TableBody>
                   {timelines.map((timeline) => (
                     <TableRow key={timeline.id} className="hover:bg-muted/50 transition-colors">
-                      <TableCell className="font-medium">{timeline.stage_name}</TableCell>
-                      <TableCell>{new Date(timeline.start_time).toLocaleString()}</TableCell>
-                      <TableCell>{new Date(timeline.end_time).toLocaleString()}</TableCell>
+                      <TableCell className="font-medium">{timeline.title}</TableCell>
+                      <TableCell>{timeline.stage_name || '-'}</TableCell>
+                      <TableCell>{timeline.start_date ? new Date(timeline.start_date).toLocaleString() : '-'}</TableCell>
+                      <TableCell>{timeline.end_date ? new Date(timeline.end_date).toLocaleString() : '-'}</TableCell>
                       <TableCell>
                         <Switch
                           checked={timeline.is_active || false}
@@ -285,7 +272,7 @@ const TimelineManagement = () => {
                           onClick={() => toggleVisibility(timeline.id, timeline.is_publicly_visible || false)}
                         >
                           {timeline.is_publicly_visible ? (
-                            <Eye className="h-4 w-4 text-success" />
+                            <Eye className="h-4 w-4 text-green-500" />
                           ) : (
                             <EyeOff className="h-4 w-4 text-muted-foreground" />
                           )}
@@ -296,7 +283,7 @@ const TimelineManagement = () => {
                           <Button size="sm" variant="ghost" onClick={() => openEdit(timeline)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(timeline.id, timeline.stage_name)}>
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(timeline.id, timeline.title)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -305,7 +292,7 @@ const TimelineManagement = () => {
                   ))}
                   {timelines.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         No timeline stages yet. Click "Add Stage" to create one.
                       </TableCell>
                     </TableRow>

@@ -451,7 +451,7 @@ const ContentManagement = () => {
 
         {/* Add/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingItem ? 'Edit' : 'Add'} {activeTab === 'leaders' ? 'Leader' : activeTab === 'executives' ? 'Executive' : activeTab === 'senate' ? 'Senator' : 'Alumni'}</DialogTitle>
               <DialogDescription>Fill in the details below</DialogDescription>
