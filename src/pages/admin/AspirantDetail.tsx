@@ -8,21 +8,19 @@ import { Input } from "@/components/ui/input";
 import { CheckCircle, XCircle, Calendar, Award } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 import { PromotionConfirmDialog } from "@/components/admin/PromotionConfirmDialog";
 import { ManifestoEditor } from "@/components/admin/ManifestoEditor";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useAuditLog } from "@/hooks/useAuditLog";
 
 const AspirantDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [application, setApplication] = useState<any>(null);
+  const [position, setPosition] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [adminNotes, setAdminNotes] = useState("");
   const [screeningDate, setScreeningDate] = useState("");
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
-  const { logAction } = useAuditLog();
 
   useEffect(() => {
     loadApplication();
@@ -31,17 +29,27 @@ const AspirantDetail = () => {
   const loadApplication = async () => {
     try {
       const { data, error } = await supabase
-        .from('aspirant_applications')
-        .select(`*, aspirant_positions(*)`)
+        .from('aspirants')
+        .select('*')
         .eq('id', id)
         .single();
 
       if (error) throw error;
       setApplication(data);
-      setAdminNotes(data.admin_notes || "");
-      if (data.screening_date) {
-        setScreeningDate(new Date(data.screening_date).toISOString().slice(0, 16));
+      
+      // Get position details if position_id exists
+      if (data?.position_id) {
+        const { data: posData } = await supabase
+          .from('positions')
+          .select('*')
+          .eq('id', data.position_id)
+          .single();
+        setPosition(posData);
       }
+      
+      // Load step_data for admin notes if available
+      const stepData = data?.step_data as any;
+      setAdminNotes(stepData?.admin_notes || "");
     } catch (error: any) {
       toast.error("Failed to load application");
     } finally {
@@ -49,11 +57,17 @@ const AspirantDetail = () => {
     }
   };
 
-  const updateStatus = async (status: Database['public']['Enums']['aspirant_status']) => {
+  const updateStatus = async (status: string) => {
     try {
       const { error } = await supabase
-        .from('aspirant_applications')
-        .update({ status, admin_notes: adminNotes })
+        .from('aspirants')
+        .update({ 
+          status,
+          step_data: {
+            ...(application?.step_data as object || {}),
+            admin_notes: adminNotes
+          }
+        })
         .eq('id', id);
 
       if (error) throw error;
@@ -67,21 +81,13 @@ const AspirantDetail = () => {
   const verifyPayment = async (verified: boolean) => {
     try {
       const { error } = await supabase
-        .from('aspirant_applications')
+        .from('aspirants')
         .update({ 
-          payment_verified: verified,
-          status: verified ? 'payment_verified' : 'submitted'
+          status: verified ? 'payment_verified' : 'pending'
         })
         .eq('id', id);
 
       if (error) throw error;
-
-      await logAction({
-        action: 'payment_verify',
-        entity_type: 'aspirant_applications',
-        entity_id: id,
-        details: { verified, applicant_name: application?.full_name }
-      });
 
       toast.success(verified ? "Payment verified" : "Payment verification removed");
       loadApplication();
@@ -98,27 +104,23 @@ const AspirantDetail = () => {
 
     try {
       const { error } = await supabase
-        .from('aspirant_applications')
+        .from('aspirants')
         .update({
-          screening_date: screeningDate,
           status: 'screening_scheduled',
-          admin_notes: adminNotes
+          step_data: {
+            ...(application?.step_data as object || {}),
+            screening_date: screeningDate,
+            admin_notes: adminNotes
+          }
         })
         .eq('id', id);
 
       if (error) throw error;
 
-      await logAction({
-        action: 'screening_schedule',
-        entity_type: 'aspirant_applications',
-        entity_id: id,
-        details: { screening_date: screeningDate, applicant_name: application?.full_name }
-      });
-
       toast.success("Screening scheduled");
       
       const phone = application?.phone?.replace(/^0/, '234');
-      const message = `Hello ${application?.full_name}, your screening for the position of ${application?.aspirant_positions?.position_name} has been scheduled for ${new Date(screeningDate).toLocaleString()}. Please be punctual. - ISECO`;
+      const message = `Hello ${application?.full_name || application?.name}, your screening for the position of ${position?.title || 'elected position'} has been scheduled for ${new Date(screeningDate).toLocaleString()}. Please be punctual. - Electoral Committee`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
       
       loadApplication();
@@ -135,19 +137,9 @@ const AspirantDetail = () => {
     setShowPromotionDialog(false);
     
     try {
-      const { data: votingPositions, error: positionError } = await supabase
-        .from('voting_positions')
-        .select('id, position_name')
-        .eq('position_name', application.aspirant_positions?.position_name)
-        .maybeSingle();
-
-      if (positionError) {
-        console.error("Error fetching voting position:", positionError);
-      }
-
       const { error: updateError } = await supabase
-        .from('aspirant_applications')
-        .update({ status: 'candidate' })
+        .from('aspirants')
+        .update({ status: 'approved' })
         .eq('id', id);
 
       if (updateError) throw updateError;
@@ -156,25 +148,15 @@ const AspirantDetail = () => {
         .from('candidates')
         .insert({
           application_id: application.id,
-          name: application.full_name,
-          matric: application.matric,
+          name: application.full_name || application.name,
+          matric: application.matric_number || application.matric,
           department: application.department,
           photo_url: application.photo_url || '',
-          manifesto: application.why_running,
-          voting_position_id: votingPositions?.id || null
+          manifesto: application.why_running || application.manifesto,
+          position_id: application.position_id
         });
 
       if (candidateError) throw candidateError;
-
-      await logAction({
-        action: 'promote_candidate',
-        entity_type: 'aspirant_applications',
-        entity_id: id,
-        details: { 
-          applicant_name: application.full_name,
-          position: application.aspirant_positions?.position_name
-        }
-      });
 
       toast.success("Aspirant promoted to candidate successfully!");
       loadApplication();
@@ -196,6 +178,8 @@ const AspirantDetail = () => {
     </AdminLayout>
   );
 
+  const isPaymentVerified = application.status === 'payment_verified' || application.status === 'approved';
+
   return (
     <AdminLayout>
       <div className="container mx-auto px-4 py-8 max-w-6xl animate-fade-in">
@@ -205,15 +189,13 @@ const AspirantDetail = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Applicant Information</CardTitle>
-                  <CardDescription>{application.full_name} - {application.matric}</CardDescription>
+                  <CardDescription>{application.full_name || application.name} - {application.matric_number || application.matric}</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Status:</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    application.status === 'candidate' ? 'bg-success/20 text-success' :
-                    application.status === 'qualified' ? 'bg-green-500/20 text-green-600' :
-                    application.status === 'disqualified' ? 'bg-destructive/20 text-destructive' :
-                    application.status === 'screening_completed' ? 'bg-blue-500/20 text-blue-600' :
+                    application.status === 'approved' ? 'bg-green-500/20 text-green-600' :
+                    application.status === 'rejected' ? 'bg-destructive/20 text-destructive' :
                     application.status === 'screening_scheduled' ? 'bg-purple-500/20 text-purple-600' :
                     application.status === 'under_review' ? 'bg-yellow-500/20 text-yellow-600' :
                     application.status === 'payment_verified' ? 'bg-green-400/20 text-green-500' :
@@ -236,30 +218,30 @@ const AspirantDetail = () => {
                 </div>
                 <div>
                   <span className="text-muted-foreground">CGPA:</span>
-                  <p className="font-semibold">{application.cgpa?.toFixed(2)}</p>
+                  <p className="font-semibold">{application.cgpa?.toFixed(2) || 'N/A'}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Gender:</span>
-                  <p className="font-semibold capitalize">{application.gender}</p>
+                  <p className="font-semibold capitalize">{application.gender || 'N/A'}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Phone:</span>
-                  <p className="font-semibold">{application.phone}</p>
+                  <p className="font-semibold">{application.phone || 'N/A'}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Position:</span>
-                  <p className="font-semibold">{application.aspirant_positions?.position_name}</p>
+                  <p className="font-semibold">{position?.title || 'N/A'}</p>
                 </div>
               </div>
 
               <div>
                 <Label>Why Running:</Label>
-                <p className="text-sm mt-1 p-3 bg-muted rounded">{application.why_running}</p>
+                <p className="text-sm mt-1 p-3 bg-muted rounded">{application.why_running || application.manifesto || 'Not provided'}</p>
               </div>
 
               <div>
                 <Label>Leadership History:</Label>
-                <p className="text-sm mt-1 p-3 bg-muted rounded">{application.leadership_history}</p>
+                <p className="text-sm mt-1 p-3 bg-muted rounded">{application.leadership_history || 'Not provided'}</p>
               </div>
             </CardContent>
           </Card>
@@ -272,7 +254,7 @@ const AspirantDetail = () => {
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
                   <Button
-                    variant={application.payment_verified ? "default" : "outline"}
+                    variant={isPaymentVerified ? "default" : "outline"}
                     onClick={() => verifyPayment(true)}
                     className="flex-1"
                   >
@@ -280,7 +262,7 @@ const AspirantDetail = () => {
                     Verified
                   </Button>
                   <Button
-                    variant={!application.payment_verified ? "destructive" : "outline"}
+                    variant={!isPaymentVerified ? "destructive" : "outline"}
                     onClick={() => verifyPayment(false)}
                     className="flex-1"
                   >
@@ -340,14 +322,14 @@ const AspirantDetail = () => {
                   <Button variant="outline" onClick={() => updateStatus('under_review')}>
                     Under Review
                   </Button>
-                  <Button variant="outline" onClick={() => updateStatus('screening_completed')}>
+                  <Button variant="outline" onClick={() => updateStatus('screening_scheduled')}>
                     Screening Done
                   </Button>
-                  <Button variant="default" className="bg-success hover:bg-success/90" onClick={() => updateStatus('qualified')}>
-                    Qualified
+                  <Button variant="default" className="bg-green-600 hover:bg-green-600/90" onClick={() => updateStatus('approved')}>
+                    Approved
                   </Button>
-                  <Button variant="destructive" onClick={() => updateStatus('disqualified')}>
-                    Disqualified
+                  <Button variant="destructive" onClick={() => updateStatus('rejected')}>
+                    Rejected
                   </Button>
                 </div>
               </div>
@@ -358,27 +340,16 @@ const AspirantDetail = () => {
                   Promote qualified aspirants to official candidates for the election
                 </p>
                 
-                {(application.status === 'qualified' || application.status === 'screening_completed') && application.status !== 'candidate' && (
-                  <Button 
-                    onClick={handlePromotionClick} 
-                    className="w-full bg-gradient-to-r from-success to-green-600 hover:from-success/90 hover:to-green-600/90 text-white shadow-lg"
-                    size="lg"
-                  >
-                    <Award className="mr-2 h-5 w-5" />
-                    Promote to Candidate
-                  </Button>
-                )}
-                
-                {application.status === 'candidate' && (
-                  <div className="p-6 bg-gradient-to-br from-success/10 to-green-500/10 border-2 border-success rounded-lg text-center">
-                    <Award className="w-10 h-10 text-success mx-auto mb-3" />
-                    <p className="font-bold text-lg text-success mb-1">Candidate Status Active</p>
+                {application.status === 'approved' && (
+                  <div className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/10 border-2 border-green-500 rounded-lg text-center">
+                    <Award className="w-10 h-10 text-green-500 mx-auto mb-3" />
+                    <p className="font-bold text-lg text-green-600 mb-1">Candidate Status Active</p>
                     <p className="text-sm text-muted-foreground mb-4">
                       This aspirant has been promoted to official candidate
                     </p>
                     <Button 
                       variant="outline" 
-                      className="border-success text-success hover:bg-success hover:text-white"
+                      className="border-green-500 text-green-600 hover:bg-green-500 hover:text-white"
                       onClick={() => navigate("/admin/candidates")}
                     >
                       View in Candidates Page
@@ -386,10 +357,21 @@ const AspirantDetail = () => {
                   </div>
                 )}
                 
-                {!['qualified', 'screening_completed', 'candidate'].includes(application.status) && (
+                {(application.status === 'payment_verified' || application.status === 'screening_scheduled') && (
+                  <Button 
+                    onClick={handlePromotionClick} 
+                    className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-500/90 hover:to-green-600/90 text-white shadow-lg"
+                    size="lg"
+                  >
+                    <Award className="mr-2 h-5 w-5" />
+                    Promote to Candidate
+                  </Button>
+                )}
+                
+                {!['approved', 'payment_verified', 'screening_scheduled'].includes(application.status) && (
                   <div className="p-4 bg-muted/50 border border-muted rounded-lg text-center">
                     <p className="text-sm text-muted-foreground">
-                      Mark as <strong>Qualified</strong> or <strong>Screening Completed</strong> to enable candidate promotion
+                      Verify payment or complete screening to enable candidate promotion
                     </p>
                   </div>
                 )}
@@ -397,11 +379,11 @@ const AspirantDetail = () => {
             </CardContent>
           </Card>
 
-          {application.status === 'candidate' && (
+          {application.status === 'approved' && (
             <ManifestoEditor
               applicationId={application.id}
-              initialManifesto={application.why_running}
-              candidateName={application.full_name}
+              initialManifesto={application.why_running || application.manifesto}
+              candidateName={application.full_name || application.name}
             />
           )}
         </div>
@@ -411,10 +393,10 @@ const AspirantDetail = () => {
           onOpenChange={setShowPromotionDialog}
           onConfirm={promoteToCandidate}
           candidateData={{
-            name: application.full_name,
-            matric: application.matric,
+            name: application.full_name || application.name,
+            matric: application.matric_number || application.matric,
             department: application.department,
-            position: application.aspirant_positions?.position_name || 'N/A',
+            position: position?.title || 'N/A',
           }}
         />
       </div>
