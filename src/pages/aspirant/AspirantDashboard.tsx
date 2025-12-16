@@ -31,15 +31,15 @@ const AspirantDashboard = () => {
 
       const [appResult, positionsResult] = await Promise.all([
         supabase
-          .from('aspirant_applications')
-          .select('*, aspirant_positions(*)')
+          .from('aspirants')
+          .select('*, positions(*)')
           .eq('user_id', user.id)
           .maybeSingle(),
         supabase
-          .from('aspirant_positions')
+          .from('positions')
           .select('*')
           .eq('is_active', true)
-          .order('position_name')
+          .order('title')
       ]);
 
       if (!appResult.error && appResult.data) {
@@ -62,7 +62,7 @@ const AspirantDashboard = () => {
     navigate("/");
   };
 
-  const statuses = ['submitted', 'payment_verified', 'under_review', 'screening_scheduled', 'screening_completed', 'qualified', 'candidate'];
+  const statuses = ['pending', 'submitted', 'under_review', 'approved', 'rejected'];
   
   const getStatusInfo = () => {
     if (!application) return { text: "Not Started", color: "text-muted-foreground", icon: Clock, description: "Start your application", progress: 0 };
@@ -71,20 +71,17 @@ const AspirantDashboard = () => {
     const progress = ((currentIdx + 1) / statuses.length) * 100;
 
     const statusMap: Record<string, { text: string; color: string; icon: any; description: string; progress: number }> = {
-      submitted: { text: "Submitted", color: "text-blue-500", icon: Clock, description: "Awaiting payment verification", progress },
-      payment_verified: { text: "Payment Verified", color: "text-green-500", icon: CheckCircle, description: "Payment confirmed. Under admin review", progress },
-      under_review: { text: "Under Review", color: "text-yellow-500", icon: Clock, description: "Admin is reviewing your application", progress },
-      screening_scheduled: { text: "Screening Scheduled", color: "text-purple-500", icon: Clock, description: "Your screening has been scheduled", progress },
-      screening_completed: { text: "Screening Completed", color: "text-indigo-500", icon: CheckCircle, description: "Awaiting final decision", progress },
-      qualified: { text: "Qualified", color: "text-green-600", icon: CheckCircle, description: "Congratulations! You have been qualified", progress },
-      disqualified: { text: "Disqualified", color: "text-red-500", icon: CheckCircle, description: "Your application was not successful", progress: 0 },
-      candidate: { text: "Promoted to Candidate", color: "text-primary", icon: Award, description: "You are now an official candidate!", progress: 100 },
+      pending: { text: "Draft", color: "text-yellow-500", icon: Clock, description: "Continue your application", progress: 20 },
+      submitted: { text: "Submitted", color: "text-blue-500", icon: Clock, description: "Awaiting review", progress: 40 },
+      under_review: { text: "Under Review", color: "text-purple-500", icon: Clock, description: "Admin is reviewing your application", progress: 60 },
+      approved: { text: "Approved", color: "text-green-600", icon: CheckCircle, description: "Congratulations! Your application has been approved", progress: 100 },
+      rejected: { text: "Rejected", color: "text-red-500", icon: CheckCircle, description: "Your application was not successful", progress: 0 },
     };
 
     return statusMap[application.status] || { text: "Unknown", color: "text-muted-foreground", icon: Clock, description: "", progress: 0 };
   };
 
-  const hasSubmittedApplication = application && statuses.includes(application.status);
+  const hasSubmittedApplication = application && ['submitted', 'under_review', 'approved', 'rejected'].includes(application.status);
   const statusInfo = getStatusInfo();
   const StatusIcon = statusInfo.icon;
 
@@ -125,9 +122,9 @@ const AspirantDashboard = () => {
         {/* Profile Header */}
         <div className="flex items-center gap-6 mb-8 animate-fade-in">
           <div className="relative">
-            {application?.photo_url || application?.step_data?.personal?.photo_url ? (
+            {application?.photo_url || (application?.step_data as any)?.personal?.photo_url ? (
               <img 
-                src={application.photo_url || application.step_data?.personal?.photo_url} 
+                src={application.photo_url || (application.step_data as any)?.personal?.photo_url} 
                 alt="Profile" 
                 className="w-24 h-24 rounded-full object-cover border-4 border-primary/20 shadow-xl"
               />
@@ -136,7 +133,7 @@ const AspirantDashboard = () => {
                 <User className="w-12 h-12 text-muted-foreground" />
               </div>
             )}
-            {application?.status === 'candidate' && (
+            {application?.status === 'approved' && (
               <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground p-1.5 rounded-full">
                 <Sparkles className="h-4 w-4" />
               </div>
@@ -144,7 +141,7 @@ const AspirantDashboard = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold">
-              {application?.full_name || application?.step_data?.personal?.full_name || "Welcome, Aspirant!"}
+              {application?.full_name || (application?.step_data as any)?.personal?.full_name || "Welcome, Aspirant!"}
             </h1>
             <p className="text-muted-foreground">{userEmail}</p>
           </div>
@@ -174,7 +171,7 @@ const AspirantDashboard = () => {
                       <p className="text-sm text-muted-foreground">{statusInfo.description}</p>
                     </div>
                   </div>
-                  {application && application.status !== 'disqualified' && (
+                  {application && application.status !== 'rejected' && (
                     <div className="mt-4">
                       <div className="flex justify-between text-sm mb-2">
                         <span className="text-muted-foreground">Progress</span>
@@ -187,33 +184,11 @@ const AspirantDashboard = () => {
 
                 {application && (
                   <>
-                    {/* Progress Steps */}
-                    <div className="space-y-3">
-                      <h3 className="font-semibold text-sm text-muted-foreground">Application Progress</h3>
-                      <div className="grid grid-cols-7 gap-1">
-                        {statuses.map((status, idx) => {
-                          const currentIdx = statuses.indexOf(application.status);
-                          const isCompleted = idx <= currentIdx;
-                          const isCurrent = idx === currentIdx;
-                          
-                          return (
-                            <div key={status} className="flex flex-col items-center gap-1">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                                isCompleted ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                              } ${isCurrent ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
-                                {isCompleted ? <CheckCircle className="w-4 h-4" /> : <span className="text-xs">{idx + 1}</span>}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
                     {/* Details Grid */}
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                       <div className="p-3 bg-muted/30 rounded-lg">
                         <span className="text-xs text-muted-foreground block mb-1">Position</span>
-                        <p className="font-semibold">{application.aspirant_positions?.position_name || 'N/A'}</p>
+                        <p className="font-semibold">{application.positions?.title || 'N/A'}</p>
                       </div>
                       <div className="p-3 bg-muted/30 rounded-lg">
                         <span className="text-xs text-muted-foreground block mb-1">Submitted</span>
@@ -221,33 +196,13 @@ const AspirantDashboard = () => {
                           {application.submitted_at ? new Date(application.submitted_at).toLocaleDateString() : 'Not yet'}
                         </p>
                       </div>
-                      {application.payment_verified !== null && (
+                      {application.payment_proof_url && (
                         <div className="p-3 bg-muted/30 rounded-lg">
                           <span className="text-xs text-muted-foreground block mb-1">Payment</span>
-                          <Badge variant={application.payment_verified ? "default" : "secondary"}>
-                            {application.payment_verified ? 'Verified' : 'Pending'}
-                          </Badge>
-                        </div>
-                      )}
-                      {application.screening_date && (
-                        <div className="p-3 bg-muted/30 rounded-lg">
-                          <span className="text-xs text-muted-foreground block mb-1">Screening Date</span>
-                          <p className="font-semibold text-purple-500">
-                            {new Date(application.screening_date).toLocaleString()}
-                          </p>
+                          <Badge variant="default">Uploaded</Badge>
                         </div>
                       )}
                     </div>
-
-                    {application.admin_notes && (
-                      <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                        <p className="text-sm font-semibold mb-2 flex items-center gap-2">
-                          <MessageSquare className="w-4 h-4 text-primary" />
-                          Admin Notes
-                        </p>
-                        <p className="text-sm text-muted-foreground">{application.admin_notes}</p>
-                      </div>
-                    )}
                   </>
                 )}
 
@@ -275,17 +230,17 @@ const AspirantDashboard = () => {
                 <>
                   <div className="p-3 bg-muted/30 rounded-lg">
                     <span className="text-xs text-muted-foreground block mb-1">Matric</span>
-                    <p className="font-mono font-semibold">{application.matric || application.step_data?.personal?.matric || 'N/A'}</p>
+                    <p className="font-mono font-semibold">{application.matric_number || (application.step_data as any)?.personal?.matric || 'N/A'}</p>
                   </div>
                   <div className="p-3 bg-muted/30 rounded-lg">
                     <span className="text-xs text-muted-foreground block mb-1">Department</span>
-                    <p className="font-semibold text-sm">{application.department || application.step_data?.personal?.department || 'N/A'}</p>
+                    <p className="font-semibold text-sm">{application.department || (application.step_data as any)?.personal?.department || 'N/A'}</p>
                   </div>
                   <div className="p-3 bg-muted/30 rounded-lg">
                     <span className="text-xs text-muted-foreground block mb-1">Level</span>
-                    <p className="font-semibold">{application.level || application.step_data?.personal?.level || 'N/A'}</p>
+                    <p className="font-semibold">{application.level || (application.step_data as any)?.personal?.level || 'N/A'}</p>
                   </div>
-                  {application.cgpa > 0 && (
+                  {application.cgpa && application.cgpa > 0 && (
                     <div className="p-3 bg-muted/30 rounded-lg">
                       <span className="text-xs text-muted-foreground block mb-1">CGPA</span>
                       <p className="font-semibold text-lg">{application.cgpa?.toFixed(2)}</p>
@@ -320,8 +275,8 @@ const AspirantDashboard = () => {
                 >
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg group-hover:text-primary transition-colors">{position.position_name}</CardTitle>
-                      <Badge variant="secondary" className="font-mono">₦{position.fee.toLocaleString()}</Badge>
+                      <CardTitle className="text-lg group-hover:text-primary transition-colors">{position.title}</CardTitle>
+                      <Badge variant="secondary" className="font-mono">₦{position.fee?.toLocaleString() || 0}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
@@ -332,11 +287,11 @@ const AspirantDashboard = () => {
                       </div>
                       <div className="p-2 bg-muted/30 rounded">
                         <span className="text-muted-foreground">Levels:</span>
-                        <span className="font-semibold ml-1">{position.eligible_levels?.join(', ')}</span>
+                        <span className="font-semibold ml-1">{position.eligible_levels?.join(', ') || 'All'}</span>
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Departments: {position.eligible_departments?.join(', ')}
+                      Departments: {position.eligible_departments?.join(', ') || 'All'}
                     </p>
                     {position.eligible_gender && (
                       <p className="text-xs text-muted-foreground capitalize">
@@ -356,6 +311,11 @@ const AspirantDashboard = () => {
                   </CardContent>
                 </Card>
               ))}
+              {positions.length === 0 && (
+                <p className="text-muted-foreground col-span-2 text-center py-8">
+                  No positions available at this time.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

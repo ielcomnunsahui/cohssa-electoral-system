@@ -1,8 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 export type AuditAction =
   | "student_upload"
+  | "student_add"
+  | "student_delete"
   | "aspirant_review"
   | "payment_verify"
   | "screening_schedule"
@@ -14,10 +15,12 @@ export type AuditAction =
   | "candidate_delete"
   | "position_create"
   | "position_update"
+  | "position_delete"
   | "position_toggle"
   | "timeline_create"
   | "timeline_update"
   | "timeline_toggle"
+  | "timeline_delete"
   | "voting_start"
   | "voting_pause"
   | "voting_resume"
@@ -25,7 +28,16 @@ export type AuditAction =
   | "voter_register"
   | "voter_vote_cast"
   | "admin_login"
-  | "admin_logout";
+  | "admin_logout"
+  | "resource_add"
+  | "resource_update"
+  | "resource_delete"
+  | "event_add"
+  | "event_update"
+  | "event_delete"
+  | "content_add"
+  | "content_update"
+  | "content_delete";
 
 interface AuditLogData {
   action: AuditAction;
