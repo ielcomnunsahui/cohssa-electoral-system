@@ -4,19 +4,41 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, FileSpreadsheet } from "lucide-react";
+import { Download, FileSpreadsheet, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--secondary))', 'hsl(var(--destructive))'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(142 76% 36%)', 'hsl(38 92% 50%)', 'hsl(var(--secondary))', 'hsl(var(--destructive))'];
+
+const DEPARTMENTS = [
+  "Nursing Science",
+  "Medical Laboratory Sciences",
+  "Medicine and Surgery",
+  "Community Medicine and Public Health",
+  "Human Anatomy",
+  "Human Physiology"
+];
+
+const LEVELS = ["100L", "200L", "300L", "400L", "500L"];
 
 const StudentList = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [students, setStudents] = useState<any[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newStudent, setNewStudent] = useState({
+    matric_number: "",
+    name: "",
+    department: "",
+    level: "",
+    email: "",
+    phone: ""
+  });
   const { logAction } = useAuditLog();
 
   useEffect(() => {
@@ -24,7 +46,7 @@ const StudentList = () => {
   }, []);
 
   const downloadTemplate = () => {
-    const csvContent = "matric,name,department,level\n21/08nus001,John Doe,Nursing Sciences,200L\n21/08mls002,Jane Smith,Medical Laboratory Sciences,300L";
+    const csvContent = "matric_number,name,department,level,email,phone\n21/08NUS001,John Doe,Nursing Science,200L,john@example.com,08012345678\n21/08MLS002,Jane Smith,Medical Laboratory Sciences,300L,jane@example.com,08087654321";
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -49,13 +71,13 @@ const StudentList = () => {
       }
 
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      const requiredHeaders = ['matric', 'name', 'department', 'level'];
+      const requiredHeaders = ['matric_number', 'name', 'department', 'level'];
       
       if (!requiredHeaders.every(h => headers.includes(h))) {
-        throw new Error('CSV must contain: matric, name, department, level');
+        throw new Error('CSV must contain: matric_number, name, department, level');
       }
 
-      const students = lines.slice(1).map(line => {
+      const studentsData = lines.slice(1).map(line => {
         const values = line.split(',').map(v => v.trim());
         const student: any = {};
         headers.forEach((header, index) => {
@@ -65,18 +87,18 @@ const StudentList = () => {
       });
 
       const { error } = await supabase
-        .from('student_list')
-        .upsert(students, { onConflict: 'matric' });
+        .from('students')
+        .upsert(studentsData, { onConflict: 'matric_number' });
 
       if (error) throw error;
 
       await logAction({
         action: 'student_upload',
-        entity_type: 'student_list',
-        details: { count: students.length }
+        entity_type: 'students',
+        details: { count: studentsData.length }
       });
 
-      toast.success(`Successfully uploaded ${students.length} student records`);
+      toast.success(`Successfully uploaded ${studentsData.length} student records`);
       loadStudents();
     } catch (error: any) {
       toast.error(error.message || 'Failed to upload CSV');
@@ -88,12 +110,53 @@ const StudentList = () => {
 
   const loadStudents = async () => {
     const { data, error } = await supabase
-      .from('student_list')
+      .from('students')
       .select('*')
       .order('name');
     
     if (!error && data) {
       setStudents(data);
+    }
+  };
+
+  const handleAddStudent = async () => {
+    if (!newStudent.matric_number || !newStudent.name || !newStudent.department || !newStudent.level) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('students')
+        .insert(newStudent);
+
+      if (error) throw error;
+
+      await logAction({
+        action: 'student_add',
+        entity_type: 'students',
+        details: { matric_number: newStudent.matric_number, name: newStudent.name }
+      });
+
+      toast.success("Student added successfully");
+      setIsDialogOpen(false);
+      setNewStudent({ matric_number: "", name: "", department: "", level: "", email: "", phone: "" });
+      loadStudents();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add student");
+    }
+  };
+
+  const handleDeleteStudent = async (id: string, name: string) => {
+    if (!confirm(`Delete student ${name}?`)) return;
+
+    try {
+      const { error } = await supabase.from('students').delete().eq('id', id);
+      if (error) throw error;
+      toast.success("Student deleted");
+      loadStudents();
+    } catch (error: any) {
+      toast.error("Failed to delete student");
     }
   };
 
@@ -110,7 +173,7 @@ const StudentList = () => {
   }, {} as Record<string, { total: number; levels: Record<string, number> }>);
 
   const departmentChartData = Object.entries(departmentStats).map(([name, data]: [string, { total: number; levels: Record<string, number> }]) => ({
-    name: name.replace(' Sciences', '').replace(' and ', ' & '),
+    name: name.replace(' Sciences', '').replace(' and ', ' & ').substring(0, 15),
     students: data.total,
   }));
 
@@ -139,7 +202,7 @@ const StudentList = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={departmentChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={10} />
                     <YAxis />
                     <Tooltip />
                     <Legend />
@@ -198,12 +261,86 @@ const StudentList = () => {
                   className="mt-2"
                 />
               </div>
-              <div className="flex gap-2 items-end">
+              <div className="flex gap-2 items-end flex-wrap">
                 <Button variant="outline" onClick={downloadTemplate}>
                   <Download className="mr-2 h-4 w-4" />
-                  Download Template
+                  Template
                 </Button>
-                <Button onClick={loadStudents}>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Student
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Student</DialogTitle>
+                      <DialogDescription>Enter student details</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Matric Number *</Label>
+                        <Input 
+                          value={newStudent.matric_number} 
+                          onChange={(e) => setNewStudent({...newStudent, matric_number: e.target.value})}
+                          placeholder="21/08NUS001"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Full Name *</Label>
+                        <Input 
+                          value={newStudent.name} 
+                          onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Department *</Label>
+                        <Select value={newStudent.department} onValueChange={(v) => setNewStudent({...newStudent, department: v})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Level *</Label>
+                        <Select value={newStudent.level} onValueChange={(v) => setNewStudent({...newStudent, level: v})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Email</Label>
+                          <Input 
+                            type="email"
+                            value={newStudent.email} 
+                            onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Phone</Label>
+                          <Input 
+                            value={newStudent.phone} 
+                            onChange={(e) => setNewStudent({...newStudent, phone: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                      <Button onClick={handleAddStudent}>Add Student</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Button onClick={loadStudents} variant="outline">
                   <FileSpreadsheet className="mr-2 h-4 w-4" />
                   Refresh
                 </Button>
@@ -219,15 +356,25 @@ const StudentList = () => {
                       <TableHead>Name</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Level</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {students.map((student) => (
                       <TableRow key={student.id}>
-                        <TableCell className="font-mono">{student.matric}</TableCell>
+                        <TableCell className="font-mono">{student.matric_number}</TableCell>
                         <TableCell>{student.name}</TableCell>
                         <TableCell>{student.department}</TableCell>
                         <TableCell>{student.level}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteStudent(student.id, student.name)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

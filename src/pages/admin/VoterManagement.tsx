@@ -34,9 +34,9 @@ const VoterManagement = () => {
     queryKey: ["admin-voters"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("voter_profiles")
+        .from("voters")
         .select("*")
-        .order("registered_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
@@ -45,9 +45,9 @@ const VoterManagement = () => {
 
   const filteredVoters = voters?.filter((voter) => {
     const matchesSearch =
-      voter.matric.toLowerCase().includes(search.toLowerCase()) ||
-      voter.name.toLowerCase().includes(search.toLowerCase()) ||
-      voter.email.toLowerCase().includes(search.toLowerCase());
+      voter.matric_number?.toLowerCase().includes(search.toLowerCase()) ||
+      voter.name?.toLowerCase().includes(search.toLowerCase()) ||
+      voter.email?.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus =
       statusFilter === "all" ||
@@ -56,8 +56,8 @@ const VoterManagement = () => {
 
     const matchesVoted =
       votedFilter === "all" ||
-      (votedFilter === "voted" && voter.voted) ||
-      (votedFilter === "not_voted" && !voter.voted);
+      (votedFilter === "voted" && voter.has_voted) ||
+      (votedFilter === "not_voted" && !voter.has_voted);
 
     return matchesSearch && matchesStatus && matchesVoted;
   });
@@ -65,13 +65,13 @@ const VoterManagement = () => {
   const stats = {
     total: voters?.length || 0,
     verified: voters?.filter((v) => v.verified).length || 0,
-    voted: voters?.filter((v) => v.voted).length || 0,
+    voted: voters?.filter((v) => v.has_voted).length || 0,
     filtered: filteredVoters?.length || 0,
   };
 
   const handleVerifyVoter = async (voterId: string, currentStatus: boolean) => {
     const { error } = await supabase
-      .from("voter_profiles")
+      .from("voters")
       .update({ verified: !currentStatus })
       .eq("id", voterId);
 
@@ -211,9 +211,9 @@ const VoterManagement = () => {
                     <TableHead>Matric Number</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Department</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Voted</TableHead>
-                    <TableHead>Registered Date</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -234,12 +234,13 @@ const VoterManagement = () => {
                     filteredVoters?.map((voter) => (
                       <TableRow key={voter.id}>
                         <TableCell className="font-mono font-medium">
-                          {voter.matric}
+                          {voter.matric_number}
                         </TableCell>
                         <TableCell>{voter.name}</TableCell>
                         <TableCell className="text-muted-foreground">
-                          {voter.email}
+                          {voter.email || "-"}
                         </TableCell>
+                        <TableCell>{voter.department}</TableCell>
                         <TableCell>
                           <Badge
                             variant={voter.verified ? "default" : "secondary"}
@@ -254,23 +255,15 @@ const VoterManagement = () => {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={voter.voted ? "default" : "outline"}
+                            variant={voter.has_voted ? "default" : "outline"}
                             className={
-                              voter.voted
+                              voter.has_voted
                                 ? "bg-primary/10 text-primary hover:bg-primary/10"
                                 : ""
                             }
                           >
-                            {voter.voted ? "Yes" : "No"}
+                            {voter.has_voted ? "Yes" : "No"}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {voter.registered_at
-                            ? format(
-                                new Date(voter.registered_at),
-                                "MMM d, yyyy HH:mm"
-                              )
-                            : "-"}
                         </TableCell>
                         <TableCell>
                           <Button

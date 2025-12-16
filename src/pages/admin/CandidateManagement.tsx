@@ -14,6 +14,15 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+const DEPARTMENTS = [
+  "Nursing Science",
+  "Medical Laboratory Sciences",
+  "Medicine and Surgery",
+  "Community Medicine and Public Health",
+  "Human Anatomy",
+  "Human Physiology"
+];
+
 const CandidateManagement = () => {
   const [candidates, setCandidates] = useState<any[]>([]);
   const [positions, setPositions] = useState<any[]>([]);
@@ -39,7 +48,7 @@ const CandidateManagement = () => {
   const loadCandidates = async () => {
     const { data, error } = await supabase
       .from('candidates')
-      .select('*, voting_positions(position_name)')
+      .select('*, positions(title)')
       .order('name');
     
     if (!error && data) {
@@ -49,7 +58,7 @@ const CandidateManagement = () => {
 
   const loadPositions = async () => {
     const { data, error } = await supabase
-      .from('voting_positions')
+      .from('positions')
       .select('*')
       .eq('is_active', true)
       .order('display_order');
@@ -76,8 +85,8 @@ const CandidateManagement = () => {
   };
 
   const handleAddCandidate = async () => {
-    if (!name || !matric || !positionId || !department || !photoPreview) {
-      toast.error("Please fill all fields and upload a photo");
+    if (!name || !matric || !positionId || !department) {
+      toast.error("Please fill all required fields");
       return;
     }
 
@@ -88,9 +97,9 @@ const CandidateManagement = () => {
         .insert({
           name,
           matric,
-          voting_position_id: positionId,
-          department: department as any,
-          photo_url: photoPreview,
+          position_id: positionId,
+          department,
+          photo_url: photoPreview || null,
           manifesto: manifesto || null
         });
 
@@ -208,7 +217,7 @@ const CandidateManagement = () => {
                 <ScrollArea className="flex-1 pr-4">
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label>Photo (Max 2MB)</Label>
+                      <Label>Photo (Max 2MB) - Optional</Label>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -232,42 +241,39 @@ const CandidateManagement = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Full Name</Label>
+                        <Label>Full Name *</Label>
                         <Input value={name} onChange={(e) => setName(e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                        <Label>Matric Number</Label>
+                        <Label>Matric Number *</Label>
                         <Input value={matric} onChange={(e) => setMatric(e.target.value)} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Position</Label>
+                        <Label>Position *</Label>
                         <Select value={positionId} onValueChange={setPositionId}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select position" />
                           </SelectTrigger>
                           <SelectContent className="bg-popover">
                             {positions.map((pos) => (
-                              <SelectItem key={pos.id} value={pos.id}>{pos.position_name}</SelectItem>
+                              <SelectItem key={pos.id} value={pos.id}>{pos.title}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Department</Label>
+                        <Label>Department *</Label>
                         <Select value={department} onValueChange={setDepartment}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select department" />
                           </SelectTrigger>
                           <SelectContent className="bg-popover">
-                            <SelectItem value="Nursing Sciences">Nursing Sciences</SelectItem>
-                            <SelectItem value="Medical Laboratory Sciences">Medical Laboratory Sciences</SelectItem>
-                            <SelectItem value="Medicine and Surgery">Medicine and Surgery</SelectItem>
-                            <SelectItem value="Community Medicine and Public Health">Community Medicine and Public Health</SelectItem>
-                            <SelectItem value="Human Anatomy">Human Anatomy</SelectItem>
-                            <SelectItem value="Human Physiology">Human Physiology</SelectItem>
+                            {DEPARTMENTS.map(d => (
+                              <SelectItem key={d} value={d}>{d}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -314,18 +320,24 @@ const CandidateManagement = () => {
                     {candidates.map((candidate) => (
                       <TableRow key={candidate.id} className="hover:bg-muted/50 transition-colors">
                         <TableCell>
-                          <img
-                            src={candidate.photo_url}
-                            alt={candidate.name}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
+                          {candidate.photo_url ? (
+                            <img
+                              src={candidate.photo_url}
+                              alt={candidate.name}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                              <span className="text-xs">{candidate.name?.charAt(0)}</span>
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="font-medium">{candidate.name}</TableCell>
                         <TableCell className="font-mono text-sm">{candidate.matric}</TableCell>
-                        <TableCell>{candidate.voting_positions?.position_name}</TableCell>
+                        <TableCell>{candidate.positions?.title}</TableCell>
                         <TableCell>{candidate.department}</TableCell>
                         <TableCell>
-                          <span className={`text-xs ${candidate.manifesto ? 'text-success' : 'text-muted-foreground'}`}>
+                          <span className={`text-xs ${candidate.manifesto ? 'text-green-600' : 'text-muted-foreground'}`}>
                             {candidate.manifesto ? 'Has manifesto' : 'No manifesto'}
                           </span>
                         </TableCell>
@@ -363,7 +375,7 @@ const CandidateManagement = () => {
             <DialogHeader className="flex-shrink-0">
               <DialogTitle>Edit Manifesto</DialogTitle>
               <DialogDescription>
-                {editingCandidate?.name} - {editingCandidate?.voting_positions?.position_name}
+                {editingCandidate?.name} - {editingCandidate?.positions?.title}
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="flex-1 pr-4">

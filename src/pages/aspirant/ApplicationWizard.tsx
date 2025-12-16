@@ -66,17 +66,18 @@ const ApplicationWizard = () => {
       }
 
       const { data, error } = await supabase
-        .from('aspirant_applications')
+        .from('aspirants')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (data) {
         setApplicationId(data.id);
-        setCurrentStep(data.current_step || 1);
+        // Determine step from status or step_data
+        const stepData = (data.step_data as any) || { personal: {}, position: {}, academic: {}, leadership: {}, referee: {}, payment: {} };
         setFormData({
           ...data,
-          step_data: data.step_data || { personal: {}, position: {}, academic: {}, leadership: {}, referee: {}, payment: {} }
+          step_data: stepData
         });
         toast.success("Application loaded");
       }
@@ -90,9 +91,8 @@ const ApplicationWizard = () => {
 
     try {
       const { error } = await supabase
-        .from('aspirant_applications')
+        .from('aspirants')
         .update({
-          current_step: currentStep,
           step_data: formData.step_data,
           updated_at: new Date().toISOString()
         })
@@ -155,12 +155,23 @@ const ApplicationWizard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      const personal = formData.step_data?.personal || {};
+      const academic = formData.step_data?.academic || {};
+
       if (applicationId) {
         const { error } = await supabase
-          .from('aspirant_applications')
+          .from('aspirants')
           .update({
-            current_step: currentStep,
             step_data: formData.step_data,
+            full_name: personal.full_name || '',
+            matric_number: personal.matric || '',
+            department: personal.department || 'Nursing Science',
+            level: personal.level || '100L',
+            date_of_birth: personal.date_of_birth || null,
+            gender: personal.gender || null,
+            phone: personal.phone || '',
+            email: personal.email || user.email || '',
+            cgpa: academic.cgpa || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', applicationId);
@@ -168,22 +179,21 @@ const ApplicationWizard = () => {
         if (error) throw error;
       } else {
         const { data, error } = await supabase
-          .from('aspirant_applications')
+          .from('aspirants')
           .insert({
             user_id: user.id,
-            current_step: currentStep,
             step_data: formData.step_data,
-            full_name: '',
-            matric: '',
-            department: 'Nursing Sciences' as const,
-            level: '100L' as const,
-            date_of_birth: new Date().toISOString().split('T')[0],
-            gender: 'male' as const,
-            phone: '',
-            cgpa: 0,
-            why_running: '',
-            leadership_history: '',
-            status: 'submitted'
+            name: personal.full_name || 'New Aspirant',
+            full_name: personal.full_name || '',
+            matric_number: personal.matric || 'PENDING',
+            department: personal.department || 'Nursing Science',
+            level: personal.level || '100L',
+            date_of_birth: personal.date_of_birth || null,
+            gender: personal.gender || null,
+            phone: personal.phone || '',
+            email: personal.email || user.email || '',
+            cgpa: academic.cgpa || null,
+            status: 'pending'
           })
           .select()
           .single();
@@ -305,7 +315,7 @@ const ApplicationWizard = () => {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button className="bg-success hover:bg-success/90">
+                <Button className="bg-green-600 hover:bg-green-700">
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Submit Application
                 </Button>

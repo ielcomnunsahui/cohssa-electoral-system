@@ -32,16 +32,46 @@ const LiveControl = () => {
   const loadResults = async () => {
     try {
       const { data: voterData, error: voterError } = await supabase
-        .from('voter_profiles')
-        .select('voted, verified');
+        .from('voters')
+        .select('has_voted, verified');
 
       if (voterError) throw voterError;
 
       const verifiedVoters = voterData?.filter(v => v.verified) || [];
       setTotalVoters(verifiedVoters.length);
-      setVotedCount(verifiedVoters.filter(v => v.voted).length);
+      setVotedCount(verifiedVoters.filter(v => v.has_voted).length);
 
-      setResults([]);
+      // Load vote results
+      const { data: votes } = await supabase
+        .from('votes')
+        .select(`
+          aspirant_id,
+          position_id,
+          aspirants(name),
+          positions(title)
+        `);
+
+      if (votes && votes.length > 0) {
+        // Group votes by position and candidate
+        const grouped = votes.reduce((acc: any, vote: any) => {
+          const positionName = vote.positions?.title || 'Unknown';
+          const candidateName = vote.aspirants?.name || 'Unknown';
+          const key = `${positionName}-${candidateName}`;
+          
+          if (!acc[key]) {
+            acc[key] = {
+              position_name: positionName,
+              candidate_name: candidateName,
+              votes: 0,
+              total_votes: 0
+            };
+          }
+          acc[key].votes++;
+          return acc;
+        }, {});
+
+        setResults(Object.values(grouped));
+      }
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -80,7 +110,7 @@ const LiveControl = () => {
               <CardTitle>Votes Cast</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold text-success">{votedCount}</p>
+              <p className="text-4xl font-bold text-green-600">{votedCount}</p>
             </CardContent>
           </Card>
 
@@ -101,7 +131,7 @@ const LiveControl = () => {
             <CardDescription>Manage election progress and results</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <Button variant="outline">
                 <Pause className="mr-2 h-4 w-4" />
                 Freeze Results

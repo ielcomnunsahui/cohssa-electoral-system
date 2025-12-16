@@ -21,10 +21,10 @@ const AspirantReview = () => {
   const loadApplications = async () => {
     try {
       const { data, error } = await supabase
-        .from('aspirant_applications')
+        .from('aspirants')
         .select(`
           *,
-          aspirant_positions(position_name, fee)
+          positions(title, fee)
         `)
         .order('created_at', { ascending: false });
 
@@ -39,16 +39,13 @@ const AspirantReview = () => {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      submitted: "outline",
-      payment_verified: "secondary",
+      pending: "outline",
+      submitted: "secondary",
       under_review: "default",
-      screening_scheduled: "default",
-      screening_completed: "default",
-      qualified: "default",
-      disqualified: "destructive",
-      candidate: "default",
+      approved: "default",
+      rejected: "destructive",
     };
-    return <Badge variant={variants[status] || "outline"}>{status.replace(/_/g, ' ')}</Badge>;
+    return <Badge variant={variants[status] || "outline"}>{status?.replace(/_/g, ' ')}</Badge>;
   };
 
   return (
@@ -81,14 +78,14 @@ const AspirantReview = () => {
                   <TableBody>
                     {applications.map((app) => (
                       <TableRow key={app.id} className="hover:bg-muted/50 transition-colors">
-                        <TableCell className="font-medium">{app.full_name}</TableCell>
-                        <TableCell className="font-mono text-sm">{app.matric}</TableCell>
-                        <TableCell>{app.aspirant_positions?.position_name}</TableCell>
+                        <TableCell className="font-medium">{app.full_name || app.name}</TableCell>
+                        <TableCell className="font-mono text-sm">{app.matric_number}</TableCell>
+                        <TableCell>{app.positions?.title}</TableCell>
                         <TableCell>{app.cgpa?.toFixed(2)}</TableCell>
                         <TableCell>{getStatusBadge(app.status)}</TableCell>
                         <TableCell>
-                          {app.payment_verified ? (
-                            <Badge variant="default">Verified</Badge>
+                          {app.payment_proof_url ? (
+                            <Badge variant="default">Uploaded</Badge>
                           ) : (
                             <Badge variant="outline">Pending</Badge>
                           )}
