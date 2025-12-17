@@ -37,6 +37,7 @@ import ContentManagement from "./pages/admin/ContentManagement";
 import ResourceManagement from "./pages/admin/ResourceManagement";
 import TextbookManagement from "./pages/admin/TextbookManagement";
 import EventsManagement from "./pages/admin/EventsManagement";
+import EditorialReview from "./pages/admin/EditorialReview";
 
 const queryClient = new QueryClient();
 

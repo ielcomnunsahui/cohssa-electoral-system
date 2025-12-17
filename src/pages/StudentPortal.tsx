@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
   ArrowLeft, BookOpen, FileText, GraduationCap, Calendar, Image, 
-  ExternalLink, Loader2, Filter, Search 
+  ExternalLink, Loader2, Filter, Search, Newspaper, ShoppingBag,
+  Video, Clock, MapPin
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/NavLink";
@@ -31,34 +32,30 @@ const StudentPortal = () => {
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const [editorialContent, setEditorialContent] = useState<any[]>([]);
+  const [textbooks, setTextbooks] = useState<any[]>([]);
   const [selectedDept, setSelectedDept] = useState("All Departments");
   const [selectedLevel, setSelectedLevel] = useState("All Levels");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("course_outlines");
 
   useEffect(() => {
-    // Check if user is logged in
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Please login to access the Student Portal");
-        navigate("/voter/login");
-        return;
-      }
-      fetchData();
-    };
-    checkAuth();
-  }, [navigate]);
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
-      const [resourcesRes, eventsRes] = await Promise.all([
-        supabase.from('resources').select('*').eq('status', 'approved'),
-        supabase.from('events').select('*').eq('is_published', true).order('start_date', { ascending: false })
+      const [resourcesRes, eventsRes, editorialRes, textbooksRes] = await Promise.all([
+        supabase.from('resources').select('*').eq('status', 'approved').neq('resource_type', 'textbook'),
+        supabase.from('events').select('*').eq('is_published', true).order('start_date', { ascending: false }),
+        supabase.from('editorial_content').select('*').eq('status', 'published').order('published_at', { ascending: false }).limit(6),
+        supabase.from('resources').select('*').eq('status', 'approved').eq('resource_type', 'textbook').eq('is_sold', false)
       ]);
 
       if (resourcesRes.data) setResources(resourcesRes.data);
       if (eventsRes.data) setEvents(eventsRes.data);
+      if (editorialRes.data) setEditorialContent(editorialRes.data);
+      if (textbooksRes.data) setTextbooks(textbooksRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -69,8 +66,7 @@ const StudentPortal = () => {
   const filteredResources = resources.filter(r => {
     const matchesDept = selectedDept === "All Departments" || r.department === selectedDept;
     const matchesLevel = selectedLevel === "All Levels" || r.level === selectedLevel;
-    const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          r.course_code?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesDept && matchesLevel && matchesSearch;
   });
 
@@ -103,6 +99,54 @@ const StudentPortal = () => {
             Back
           </Button>
         </header>
+
+        {/* Quick Links */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 animate-fade-in" style={{ animationDelay: '50ms' }}>
+          <Card className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1" onClick={() => navigate('/editorial')}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <Newspaper className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Editorial</p>
+                <p className="text-xs text-muted-foreground">Articles & News</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1" onClick={() => setActiveTab('marketplace')}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <ShoppingBag className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Marketplace</p>
+                <p className="text-xs text-muted-foreground">Used Textbooks</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1" onClick={() => setActiveTab('events')}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Calendar className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Events</p>
+                <p className="text-xs text-muted-foreground">Upcoming Events</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1" onClick={() => setActiveTab('webinars')}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-500/10">
+                <Video className="h-5 w-5 text-red-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Webinars</p>
+                <p className="text-xs text-muted-foreground">Online Sessions</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Filters */}
         <Card className="mb-8 animate-fade-in" style={{ animationDelay: '100ms' }}>
@@ -144,29 +188,34 @@ const StudentPortal = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2 h-auto p-2 bg-muted/50">
+          <TabsList className="grid grid-cols-3 md:grid-cols-7 gap-2 h-auto p-2 bg-muted/50">
             <TabsTrigger value="course_outlines" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Course Outlines</span>
-              <span className="sm:hidden">Outlines</span>
+              <span className="hidden sm:inline">Outlines</span>
             </TabsTrigger>
             <TabsTrigger value="past_questions" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Past Questions</span>
-              <span className="sm:hidden">PQs</span>
+              <span className="hidden sm:inline">PQs</span>
             </TabsTrigger>
             <TabsTrigger value="e_materials" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <GraduationCap className="h-4 w-4" />
               <span className="hidden sm:inline">E-Materials</span>
-              <span className="sm:hidden">Materials</span>
+            </TabsTrigger>
+            <TabsTrigger value="marketplace" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <ShoppingBag className="h-4 w-4" />
+              <span className="hidden sm:inline">Textbooks</span>
             </TabsTrigger>
             <TabsTrigger value="events" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Calendar className="h-4 w-4" />
-              Events
+              <span className="hidden sm:inline">Events</span>
+            </TabsTrigger>
+            <TabsTrigger value="webinars" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Video className="h-4 w-4" />
+              <span className="hidden sm:inline">Webinars</span>
             </TabsTrigger>
             <TabsTrigger value="gallery" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Image className="h-4 w-4" />
-              Gallery
+              <span className="hidden sm:inline">Gallery</span>
             </TabsTrigger>
           </TabsList>
 
@@ -185,29 +234,114 @@ const StudentPortal = () => {
             <ResourceGrid resources={getResourcesByType('e_material')} type="E-Material" />
           </TabsContent>
 
+          {/* Marketplace */}
+          <TabsContent value="marketplace" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {textbooks.length === 0 ? (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <ShoppingBag className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No textbooks available for sale</p>
+                </div>
+              ) : (
+                textbooks.map((book, index) => (
+                  <Card key={book.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
+                    <CardContent className="p-4">
+                      <div className="flex gap-4">
+                        <div className="w-16 h-20 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                          <BookOpen className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">{book.title}</h3>
+                          <p className="text-2xl font-bold text-green-600 mt-1">₦{book.price?.toLocaleString()}</p>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {book.department && <Badge variant="secondary" className="text-xs">{book.department}</Badge>}
+                            {book.level && <Badge variant="outline" className="text-xs">{book.level}</Badge>}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">Seller: {book.seller_name}</p>
+                          {book.seller_phone && (
+                            <Button size="sm" variant="outline" className="mt-2 gap-1 text-xs" onClick={() => window.open(`tel:${book.seller_phone}`)}>
+                              Contact Seller
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
           {/* Events */}
           <TabsContent value="events" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.filter(e => e.event_type === 'event').length === 0 ? (
+              {events.filter(e => e.event_type === 'event' || !e.event_type).length === 0 ? (
                 <div className="col-span-full text-center py-12 text-muted-foreground">
                   <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No events available yet</p>
                 </div>
               ) : (
-                events.filter(e => e.event_type === 'event').map(event => (
-                  <Card key={event.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+                events.filter(e => e.event_type === 'event' || !e.event_type).map((event, index) => (
+                  <Card key={event.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
                     {event.image_url && (
                       <div className="aspect-video overflow-hidden">
                         <img src={event.image_url} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                     )}
                     <CardContent className="p-4">
-                      <h3 className="font-semibold mb-2">{event.title}</h3>
+                      <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">{event.title}</h3>
                       {event.start_date && (
-                        <p className="text-sm text-muted-foreground">{new Date(event.start_date).toLocaleDateString()}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                          <Clock className="h-4 w-4" />
+                          {new Date(event.start_date).toLocaleDateString()}
+                        </div>
+                      )}
+                      {event.location && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          {event.location}
+                        </div>
                       )}
                       {event.description && (
                         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{event.description}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Webinars */}
+          <TabsContent value="webinars" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {events.filter(e => e.event_type === 'webinar').length === 0 ? (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No webinars available yet</p>
+                </div>
+              ) : (
+                events.filter(e => e.event_type === 'webinar').map((webinar, index) => (
+                  <Card key={webinar.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
+                    {webinar.image_url && (
+                      <div className="aspect-video overflow-hidden relative">
+                        <img src={webinar.image_url} alt={webinar.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Video className="h-12 w-12 text-white" />
+                        </div>
+                      </div>
+                    )}
+                    <CardContent className="p-4">
+                      <Badge variant="secondary" className="mb-2">Webinar</Badge>
+                      <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">{webinar.title}</h3>
+                      {webinar.start_date && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          {new Date(webinar.start_date).toLocaleDateString()}
+                        </div>
+                      )}
+                      {webinar.highlights && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{webinar.highlights}</p>
                       )}
                     </CardContent>
                   </Card>
@@ -225,8 +359,8 @@ const StudentPortal = () => {
                   <p>No gallery items available yet</p>
                 </div>
               ) : (
-                events.filter(e => e.event_type === 'gallery').map(item => (
-                  <Card key={item.id} className="group overflow-hidden cursor-pointer hover:shadow-lg transition-all">
+                events.filter(e => e.event_type === 'gallery').map((item, index) => (
+                  <Card key={item.id} className="group overflow-hidden cursor-pointer hover:shadow-lg transition-all animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
                     {item.image_url && (
                       <div className="aspect-square overflow-hidden">
                         <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -238,6 +372,41 @@ const StudentPortal = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Editorial Section */}
+        {editorialContent.length > 0 && (
+          <section className="mt-12 animate-fade-in">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">Latest from Editorial</h2>
+              <Button variant="outline" onClick={() => navigate('/editorial')} className="gap-2">
+                View All
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {editorialContent.slice(0, 3).map((item, index) => (
+                <Card key={item.id} className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1" onClick={() => navigate('/editorial')}>
+                  <CardContent className="p-4">
+                    <Badge variant="secondary" className="mb-2 capitalize">{item.content_type}</Badge>
+                    <h3 className="font-semibold line-clamp-2 mb-2">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{item.content}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Footer */}
+        <footer className="text-center py-8 border-t mt-16">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Logo className="h-6 w-6" />
+            <span className="font-semibold text-foreground">ISECO</span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Independent Students Electoral Committee • COHSSA
+          </p>
+        </footer>
       </div>
     </div>
   );
@@ -268,23 +437,21 @@ const ResourceGrid = ({ resources, type }: { resources: any[]; type: string }) =
                 <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
                   {resource.title}
                 </h3>
-                {resource.course_code && (
-                  <Badge variant="secondary" className="mt-1">{resource.course_code}</Badge>
-                )}
               </div>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="shrink-0"
-                onClick={() => window.open(resource.external_url, '_blank')}
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
+              {(resource.file_url || resource.external_link) && (
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="shrink-0"
+                  onClick={() => window.open(resource.file_url || resource.external_link, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span className="bg-muted px-2 py-1 rounded">{resource.department}</span>
-              <span className="bg-muted px-2 py-1 rounded">{resource.level}</span>
-              {resource.year && <span className="bg-muted px-2 py-1 rounded">{resource.year}</span>}
+              {resource.department && <span className="bg-muted px-2 py-1 rounded">{resource.department}</span>}
+              {resource.level && <span className="bg-muted px-2 py-1 rounded">{resource.level}</span>}
             </div>
             {resource.description && (
               <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{resource.description}</p>

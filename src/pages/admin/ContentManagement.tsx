@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -14,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminTour } from "@/hooks/useAdminTour";
 import { 
   Plus, Edit, Trash2, Loader2, Users, Crown, Scale, GraduationCap, 
-  Building, Phone, Mail, Upload, Save
+  Building, Upload, Save, Image as ImageIcon
 } from "lucide-react";
 
 const ContentManagement = () => {
@@ -22,6 +21,8 @@ const ContentManagement = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("leaders");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Data states
   const [leaders, setLeaders] = useState<any[]>([]);
@@ -33,6 +34,7 @@ const ContentManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [formData, setFormData] = useState<any>({});
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAllData();
@@ -62,12 +64,14 @@ const ContentManagement = () => {
   const handleAdd = (type: string) => {
     setEditingItem(null);
     setFormData(getDefaultFormData(type));
+    setPreviewUrl(null);
     setDialogOpen(true);
   };
 
   const handleEdit = (item: any) => {
     setEditingItem(item);
     setFormData(item);
+    setPreviewUrl(item.photo_url || null);
     setDialogOpen(true);
   };
 
@@ -76,9 +80,9 @@ const ContentManagement = () => {
       case 'leaders':
         return { name: '', position: '', faculty: '', photo_url: '', display_order: 0 };
       case 'executives':
-        return { name: '', position: '', department: '', level: '', contact: '', photo_url: '', display_order: 0 };
+        return { name: '', position: '', department: '', level: '', phone: '', email: '', photo_url: '', display_order: 0 };
       case 'senate':
-        return { name: '', position: '', department: '', level: '', contact: '', photo_url: '', display_order: 0 };
+        return { name: '', position: '', department: '', level: '', phone: '', email: '', photo_url: '', display_order: 0 };
       case 'alumni':
         return { name: '', position: '', department: '', graduation_year: '', current_workplace: '', phone: '', email: '', photo_url: '', administration_number: 1 };
       default:
@@ -96,7 +100,53 @@ const ContentManagement = () => {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Create a data URL for preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPreviewUrl(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // For now, use the data URL as the photo_url
+      // In production, you'd upload to Supabase Storage
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(file);
+      });
+
+      setFormData((prev: any) => ({ ...prev, photo_url: dataUrl }));
+      toast.success("Photo uploaded successfully");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload photo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSave = async () => {
+    if (!formData.name || !formData.position) {
+      toast.error("Name and position are required");
+      return;
+    }
+
     setSaving(true);
     try {
       const tableName = getTableName(activeTab) as any;
@@ -117,6 +167,7 @@ const ContentManagement = () => {
       }
       
       setDialogOpen(false);
+      setPreviewUrl(null);
       fetchAllData();
     } catch (error: any) {
       console.error("Save error:", error);
@@ -266,7 +317,6 @@ const ContentManagement = () => {
                       <TableHead>Position</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Level</TableHead>
-                      <TableHead>Contact</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -286,7 +336,6 @@ const ContentManagement = () => {
                         <TableCell>{exec.position}</TableCell>
                         <TableCell>{exec.department || '-'}</TableCell>
                         <TableCell>{exec.level || '-'}</TableCell>
-                        <TableCell>{exec.contact || '-'}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button variant="outline" size="icon" onClick={() => handleEdit(exec)}>
@@ -301,7 +350,7 @@ const ContentManagement = () => {
                     ))}
                     {executives.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           No executives added yet
                         </TableCell>
                       </TableRow>
@@ -334,7 +383,6 @@ const ContentManagement = () => {
                       <TableHead>Position</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Level</TableHead>
-                      <TableHead>Contact</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -354,7 +402,6 @@ const ContentManagement = () => {
                         <TableCell>{senator.position}</TableCell>
                         <TableCell>{senator.department || '-'}</TableCell>
                         <TableCell>{senator.level || '-'}</TableCell>
-                        <TableCell>{senator.contact || '-'}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button variant="outline" size="icon" onClick={() => handleEdit(senator)}>
@@ -369,7 +416,7 @@ const ContentManagement = () => {
                     ))}
                     {senate.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           No senators added yet
                         </TableCell>
                       </TableRow>
@@ -401,8 +448,7 @@ const ContentManagement = () => {
                       <TableHead>Name</TableHead>
                       <TableHead>Position</TableHead>
                       <TableHead>Administration</TableHead>
-                      <TableHead>Graduation Year</TableHead>
-                      <TableHead>Contact</TableHead>
+                      <TableHead>Graduation</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -422,7 +468,6 @@ const ContentManagement = () => {
                         <TableCell>{alum.position}</TableCell>
                         <TableCell><Badge>{alum.administration_number}th Admin</Badge></TableCell>
                         <TableCell>{alum.graduation_year || '-'}</TableCell>
-                        <TableCell>{alum.phone || alum.email || '-'}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button variant="outline" size="icon" onClick={() => handleEdit(alum)}>
@@ -437,7 +482,7 @@ const ContentManagement = () => {
                     ))}
                     {alumni.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           No alumni added yet
                         </TableCell>
                       </TableRow>
@@ -457,6 +502,54 @@ const ContentManagement = () => {
               <DialogDescription>Fill in the details below</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
+              {/* Photo Upload Section */}
+              <div className="space-y-3">
+                <Label>Photo</Label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    {previewUrl ? (
+                      <img src={previewUrl} alt="Preview" className="w-20 h-20 rounded-full object-cover border-2 border-primary" />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/50">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full gap-2"
+                    >
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      {uploading ? 'Uploading...' : 'Upload Photo'}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">Max 5MB, JPG/PNG</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Or enter URL</Label>
+                  <Input
+                    value={formData.photo_url || ''}
+                    onChange={(e) => {
+                      setFormData({ ...formData, photo_url: e.target.value });
+                      setPreviewUrl(e.target.value || null);
+                    }}
+                    placeholder="https://..."
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-2">
                   <Label>Full Name *</Label>
@@ -503,11 +596,19 @@ const ContentManagement = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Contact</Label>
+                      <Label>Phone</Label>
                       <Input
-                        value={formData.contact || ''}
-                        onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                        value={formData.phone || ''}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="Phone number"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input
+                        value={formData.email || ''}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="Email address"
                       />
                     </div>
                   </>
@@ -565,14 +666,6 @@ const ContentManagement = () => {
                     </div>
                   </>
                 )}
-                <div className="col-span-2 space-y-2">
-                  <Label>Photo URL</Label>
-                  <Input
-                    value={formData.photo_url || ''}
-                    onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
-                    placeholder="https://..."
-                  />
-                </div>
                 {activeTab !== 'alumni' && (
                   <div className="space-y-2">
                     <Label>Display Order</Label>

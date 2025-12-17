@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
   ArrowLeft, Newspaper, FileText, BookOpen, Feather, PenTool, Send,
-  Loader2, Calendar, User, Plus, Eye
+  Loader2, Calendar, User, Plus, Eye, Upload, Image as ImageIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/NavLink";
@@ -26,6 +26,15 @@ const CONTENT_TYPES = [
   { value: "writing", label: "Writing", icon: PenTool },
 ];
 
+const DEPARTMENTS = [
+  "Nursing Sciences",
+  "Medical Laboratory Sciences",
+  "Medicine and Surgery",
+  "Community Medicine and Public Health",
+  "Human Anatomy",
+  "Human Physiology"
+];
+
 const Editorial = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -35,13 +44,17 @@ const Editorial = () => {
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
     content_type: "",
     author_name: "",
     author_matric: "",
-    author_department: ""
+    author_department: "",
+    image_url: ""
   });
 
   useEffect(() => {
@@ -74,6 +87,39 @@ const Editorial = () => {
     ? content 
     : content.filter(c => c.content_type === activeTab);
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(file);
+      });
+
+      setPreviewUrl(dataUrl);
+      setFormData(prev => ({ ...prev, image_url: dataUrl }));
+      toast.success("Photo uploaded successfully");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload photo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user) {
       toast.error("Please login to submit content");
@@ -93,6 +139,7 @@ const Editorial = () => {
         content_type: formData.content_type,
         author_name: formData.author_name,
         department: formData.author_department,
+        image_url: formData.image_url || null,
         user_id: user.id,
         status: 'pending'
       });
@@ -101,13 +148,15 @@ const Editorial = () => {
 
       toast.success("Content submitted for review! It will be published after approval.");
       setSubmitDialogOpen(false);
+      setPreviewUrl(null);
       setFormData({
         title: "",
         content: "",
         content_type: "",
         author_name: "",
         author_matric: "",
-        author_department: ""
+        author_department: "",
+        image_url: ""
       });
     } catch (error: any) {
       console.error("Submit error:", error);
@@ -179,6 +228,43 @@ const Editorial = () => {
                       placeholder="Enter title"
                     />
                   </div>
+
+                  {/* Photo Upload Section */}
+                  <div className="space-y-3">
+                    <Label>Featured Image (Optional)</Label>
+                    <div className="flex items-start gap-4">
+                      <div className="relative">
+                        {previewUrl ? (
+                          <img src={previewUrl} alt="Preview" className="w-32 h-24 rounded-lg object-cover border-2 border-primary" />
+                        ) : (
+                          <div className="w-32 h-24 rounded-lg bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/50">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="w-full gap-2"
+                        >
+                          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                          {uploading ? 'Uploading...' : 'Upload Photo'}
+                        </Button>
+                        <p className="text-xs text-muted-foreground">Max 5MB, JPG/PNG. Optional but recommended for articles.</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Content *</Label>
                     <Textarea
@@ -207,11 +293,19 @@ const Editorial = () => {
                     </div>
                     <div className="space-y-2">
                       <Label>Department</Label>
-                      <Input
-                        value={formData.author_department}
-                        onChange={(e) => setFormData(prev => ({ ...prev, author_department: e.target.value }))}
-                        placeholder="Your department"
-                      />
+                      <Select 
+                        value={formData.author_department} 
+                        onValueChange={(v) => setFormData(prev => ({ ...prev, author_department: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DEPARTMENTS.map(dept => (
+                            <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <Button onClick={handleSubmit} disabled={submitting} className="w-full gap-2">
@@ -284,10 +378,10 @@ const Editorial = () => {
                       style={{ animationDelay: `${index * 50}ms` }}
                       onClick={() => setSelectedContent(item)}
                     >
-                      {item.featured_image_url && (
+                      {item.image_url && (
                         <div className="aspect-video overflow-hidden">
                           <img 
-                            src={item.featured_image_url} 
+                            src={item.image_url} 
                             alt={item.title} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
@@ -339,13 +433,13 @@ const Editorial = () => {
                     </Badge>
                   </div>
                   <DialogTitle className="text-2xl">{selectedContent.title}</DialogTitle>
-                  <DialogDescription className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <User className="h-4 w-4" />
                       {selectedContent.author_name}
                     </span>
-                    {selectedContent.author_department && (
-                      <span>• {selectedContent.author_department}</span>
+                    {selectedContent.department && (
+                      <span>• {selectedContent.department}</span>
                     )}
                     {selectedContent.published_at && (
                       <span className="flex items-center gap-1">
@@ -353,11 +447,11 @@ const Editorial = () => {
                         {new Date(selectedContent.published_at).toLocaleDateString()}
                       </span>
                     )}
-                  </DialogDescription>
+                  </div>
                 </DialogHeader>
-                {selectedContent.featured_image_url && (
+                {selectedContent.image_url && (
                   <img 
-                    src={selectedContent.featured_image_url} 
+                    src={selectedContent.image_url} 
                     alt={selectedContent.title} 
                     className="w-full rounded-lg"
                   />
