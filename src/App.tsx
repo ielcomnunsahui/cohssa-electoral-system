@@ -162,6 +162,14 @@ const App = () => (
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/admin/editorial" 
+            element={
+              <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                <EditorialReview />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/committee" element={<Committee />} />
           <Route path="/voter/register" element={<VoterRegister />} />
           <Route path="/voter/login" element={<VoterLogin />} />

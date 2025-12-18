@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Get voter profile
     const { data: voterProfile, error: profileError } = await supabase
-      .from("voter_profiles")
+      .from("voters")
       .select("*")
       .eq("email", email.toLowerCase())
       .maybeSingle();
@@ -86,12 +86,11 @@ const handler = async (req: Request): Promise<Response> => {
         message: "OTP verified successfully",
         voter: {
           id: voterProfile.id,
-          matric: voterProfile.matric,
+          matric: voterProfile.matric_number,
           name: voterProfile.name,
           email: voterProfile.email,
           verified: voterProfile.verified,
-          voted: voterProfile.voted,
-          issuance_token: voterProfile.issuance_token
+          has_voted: voterProfile.has_voted
         }
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
