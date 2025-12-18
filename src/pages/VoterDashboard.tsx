@@ -111,8 +111,8 @@ const VoterDashboard = () => {
   };
 
   const handleSubmitVote = async () => {
-    if (!voterProfile?.issuance_token) {
-      toast.error("Invalid voter token");
+    if (!voterProfile?.id) {
+      toast.error("Invalid voter session");
       return;
     }
 

@@ -1,73 +1,133 @@
-# Welcome to your Lovable project
+# ISECO - Independent Students Electoral Committee
 
-## Project info
+Official digital election platform for the **College of Health Sciences Students Association (COHSSA)** at Al-Hikmah University, Ilorin, Nigeria.
 
-**URL**: https://lovable.dev/projects/820d8e87-2e61-4c84-9495-d167d0da4c14
+![ISECO Platform](https://iseco.lovable.app/og-image.png)
 
-## How can I edit this code?
+## 🗳️ Overview
 
-There are several ways of editing your application.
+ISECO is a comprehensive election management system that handles the complete election lifecycle:
 
-**Use Lovable**
+- **Voter Registration** with matric verification and biometric authentication
+- **Candidate Applications** with multi-step wizard and admin review
+- **Secure Voting** with WebAuthn and OTP authentication
+- **Live Results** with real-time charts and statistics
+- **Admin Dashboard** for complete election management
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/820d8e87-2e61-4c84-9495-d167d0da4c14) and start prompting.
+## ✨ Key Features
 
-Changes made via Lovable will be committed automatically to this repo.
+### For Voters
+- 📝 Register with matric number verification
+- 🔐 Biometric-first login (WebAuthn) with OTP fallback
+- ✅ Step-by-step voting for all positions
+- 📊 View live election results
 
-**Use your preferred IDE**
+### For Candidates
+- 📋 Multi-step application wizard
+- ✍️ Rich manifesto editor
+- 📈 Track application status
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### For Administrators
+- 📊 Dashboard with statistics and charts
+- 👥 Student, voter, and candidate management
+- ⏱️ Election timeline control
+- 🎛️ Live voting controls
+- 📰 Editorial and content management
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🚀 Getting Started
 
-Follow these steps:
+### Prerequisites
+- Node.js 18+
+- npm or bun
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Installation
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+# Clone the repository
+git clone https://github.com/your-repo/iseco.git
+cd iseco
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Create a `.env` file with:
 
-**Use GitHub Codespaces**
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🛠️ Tech Stack
 
-## What technologies are used for this project?
+| Technology | Purpose |
+|------------|---------|
+| React 18 | UI Framework |
+| TypeScript | Type Safety |
+| Vite | Build Tool |
+| Tailwind CSS | Styling |
+| Shadcn/UI | Component Library |
+| Supabase | Backend & Auth |
+| Recharts | Data Visualization |
+| WebAuthn | Biometric Auth |
 
-This project is built with:
+## 📁 Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+src/
+├── components/         # Reusable UI components
+│   ├── ui/            # Shadcn components
+│   ├── admin/         # Admin-specific components
+│   ├── aspirant/      # Candidate application components
+│   └── HomePage/      # Homepage components
+├── pages/             # Route pages
+│   ├── admin/         # Admin pages
+│   └── aspirant/      # Aspirant pages
+├── hooks/             # Custom React hooks
+├── lib/               # Utilities and helpers
+└── integrations/      # Third-party integrations
+```
 
-## How can I deploy this project?
+## 🔒 Security
 
-Simply open [Lovable](https://lovable.dev/projects/820d8e87-2e61-4c84-9495-d167d0da4c14) and click on Share -> Publish.
+- **Row Level Security (RLS)** on all database tables
+- **Role-based access control** with separate roles table
+- **Biometric authentication** via WebAuthn
+- **Anonymous vote recording** for ballot secrecy
+- **Input validation** with Zod schemas
 
-## Can I connect a custom domain to my Lovable project?
+## 📖 Documentation
 
-Yes, you can!
+For detailed documentation, see:
+- [DOCUMENTATION.md](./DOCUMENTATION.md) - Complete technical documentation
+- [USER_FLOWS_DOCUMENTATION.md](./USER_FLOWS_DOCUMENTATION.md) - User flow diagrams
+- [SETUP_ADMIN.md](./SETUP_ADMIN.md) - Admin setup guide
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🤝 Contributing
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is developed for Al-Hikmah University COHSSA.
+
+## 📞 Support
+
+For support, contact the Electoral Committee:
+- Email: iseco@alhikmah.edu.ng
+- Visit the Support page in the application
+
+---
+
+**Built with ❤️ by ISECO Team**
+
+*Ensuring Free, Fair, and Transparent Elections*
