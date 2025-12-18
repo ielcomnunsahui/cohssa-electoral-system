@@ -7,10 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { ArrowLeft, Mail, Fingerprint, Loader2, IdCard, Shield, ArrowRight, Vote, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Logo } from "@/components/NavLink";
+import { DualLogo } from "@/components/NavLink";
 import { useWebAuthn } from "@/hooks/useWebAuthn";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import SEO from "@/components/SEO";
 
 // Matric validation regex
 const MATRIC_REGEX = /^\d{2}\/\d{2}[A-Za-z]{3}\d{3}$/;
@@ -202,6 +203,11 @@ const VoterLogin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <SEO 
+        title="Voter Login" 
+        description="Login to your ISECO voter account using biometric authentication or email OTP to cast your vote in COHSSA elections."
+        keywords="voter login, ISECO, COHSSA elections, biometric login, student voting"
+      />
       {/* Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
@@ -428,8 +434,7 @@ const VoterLogin = () => {
         {/* Footer */}
         <div className="mt-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Logo className="h-6 w-6" />
-            <span className="font-semibold text-sm text-foreground">ISECO</span>
+            <DualLogo logoSize="h-6 w-6" />
           </div>
           <p className="text-xs text-muted-foreground">
             Independent Students Electoral Committee • COHSSA

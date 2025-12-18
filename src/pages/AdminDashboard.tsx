@@ -5,13 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Users, FileText, Vote, Settings, Calendar, BarChart3, UserCheck, UserPlus, FileCheck, Trophy, Loader2, ArrowUpRight, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useAdminTour } from "@/hooks/useAdminTour";
+import { useAdminTour, adminDashboardTourSteps } from "@/hooks/useAdminTour";
 import { Progress } from "@/components/ui/progress";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
+import SEO from "@/components/SEO";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { startTour } = useAdminTour();
+  const { startTour, hasSeenTour } = useAdminTour({
+    tourKey: 'admin_dashboard',
+    steps: adminDashboardTourSteps,
+    autoStart: true,
+  });
   const [stats, setStats] = useState({
     totalStudents: 0,
     registeredVoters: 0,
@@ -75,20 +80,17 @@ const AdminDashboard = () => {
 
   const loadChartData = async () => {
     try {
-      // Voter turnout data
       const { data: voters } = await supabase.from('voters').select('has_voted, verified');
       const verified = voters?.filter(v => v.verified) || [];
       const voted = verified.filter(v => v.has_voted).length;
       const notVoted = verified.length - voted;
 
-      // Application status data
       const { data: applications } = await supabase.from('aspirants').select('status');
       const statusCounts = applications?.reduce((acc, app) => {
         acc[app.status || 'pending'] = (acc[app.status || 'pending'] || 0) + 1;
         return acc;
       }, {} as Record<string, number>) || {};
 
-      // Timeline data
       const { data: timeline } = await supabase.from('election_timeline').select('*').order('start_time');
       const now = new Date();
       const timelineProgress = (timeline || []).map(stage => {
@@ -104,9 +106,7 @@ const AdminDashboard = () => {
         return { stage: (stage.stage_name || stage.title).replace(' ', '\n'), progress };
       });
 
-      // Department data
       const { data: studentDepts } = await supabase.from('students').select('department');
-      const { data: voterDepts } = await supabase.from('voters').select('matric_number');
       const { data: appDepts } = await supabase.from('aspirants').select('department');
 
       const deptStats: Record<string, { voters: number; applications: number }> = {};
@@ -187,7 +187,11 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout onStartTour={startTour}>
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <SEO 
+        title="Admin Dashboard" 
+        description="ISECO Admin Dashboard - Manage elections, voters, candidates, and monitor live results for COHSSA elections."
+      />
+      <div className="space-y-8">
         {/* Header */}
         <div className="flex justify-between items-center animate-fade-in">
           <div>
@@ -198,16 +202,25 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 animate-fade-in" style={{ animationDelay: '100ms' }}>
+        <div 
+          data-tour="dashboard-stats"
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4"
+        >
           {statsCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.title} className="relative overflow-hidden group hover:shadow-lg transition-all duration-300" style={{ animationDelay: `${index * 50}ms` }}>
+              <Card 
+                key={stat.title} 
+                className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
                 <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center justify-between">
                     <span className="text-muted-foreground">{stat.title}</span>
-                    <Icon className={`h-4 w-4 bg-gradient-to-br ${stat.color} text-white rounded p-0.5`} />
+                    <div className={`p-1.5 rounded-lg bg-gradient-to-br ${stat.color}`}>
+                      <Icon className="h-4 w-4 text-white" />
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -228,7 +241,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Action Cards Grid */}
-        <div className="space-y-4">
+        <div className="space-y-4" data-tour="quick-actions">
           <h2 className="text-xl font-semibold animate-fade-in" style={{ animationDelay: '200ms' }}>Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {dashboardCards.map((card, index) => {
@@ -236,7 +249,7 @@ const AdminDashboard = () => {
               return (
                 <Card 
                   key={card.title}
-                  className="group cursor-pointer overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in"
+                  className="group cursor-pointer overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-slide-up"
                   style={{ animationDelay: `${(index + 5) * 50}ms` }}
                   onClick={() => navigate(card.link)}
                 >
@@ -263,7 +276,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Charts Section */}
-        <div className="space-y-4">
+        <div className="space-y-4" data-tour="dashboard-charts">
           <h2 className="text-xl font-semibold animate-fade-in" style={{ animationDelay: '250ms' }}>Analytics & Insights</h2>
           <DashboardCharts {...chartData} />
         </div>

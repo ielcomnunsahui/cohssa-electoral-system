@@ -1,185 +1,207 @@
-import { useEffect, useCallback } from "react";
-import { driver } from "driver.js";
+import { useEffect, useCallback, useState } from "react";
+import { driver, DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
 
-export const useAdminTour = () => {
+interface UseAdminTourOptions {
+  tourKey: string;
+  steps: DriveStep[];
+  autoStart?: boolean;
+}
+
+// Predefined tour steps for admin dashboard
+export const adminDashboardTourSteps: DriveStep[] = [
+  {
+    element: '[data-tour="dashboard-stats"]',
+    popover: {
+      title: "📊 Quick Statistics",
+      description: "View real-time statistics including voter count, aspirants, candidates, and votes cast.",
+      side: "bottom",
+      align: "center",
+    },
+  },
+  {
+    element: '[data-tour="quick-actions"]',
+    popover: {
+      title: "⚡ Quick Actions",
+      description: "Access all management sections quickly. Each card takes you to a specific admin function.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: '[data-tour="dashboard-charts"]',
+    popover: {
+      title: "📉 Visual Analytics",
+      description: "Charts showing voter demographics, registration trends, application status, and timeline progress.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    popover: {
+      title: "✅ Dashboard Tour Complete!",
+      description: "You now know the basics. Explore each section for detailed management options.",
+    },
+  },
+];
+
+// Predefined tour steps for aspirant review
+export const aspirantReviewTourSteps: DriveStep[] = [
+  {
+    element: '[data-tour="aspirant-filters"]',
+    popover: {
+      title: "🔍 Filter Applications",
+      description: "Search and filter aspirants by name, matric number, or status. Click status cards for quick filtering.",
+      side: "bottom",
+      align: "start",
+    },
+  },
+  {
+    element: '[data-tour="aspirant-list"]',
+    popover: {
+      title: "📋 Application List",
+      description: "View all submitted applications. Click on any row to see full details and review the application.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: '[data-tour="aspirant-actions"]',
+    popover: {
+      title: "✔️ Review Actions",
+      description: "Click 'Review' to verify payment, schedule screening, and approve or reject applications.",
+      side: "left",
+      align: "center",
+    },
+  },
+  {
+    popover: {
+      title: "✅ Review Tour Complete!",
+      description: "You can now efficiently review and process aspirant applications.",
+    },
+  },
+];
+
+// Predefined tour steps for timeline management
+export const timelineManagementTourSteps: DriveStep[] = [
+  {
+    element: '[data-tour="add-stage"]',
+    popover: {
+      title: "➕ Add New Stage",
+      description: "Create custom election stages with specific start/end times and visibility settings.",
+      side: "bottom",
+      align: "end",
+    },
+  },
+  {
+    element: '[data-tour="timeline-list"]',
+    popover: {
+      title: "📅 Election Stages",
+      description: "Manage all election timeline stages. Each stage controls what features are available to users.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: '[data-tour="stage-controls"]',
+    popover: {
+      title: "🎛️ Stage Controls",
+      description: "Toggle stages active/inactive and control public visibility. Active stages enable corresponding features on the homepage.",
+      side: "left",
+      align: "center",
+    },
+  },
+  {
+    popover: {
+      title: "✅ Timeline Tour Complete!",
+      description: "You can now manage the election timeline effectively.",
+    },
+  },
+];
+
+// Predefined tour steps for live control
+export const liveControlTourSteps: DriveStep[] = [
+  {
+    element: '[data-tour="election-status"]',
+    popover: {
+      title: "🔴 Election Status",
+      description: "Current status of the election - shows whether voting is live or paused.",
+      side: "bottom",
+      align: "center",
+    },
+  },
+  {
+    element: '[data-tour="live-stats"]',
+    popover: {
+      title: "📊 Live Statistics",
+      description: "Real-time voting statistics including registered voters, votes cast, and turnout percentage.",
+      side: "top",
+      align: "center",
+    },
+  },
+  {
+    element: '[data-tour="emergency-controls"]',
+    popover: {
+      title: "⚠️ Emergency Controls",
+      description: "Pause/resume voting, publish final results, and export detailed election reports.",
+      side: "left",
+      align: "center",
+    },
+  },
+  {
+    popover: {
+      title: "✅ Live Control Tour Complete!",
+      description: "You can now monitor and control live election status.",
+    },
+  },
+];
+
+export const useAdminTour = (options?: UseAdminTourOptions) => {
+  const [hasSeenTour, setHasSeenTour] = useState(false);
+  const tourKey = options?.tourKey || 'admin_tour';
+  const steps = options?.steps || adminDashboardTourSteps;
+  const autoStart = options?.autoStart ?? false;
+
+  useEffect(() => {
+    const seen = localStorage.getItem(`${tourKey}_completed`);
+    setHasSeenTour(!!seen);
+  }, [tourKey]);
+
   const startTour = useCallback(() => {
     const driverObj = driver({
       showProgress: true,
       showButtons: ["next", "previous", "close"],
-      popoverClass: "admin-tour-popover",
-      steps: [
-        {
-          element: "#tour-trigger",
-          popover: {
-            title: "Welcome to ISECO Admin! 👋",
-            description:
-              "This is the electoral management system control center. Let's walk through all the features to help you manage elections effectively.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/dashboard"]',
-          popover: {
-            title: "📊 Dashboard Overview",
-            description:
-              "Your real-time command center! View key metrics: total students, registered voters, submitted applications, active candidates, and live voter turnout. Charts provide visual insights into election progress.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/students"]',
-          popover: {
-            title: "📋 Student List Management",
-            description:
-              "Upload student records via CSV to verify voter eligibility. Only students in this list can register as voters. Download templates, manage records, and view department/level analytics.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/voters"]',
-          popover: {
-            title: "🗳️ Voter Management",
-            description:
-              "View and manage all registered voters. Verify voter identities, check registration status, and monitor who has voted. Essential for maintaining election integrity.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/aspirants"]',
-          popover: {
-            title: "📝 Aspirant Review",
-            description:
-              "Process candidate applications step-by-step: verify payment receipts → schedule screening interviews → record screening results → promote qualified aspirants to official candidates.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/candidates"]',
-          popover: {
-            title: "🏆 Candidate Management",
-            description:
-              "Manage final election candidates. View their profiles, edit manifestos, manage photos, and assign candidates to voting positions. Only candidates here appear on ballots.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/positions"]',
-          popover: {
-            title: "⚙️ Position Management",
-            description:
-              "Configure two types of positions: (1) Aspirant positions with fees, CGPA requirements, and eligibility rules. (2) Voting positions with vote types (single/multiple selection). Drag to reorder display.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/timeline"]',
-          popover: {
-            title: "📅 Election Timeline",
-            description:
-              "Control election phases: Aspirant Application → Voter Registration → Voting → Results. Set start/end times, activate stages, and control public visibility. Only active stages appear on the homepage.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/live-control"]',
-          popover: {
-            title: "🔴 Live Control & Results",
-            description:
-              "Monitor elections in real-time! Track voter turnout, view live vote counts with charts, freeze/resume voting if needed, publish final results, and export comprehensive reports.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/activity"]',
-          popover: {
-            title: "📜 Activity & Audit Logs",
-            description:
-              "All admin actions are logged for transparency. View who did what and when. Essential for accountability and investigating any issues during the election.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/content"]',
-          popover: {
-            title: "📚 Content Management",
-            description:
-              "Manage all portal content: university leaders, COHSSA executives, senate members, alumni profiles, and editorial content. Add photos, contact details, and biographical information.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/resources"]',
-          popover: {
-            title: "📖 Academic Resources",
-            description:
-              "Upload and manage academic materials: course outlines, past questions, e-materials, mock tests, and revision notes. Add Google Drive links, YouTube videos, and documents.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          element: 'a[href="/admin/textbooks"]',
-          popover: {
-            title: "📕 Textbook Marketplace",
-            description:
-              "Review student textbook listings for sale. Approve, add commission, and manage the buyer-seller workflow. Facilitate delivery and payment for sold textbooks.",
-            side: "right",
-            align: "start",
-          },
-        },
-        {
-          popover: {
-            title: "🔒 Security Notes",
-            description:
-              "Remember: All actions are logged. Use two-factor authentication. Never share credentials. Log out when done. Contact tech support for any suspicious activity.",
-          },
-        },
-        {
-          popover: {
-            title: "You're All Set! 🎉",
-            description:
-              "You now know how to manage the entire electoral process. Click 'Take a Tour' in the sidebar anytime to restart this guide. Good luck with the election!",
-          },
-        },
-      ],
+      animate: true,
+      overlayColor: 'rgba(0, 0, 0, 0.75)',
+      stagePadding: 8,
+      popoverClass: 'admin-tour-popover',
+      steps,
       onDestroyStarted: () => {
+        localStorage.setItem(`${tourKey}_completed`, 'true');
+        setHasSeenTour(true);
         if (driverObj.hasNextStep()) {
-          const confirmed = confirm("Are you sure you want to exit the tour?");
+          const confirmed = confirm("Exit the tour?");
           if (!confirmed) return;
         }
         driverObj.destroy();
       },
     });
-
     driverObj.drive();
-  }, []);
+  }, [tourKey, steps]);
 
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem("admin_tour_completed");
-    if (!hasSeenTour) {
+    if (autoStart && !hasSeenTour) {
       const timer = setTimeout(() => {
         startTour();
-        localStorage.setItem("admin_tour_completed", "true");
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [startTour]);
+  }, [autoStart, hasSeenTour, startTour]);
 
   const resetTour = useCallback(() => {
-    localStorage.removeItem("admin_tour_completed");
-  }, []);
+    localStorage.removeItem(`${tourKey}_completed`);
+    setHasSeenTour(false);
+  }, [tourKey]);
 
-  return { startTour, resetTour };
+  return { startTour, resetTour, hasSeenTour };
 };

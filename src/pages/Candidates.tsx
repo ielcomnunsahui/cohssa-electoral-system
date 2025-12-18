@@ -5,7 +5,8 @@ import { ArrowLeft, Users, Loader2, WifiOff, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Logo } from "@/components/NavLink";
+import { DualLogo } from "@/components/NavLink";
+import SEO from "@/components/SEO";
 
 interface Candidate {
   id: string;
@@ -89,10 +90,15 @@ const Candidates = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <SEO 
+        title="Meet the Candidates" 
+        description="View all candidates running for COHSSA student union positions. Read their manifestos and learn about their vision for the association."
+        keywords="COHSSA candidates, student election candidates, ISECO, Al-Hikmah University elections, student union"
+      />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="flex items-center gap-4 mb-8 animate-fade-in">
-          <Logo className="h-12 w-12" />
+          <DualLogo logoSize="h-10 w-10" />
           <div className="flex-1" />
           <Button 
             variant="outline" 
