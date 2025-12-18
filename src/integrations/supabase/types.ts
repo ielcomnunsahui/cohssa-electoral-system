@@ -140,6 +140,13 @@ export type Database = {
             foreignKeyName: "candidates_application_id_fkey"
             columns: ["application_id"]
             isOneToOne: false
+            referencedRelation: "approved_aspirants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidates_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
             referencedRelation: "aspirants"
             referencedColumns: ["id"]
           },
@@ -881,6 +888,13 @@ export type Database = {
             foreignKeyName: "votes_aspirant_id_fkey"
             columns: ["aspirant_id"]
             isOneToOne: false
+            referencedRelation: "approved_aspirants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_aspirant_id_fkey"
+            columns: ["aspirant_id"]
+            isOneToOne: false
             referencedRelation: "aspirants"
             referencedColumns: ["id"]
           },
@@ -902,7 +916,129 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      approved_aspirants_public: {
+        Row: {
+          department: string | null
+          full_name: string | null
+          id: string | null
+          level: string | null
+          manifesto: string | null
+          name: string | null
+          photo_url: string | null
+          position_id: string | null
+          status: string | null
+          why_running: string | null
+        }
+        Insert: {
+          department?: string | null
+          full_name?: string | null
+          id?: string | null
+          level?: string | null
+          manifesto?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position_id?: string | null
+          status?: string | null
+          why_running?: string | null
+        }
+        Update: {
+          department?: string | null
+          full_name?: string | null
+          id?: string | null
+          level?: string | null
+          manifesto?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position_id?: string | null
+          status?: string | null
+          why_running?: string | null
+        }
+        Relationships: []
+      }
+      approved_resources_public: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          description: string | null
+          external_link: string | null
+          file_url: string | null
+          id: string | null
+          is_sold: boolean | null
+          level: string | null
+          price: number | null
+          resource_type: string | null
+          seller_name: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          external_link?: string | null
+          file_url?: string | null
+          id?: string | null
+          is_sold?: boolean | null
+          level?: string | null
+          price?: number | null
+          resource_type?: string | null
+          seller_name?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          description?: string | null
+          external_link?: string | null
+          file_url?: string | null
+          id?: string | null
+          is_sold?: boolean | null
+          level?: string | null
+          price?: number | null
+          resource_type?: string | null
+          seller_name?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
+      published_content_public: {
+        Row: {
+          author_name: string | null
+          content: string | null
+          content_type: string | null
+          created_at: string | null
+          department: string | null
+          id: string | null
+          image_url: string | null
+          pdf_url: string | null
+          published_at: string | null
+          title: string | null
+        }
+        Insert: {
+          author_name?: string | null
+          content?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          department?: string | null
+          id?: string | null
+          image_url?: string | null
+          pdf_url?: string | null
+          published_at?: string | null
+          title?: string | null
+        }
+        Update: {
+          author_name?: string | null
+          content?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          department?: string | null
+          id?: string | null
+          image_url?: string | null
+          pdf_url?: string | null
+          published_at?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
