@@ -2,7 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Users, Award, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Logo } from "@/components/NavLink";
+import { Logo, DualLogo } from "@/components/NavLink";
+import { SEO } from "@/components/SEO";
 
 const Committee = () => {
   const navigate = useNavigate();
@@ -45,6 +46,11 @@ const Committee = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <SEO 
+        title="Electoral Committee" 
+        description="Meet the ISECO Electoral Committee members responsible for conducting free and fair COHSSA elections at Al-Hikmah University."
+        keywords="electoral committee, ISECO, COHSSA elections, Al-Hikmah University, student elections"
+      />
       {/* Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" />
@@ -54,7 +60,7 @@ const Committee = () => {
       <div className="container relative mx-auto px-4 py-8">
         {/* Header */}
         <header className="flex items-center gap-4 mb-8 animate-fade-in">
-          <Logo className="h-12 w-12" />
+          <DualLogo className="h-10 w-auto" />
           <div className="flex-1" />
           <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
             <ArrowLeft className="h-4 w-4" />

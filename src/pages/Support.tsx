@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ArrowLeft, Mail, Phone, Clock, HelpCircle, MessageSquare, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Logo } from "@/components/NavLink";
+import { Logo, DualLogo } from "@/components/NavLink";
 import { toast } from "sonner";
+import { SEO } from "@/components/SEO";
 import { z } from "zod";
 
 const contactSchema = z.object({
@@ -99,10 +100,15 @@ const Support = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <SEO 
+        title="Support Center" 
+        description="Get help with COHSSA elections at Al-Hikmah University. Find answers to FAQs, contact the electoral committee, or submit a support request."
+        keywords="support, help, FAQ, COHSSA elections, Al-Hikmah University, contact"
+      />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="flex items-center gap-4 mb-8 animate-fade-in">
-          <Logo className="h-12 w-12" />
+          <DualLogo className="h-10 w-auto" />
           <div className="flex-1" />
           <Button 
             variant="outline" 

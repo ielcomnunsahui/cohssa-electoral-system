@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookOpen, Scale, Users, Shield, Vote, Loader2, Download, Printer, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Logo } from "@/components/NavLink";
+import { Logo, DualLogo } from "@/components/NavLink";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { SEO } from "@/components/SEO";
 
 // Constitution content extracted from the COHSSA Constitution document
 const constitutionSections = [
@@ -305,6 +306,11 @@ const Rules = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <SEO 
+        title="COHSSA Constitution & Rules" 
+        description="Read the official COHSSA Constitution and electoral rules for Al-Hikmah University elections. Download the full constitution document."
+        keywords="COHSSA constitution, electoral rules, Al-Hikmah University, student elections, voting rules"
+      />
       {/* Print Styles */}
       <style>{`
         @media print {
@@ -335,7 +341,7 @@ const Rules = () => {
       <div className="container relative mx-auto px-4 py-8">
         {/* Header */}
         <header className="flex items-center gap-4 mb-8 animate-fade-in no-print">
-          <Logo className="h-12 w-12" />
+          <DualLogo className="h-10 w-auto" />
           <div className="flex-1" />
           <div className="flex gap-2">
             <Button variant="outline" onClick={handlePrint} className="gap-2">

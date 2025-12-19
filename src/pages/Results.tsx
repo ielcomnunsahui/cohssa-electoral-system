@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Trophy, Users, BarChart3, Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Logo } from "@/components/NavLink";
+import { Logo, DualLogo } from "@/components/NavLink";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { SEO } from "@/components/SEO";
 
 interface PositionResult {
   position_id: string;
@@ -136,10 +137,15 @@ const Results = () => {
   if (!isResultsStageActive && !loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
+        <SEO 
+          title="Election Results" 
+          description="View live COHSSA election results at Al-Hikmah University. Real-time vote counts and winner announcements."
+          keywords="election results, COHSSA, vote count, winners, Al-Hikmah University"
+        />
         <div className="container mx-auto max-w-2xl py-16">
           <Card className="text-center p-8">
             <CardContent className="space-y-4">
-              <Logo className="h-20 w-20 mx-auto mb-4" />
+              <DualLogo className="h-16 w-auto mx-auto mb-4" />
               <h1 className="text-2xl font-bold">Results Not Yet Available</h1>
               <p className="text-muted-foreground">
                 Election results will be displayed here once the results stage is activated by the electoral committee.
@@ -157,6 +163,11 @@ const Results = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+      <SEO 
+        title="Election Results" 
+        description="View live COHSSA election results at Al-Hikmah University. Real-time vote counts and winner announcements."
+        keywords="election results, COHSSA, vote count, winners, Al-Hikmah University"
+      />
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <Button variant="ghost" onClick={() => navigate("/")}>
@@ -164,7 +175,7 @@ const Results = () => {
             Back
           </Button>
           <div className="flex items-center gap-2">
-            <Logo className="h-8 w-8" />
+            <DualLogo className="h-8 w-auto" />
             <span className="font-bold">Live Results</span>
           </div>
           <Button variant="outline" size="sm" onClick={loadResults} disabled={loading}>
