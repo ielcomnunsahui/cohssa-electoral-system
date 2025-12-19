@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Building2, GraduationCap, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Logo } from "@/components/NavLink";
+import { Logo, DualLogo } from "@/components/NavLink";
+import { SEO } from "@/components/SEO";
 
 const AboutCollege = () => {
   const navigate = useNavigate();
@@ -40,11 +41,16 @@ const AboutCollege = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <SEO 
+        title="About the College" 
+        description="Learn about the College of Health Sciences at Al-Hikmah University, Ilorin. Discover our programs, faculty, and leadership."
+        keywords="College of Health Sciences, Al-Hikmah University, Ilorin, Nigeria, medical education, nursing, anatomy"
+      />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="flex items-center justify-between mb-8 animate-fade-in">
           <div className="flex items-center gap-4">
-            <Logo className="h-12 w-12" />
+            <DualLogo className="h-10 w-auto" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               About the College
             </h1>

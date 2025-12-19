@@ -15,7 +15,8 @@ import {
   Loader2, Calendar, User, Plus, Eye, Upload, Image as ImageIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Logo } from "@/components/NavLink";
+import { Logo, DualLogo } from "@/components/NavLink";
+import { SEO } from "@/components/SEO";
 
 const CONTENT_TYPES = [
   { value: "newsletter", label: "Newsletter", icon: Newspaper },
@@ -176,11 +177,16 @@ const Editorial = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <SEO 
+        title="COHSSA Editorial" 
+        description="Read newsletters, articles, research papers, poems, and creative writings from COHSSA students at Al-Hikmah University."
+        keywords="COHSSA editorial, student publications, newsletters, articles, Al-Hikmah University"
+      />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="flex items-center justify-between mb-8 animate-fade-in">
           <div className="flex items-center gap-4">
-            <Logo className="h-12 w-12" />
+            <DualLogo className="h-10 w-auto" />
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 COHSSA Editorial

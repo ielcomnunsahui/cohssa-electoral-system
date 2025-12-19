@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useWebAuthn } from "@/hooks/useWebAuthn";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Progress } from "@/components/ui/progress";
+import { SEO } from "@/components/SEO";
 
 // Strict matric validation regex: XX/XXaaa000 (e.g., 21/08nus014)
 const MATRIC_REGEX = /^\d{2}\/\d{2}[A-Za-z]{3}\d{3}$/;
@@ -333,6 +334,11 @@ const VoterRegister = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <SEO 
+        title="Voter Registration" 
+        description="Register as a voter for COHSSA elections at Al-Hikmah University. Verify your matric number, set up biometric, and get ready to vote."
+        keywords="voter registration, COHSSA elections, Al-Hikmah University, student elections, vote"
+      />
       {/* Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
