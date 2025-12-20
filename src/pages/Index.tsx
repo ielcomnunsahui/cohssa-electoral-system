@@ -676,9 +676,21 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Admin Link */}
+      {/* Demo & Admin Links */}
       <section id="admin-link" className="container mx-auto px-4 py-12">
-        <div className="text-center">
+        <div className="text-center space-y-4">
+          <Card className="max-w-md mx-auto p-6 border-dashed border-2 hover:border-primary/50 transition-all cursor-pointer group" onClick={() => navigate("/demo")}>
+            <div className="flex items-center justify-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 group-hover:scale-110 transition-transform">
+                <Eye className="h-5 w-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-foreground group-hover:text-primary transition-colors">Try Interactive Demo</p>
+                <p className="text-xs text-muted-foreground">Experience the system in a sandbox</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+          </Card>
           <Button
             variant="ghost"
             onClick={() => navigate("/admin/login")}

@@ -34,14 +34,44 @@ const LiveControl = () => {
   const [votedCount, setVotedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [votingActive, setVotingActive] = useState(true);
+  const [votingActive, setVotingActive] = useState(false);
+  const [activeStage, setActiveStage] = useState<string | null>(null);
   const { logAction } = useAuditLog();
 
   useEffect(() => {
     loadResults();
+    loadTimelineStatus();
     const interval = setInterval(loadResults, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadTimelineStatus = async () => {
+    try {
+      // Check if voting stage is active from election_timeline
+      const { data: stages } = await supabase
+        .from('election_timeline')
+        .select('*')
+        .eq('is_active', true)
+        .or('stage_name.ilike.%voting%,title.ilike.%voting%');
+
+      if (stages && stages.length > 0) {
+        const now = new Date();
+        const activeVoting = stages.find(stage => {
+          const start = new Date(stage.start_date);
+          const end = stage.end_date ? new Date(stage.end_date) : null;
+          return now >= start && (!end || now <= end);
+        });
+        
+        setVotingActive(!!activeVoting);
+        setActiveStage(activeVoting?.stage_name || activeVoting?.title || null);
+      } else {
+        setVotingActive(false);
+        setActiveStage(null);
+      }
+    } catch (error) {
+      console.error("Error loading timeline status:", error);
+    }
+  };
 
   const loadResults = async () => {
     try {
@@ -111,16 +141,12 @@ const LiveControl = () => {
   const handleRefresh = () => {
     setRefreshing(true);
     loadResults();
+    loadTimelineStatus();
   };
 
   const handleToggleVoting = async () => {
-    const newState = !votingActive;
-    setVotingActive(newState);
-    await logAction({
-      action: newState ? 'voting_resume' : 'voting_pause',
-      entity_type: 'election_control'
-    });
-    toast.success(newState ? "Voting resumed" : "Voting paused");
+    // Navigate to timeline management to toggle voting stage
+    toast.info("Go to Timeline Management to toggle voting stage status");
   };
 
   const handlePublishResults = async () => {

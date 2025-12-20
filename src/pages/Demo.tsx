@@ -28,10 +28,12 @@ import {
   Award,
   Clock,
   Lock,
-  Zap
+  Zap,
+  Eye
 } from "lucide-react";
-import { Logo } from "@/components/NavLink";
+import { DualLogo } from "@/components/NavLink";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import SEO from "@/components/SEO";
 
 const MATRIC_REGEX = /^\d{2}\/\d{2}[A-Za-z]{3}\d{3}$/;
 
@@ -607,6 +609,11 @@ const Demo = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <SEO 
+        title="Interactive Demo - Try ISECO Features" 
+        description="Experience the ISECO election system in a sandbox environment. Try voter registration, voting simulation, and aspirant applications without affecting real data."
+        keywords="ISECO demo, election system demo, voter registration demo, voting simulation, COHSSA"
+      />
       {/* Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
@@ -622,9 +629,7 @@ const Demo = () => {
         {/* Header */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
-            <div className="relative p-3 bg-primary/10 rounded-2xl">
-              <Sparkles className="h-10 w-10 text-primary" />
-            </div>
+            <DualLogo logoSize="h-12 w-12" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Interactive Demo
@@ -689,8 +694,7 @@ const Demo = () => {
         {/* Footer */}
         <div className="mt-12 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Logo className="h-6 w-6" />
-            <span className="font-semibold text-foreground">ISECO</span>
+            <DualLogo logoSize="h-6 w-6" />
           </div>
           <p className="text-xs text-muted-foreground">
             Independent Students Electoral Committee • COHSSA
