@@ -38,18 +38,33 @@ const AspirantReview = () => {
 
   const loadApplications = async () => {
     try {
-      const { data, error } = await supabase
+      // First get aspirants
+      const { data: aspirantsData, error: aspirantsError } = await supabase
         .from('aspirants')
-        .select(`
-          *,
-          positions(title, fee)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setApplications(data || []);
+      if (aspirantsError) {
+        console.error("Aspirants fetch error:", aspirantsError);
+        throw aspirantsError;
+      }
+
+      // Then get positions separately
+      const { data: positionsData } = await supabase
+        .from('positions')
+        .select('id, title, fee');
+
+      // Map positions to aspirants
+      const positionsMap = new Map((positionsData || []).map(p => [p.id, p]));
+      const enrichedData = (aspirantsData || []).map(aspirant => ({
+        ...aspirant,
+        positions: aspirant.position_id ? positionsMap.get(aspirant.position_id) : null
+      }));
+
+      setApplications(enrichedData);
     } catch (error: any) {
-      toast.error("Failed to load applications");
+      console.error("Load applications error:", error);
+      toast.error("Failed to load applications: " + (error.message || "Unknown error"));
     } finally {
       setLoading(false);
       setRefreshing(false);
