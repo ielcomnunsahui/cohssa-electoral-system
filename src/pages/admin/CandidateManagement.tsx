@@ -6,13 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Upload, Plus, Trash2, FileText } from "lucide-react";
+import { Upload, Plus, Trash2, FileText, Users, Award, Camera, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import SEO from "@/components/SEO";
 
 const DEPARTMENTS = [
   "Nursing Science",
@@ -195,29 +198,66 @@ const CandidateManagement = () => {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto px-4 py-8">
-        <Card className="animate-fade-in">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Candidate Management</CardTitle>
-              <CardDescription>Manage election candidates and their manifestos</CardDescription>
+      <SEO 
+        title="Candidate Management" 
+        description="Manage election candidates, their manifestos, and information for COHSSA elections."
+      />
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Candidate Management
+            </h1>
+            <p className="text-muted-foreground mt-1">Manage election candidates and their manifestos</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
+              <Users className="h-5 w-5 text-primary" />
+              <span className="font-bold text-lg">{candidates.length}</span>
+              <span className="text-sm text-muted-foreground">Candidates</span>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
                   Add Candidate
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-                <DialogHeader className="flex-shrink-0">
-                  <DialogTitle>Add New Candidate</DialogTitle>
-                  <DialogDescription>Enter candidate details below</DialogDescription>
+              <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
+                  <DialogTitle className="flex items-center gap-2 text-xl">
+                    <Award className="h-5 w-5 text-primary" />
+                    Add New Candidate
+                  </DialogTitle>
+                  <DialogDescription>Fill in the candidate details below. Fields marked with * are required.</DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-1 pr-4">
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label>Photo (Max 2MB) - Optional</Label>
+                <ScrollArea className="flex-1 px-6">
+                  <div className="space-y-6 py-6">
+                    {/* Photo Upload Section */}
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="relative">
+                        {photoPreview ? (
+                          <div className="relative">
+                            <img 
+                              src={photoPreview} 
+                              alt="Preview" 
+                              className="w-32 h-32 rounded-full object-cover border-4 border-primary/20" 
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPhotoPreview("")}
+                              className="absolute -top-2 -right-2 w-8 h-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="w-32 h-32 rounded-full bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                            <Camera className="h-10 w-10 text-muted-foreground/50" />
+                          </div>
+                        )}
+                      </div>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -225,49 +265,61 @@ const CandidateManagement = () => {
                         onChange={handlePhotoUpload}
                         className="hidden"
                       />
-                      {photoPreview && (
-                        <img src={photoPreview} alt="Preview" className="w-32 h-32 rounded-full object-cover mx-auto" />
-                      )}
                       <Button
                         type="button"
                         variant="outline"
+                        size="sm"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full"
+                        className="gap-2"
                       >
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload Photo
+                        <Upload className="h-4 w-4" />
+                        {photoPreview ? "Change Photo" : "Upload Photo"}
                       </Button>
+                      <p className="text-xs text-muted-foreground">Max 2MB, JPG/PNG format</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Form Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Full Name *</Label>
-                        <Input value={name} onChange={(e) => setName(e.target.value)} />
+                        <Label className="text-sm font-medium">Full Name *</Label>
+                        <Input 
+                          value={name} 
+                          onChange={(e) => setName(e.target.value)} 
+                          placeholder="Enter full name"
+                          className="h-11"
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label>Matric Number *</Label>
-                        <Input value={matric} onChange={(e) => setMatric(e.target.value)} />
+                        <Label className="text-sm font-medium">Matric Number *</Label>
+                        <Input 
+                          value={matric} 
+                          onChange={(e) => setMatric(e.target.value)} 
+                          placeholder="e.g., 21/08NUS014"
+                          className="h-11 font-mono"
+                        />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Position *</Label>
+                        <Label className="text-sm font-medium">Position *</Label>
                         <Select value={positionId} onValueChange={setPositionId}>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-11">
                             <SelectValue placeholder="Select position" />
                           </SelectTrigger>
                           <SelectContent className="bg-popover">
                             {positions.map((pos) => (
-                              <SelectItem key={pos.id} value={pos.id}>{pos.title}</SelectItem>
+                              <SelectItem key={pos.id} value={pos.id}>
+                                {pos.title}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Department *</Label>
+                        <Label className="text-sm font-medium">Department *</Label>
                         <Select value={department} onValueChange={setDepartment}>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-11">
                             <SelectValue placeholder="Select department" />
                           </SelectTrigger>
                           <SelectContent className="bg-popover">
@@ -280,83 +332,119 @@ const CandidateManagement = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Manifesto (Optional)</Label>
+                      <Label className="text-sm font-medium">Manifesto (Optional)</Label>
                       <Textarea 
                         value={manifesto} 
                         onChange={(e) => setManifesto(e.target.value)}
-                        placeholder="Enter candidate's manifesto..."
-                        rows={4}
+                        placeholder="Enter candidate's manifesto, goals, and vision..."
+                        rows={5}
+                        className="resize-none"
                       />
+                      <p className="text-xs text-muted-foreground">You can also add the manifesto later by editing the candidate.</p>
                     </div>
                   </div>
                 </ScrollArea>
-                <DialogFooter className="flex-shrink-0 pt-4 border-t">
+                <DialogFooter className="px-6 py-4 border-t bg-muted/30">
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddCandidate} disabled={loading}>
-                    {loading ? "Adding..." : "Add Candidate"}
+                  <Button onClick={handleAddCandidate} disabled={loading} className="gap-2">
+                    {loading ? "Adding..." : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        Add Candidate
+                      </>
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </CardHeader>
-          <CardContent>
+          </div>
+        </div>
+
+        {/* Candidates Table */}
+        <Card className="animate-fade-in border-0 shadow-sm overflow-hidden">
+          <CardContent className="p-0">
             {candidates.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No candidates yet</p>
+              <div className="text-center py-16">
+                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1">No candidates yet</h3>
+                <p className="text-muted-foreground mb-4">Add your first candidate to get started</p>
+                <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Candidate
+                </Button>
+              </div>
             ) : (
-              <div className="border rounded-lg overflow-x-auto">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Photo</TableHead>
-                      <TableHead>Name</TableHead>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="w-16">Photo</TableHead>
+                      <TableHead>Candidate</TableHead>
                       <TableHead>Matric</TableHead>
                       <TableHead>Position</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Manifesto</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {candidates.map((candidate) => (
-                      <TableRow key={candidate.id} className="hover:bg-muted/50 transition-colors">
+                    {candidates.map((candidate, index) => (
+                      <TableRow 
+                        key={candidate.id} 
+                        className="hover:bg-muted/30 transition-colors animate-fade-in"
+                        style={{ animationDelay: `${index * 30}ms` }}
+                      >
                         <TableCell>
-                          {candidate.photo_url ? (
-                            <img
-                              src={candidate.photo_url}
-                              alt={candidate.name}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
+                          <Avatar className="h-12 w-12 border-2 border-muted">
+                            <AvatarImage src={candidate.photo_url} alt={candidate.name} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {candidate.name?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </TableCell>
+                        <TableCell>
+                          <p className="font-medium">{candidate.name}</p>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{candidate.matric}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-normal">
+                            {candidate.positions?.title || '-'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{candidate.department}</TableCell>
+                        <TableCell>
+                          {candidate.manifesto ? (
+                            <Badge className="bg-green-500/10 text-green-600 border-0 gap-1">
+                              <FileText className="h-3 w-3" />
+                              Has manifesto
+                            </Badge>
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                              <span className="text-xs">{candidate.name?.charAt(0)}</span>
-                            </div>
+                            <Badge variant="outline" className="text-muted-foreground">
+                              No manifesto
+                            </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="font-medium">{candidate.name}</TableCell>
-                        <TableCell className="font-mono text-sm">{candidate.matric}</TableCell>
-                        <TableCell>{candidate.positions?.title}</TableCell>
-                        <TableCell>{candidate.department}</TableCell>
-                        <TableCell>
-                          <span className={`text-xs ${candidate.manifesto ? 'text-green-600' : 'text-muted-foreground'}`}>
-                            {candidate.manifesto ? 'Has manifesto' : 'No manifesto'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
                             <Button
                               size="sm"
-                              variant="ghost"
+                              variant="outline"
                               onClick={() => openManifestoEditor(candidate)}
                               title="Edit Manifesto"
+                              className="gap-1"
                             >
                               <FileText className="h-4 w-4" />
+                              <span className="hidden sm:inline">Manifesto</span>
                             </Button>
                             <Button
                               size="sm"
                               variant="destructive"
                               onClick={() => handleDeleteCandidate(candidate.id, candidate.name)}
+                              title="Delete Candidate"
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -371,27 +459,34 @@ const CandidateManagement = () => {
 
         {/* Manifesto Editor Dialog */}
         <Dialog open={isManifestoDialogOpen} onOpenChange={setIsManifestoDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle>Edit Manifesto</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Edit Manifesto
+              </DialogTitle>
+              <DialogDescription className="flex items-center gap-2">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={editingCandidate?.photo_url} />
+                  <AvatarFallback className="text-xs">{editingCandidate?.name?.charAt(0)}</AvatarFallback>
+                </Avatar>
                 {editingCandidate?.name} - {editingCandidate?.positions?.title}
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="flex-1 pr-4">
-              <div className="space-y-4 py-4">
+            <ScrollArea className="flex-1 px-6">
+              <div className="py-6">
                 <Textarea 
                   value={manifesto} 
                   onChange={(e) => setManifesto(e.target.value)}
-                  placeholder="Enter candidate's manifesto..."
-                  rows={12}
-                  className="min-h-[250px]"
+                  placeholder="Enter candidate's manifesto, goals, vision, and what they plan to achieve if elected..."
+                  rows={15}
+                  className="resize-none min-h-[300px]"
                 />
               </div>
             </ScrollArea>
-            <DialogFooter className="flex-shrink-0 pt-4 border-t">
+            <DialogFooter className="px-6 py-4 border-t bg-muted/30">
               <Button variant="outline" onClick={() => setIsManifestoDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveManifesto} disabled={loading}>
+              <Button onClick={handleSaveManifesto} disabled={loading} className="gap-2">
                 {loading ? "Saving..." : "Save Manifesto"}
               </Button>
             </DialogFooter>

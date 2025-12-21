@@ -17,10 +17,8 @@ import {
   CheckCircle, 
   Mail, 
   Fingerprint,
-  AlertCircle,
   ArrowRight,
   Shield,
-  Sparkles,
   Play,
   IdCard,
   User,
@@ -29,20 +27,41 @@ import {
   Clock,
   Lock,
   Zap,
-  Eye
+  Smartphone
 } from "lucide-react";
 import { DualLogo } from "@/components/NavLink";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import SEO from "@/components/SEO";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const MATRIC_REGEX = /^\d{2}\/\d{2}[A-Za-z]{3}\d{3}$/;
 
+type Step = 'matric' | 'email' | 'verify_choice' | 'biometric' | 'otp' | 'success';
+
 const DemoVoterRegistration = () => {
-  const [step, setStep] = useState<'matric' | 'email' | 'otp' | 'biometric' | 'success'>('matric');
+  const [currentStep, setCurrentStep] = useState<Step>('matric');
   const [matric, setMatric] = useState("");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [matricError, setMatricError] = useState<string | null>(null);
+  const [studentInfo, setStudentInfo] = useState<{ matric: string; name: string; department: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [biometricSetupDone, setBiometricSetupDone] = useState(false);
+
+  const steps = [
+    { id: 'matric', label: 'Matric', icon: IdCard },
+    { id: 'email', label: 'Email', icon: Mail },
+    { id: 'verify_choice', label: 'Verify', icon: Shield },
+    { id: 'success', label: 'Done', icon: CheckCircle },
+  ];
+
+  const getStepIndex = (step: Step) => {
+    if (step === 'biometric' || step === 'otp') return 2;
+    const idx = steps.findIndex(s => s.id === step);
+    return idx === -1 ? steps.length : idx;
+  };
+
+  const progress = ((getStepIndex(currentStep) + 1) / steps.length) * 100;
 
   const validateMatric = (value: string) => {
     setMatric(value);
@@ -55,30 +74,18 @@ const DemoVoterRegistration = () => {
     }
   };
 
-  const steps = [
-    { id: 'matric', label: 'Matric', icon: IdCard },
-    { id: 'email', label: 'Email', icon: Mail },
-    { id: 'otp', label: 'Verify', icon: Shield },
-    { id: 'biometric', label: 'Security', icon: Fingerprint },
-  ];
-
-  const getProgress = () => {
-    const idx = steps.findIndex(s => s.id === step);
-    return ((idx + 1) / (steps.length + 1)) * 100;
-  };
-
-  if (step === 'success') {
+  if (currentStep === 'success') {
     return (
-      <Card className="border-green-500/50 bg-green-50 dark:bg-green-950/20">
+      <Card className="border-green-500/50 bg-green-50 dark:bg-green-950/20 animate-fade-in">
         <CardContent className="pt-6 text-center space-y-4">
           <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto animate-scale-in">
             <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
           <h3 className="text-xl font-bold text-green-700 dark:text-green-400">Registration Complete!</h3>
-          <p className="text-sm text-muted-foreground">
-            In a real scenario, you would receive an email verification and wait for admin approval.
+          <p className="text-muted-foreground text-sm">
+            {biometricSetupDone ? "Biometric enabled for quick login." : "Email verified successfully."} Your account is pending admin approval.
           </p>
-          <Button variant="outline" onClick={() => { setStep('matric'); setMatric(""); setEmail(""); setOtp(""); }}>
+          <Button variant="outline" onClick={() => { setCurrentStep('matric'); setMatric(""); setEmail(""); setOtp(""); setStudentInfo(null); setBiometricSetupDone(false); }}>
             <Play className="mr-2 h-4 w-4" />
             Try Again
           </Button>
@@ -89,49 +96,60 @@ const DemoVoterRegistration = () => {
 
   return (
     <div className="space-y-6">
-      {/* Progress Steps */}
-      <div className="flex items-center justify-between mb-4">
-        {steps.map((s, index) => {
-          const Icon = s.icon;
-          const isActive = s.id === step;
-          const isCompleted = steps.findIndex(st => st.id === step) > index;
-          
-          return (
-            <div key={s.id} className="flex flex-col items-center flex-1">
-              <div className={`
-                w-10 h-10 rounded-full flex items-center justify-center mb-1 transition-all
-                ${isCompleted ? 'bg-primary text-primary-foreground' : 
-                  isActive ? 'bg-primary/20 text-primary border-2 border-primary' : 
-                  'bg-muted text-muted-foreground'}
-              `}>
-                {isCompleted ? <CheckCircle className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+      {/* Progress Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = step.id === currentStep || (currentStep === 'biometric' && step.id === 'verify_choice') || (currentStep === 'otp' && step.id === 'verify_choice');
+            const isCompleted = getStepIndex(currentStep) > index;
+            
+            return (
+              <div key={step.id} className="flex flex-col items-center flex-1">
+                <div className={`
+                  w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all duration-300
+                  ${isCompleted ? 'bg-primary text-primary-foreground' : 
+                    isActive ? 'bg-primary/20 text-primary border-2 border-primary' : 
+                    'bg-muted text-muted-foreground'}
+                `}>
+                  {isCompleted && !isActive ? <CheckCircle className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                </div>
+                <span className={`text-xs font-medium ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {step.label}
+                </span>
               </div>
-              <span className={`text-xs ${isActive ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
-                {s.label}
-              </span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        <Progress value={progress} className="h-2" />
       </div>
-      <Progress value={getProgress()} className="h-2" />
 
-      {step === 'matric' && (
-        <Card className="animate-fade-in">
+      {/* Step: Matric */}
+      {currentStep === 'matric' && (
+        <Card className="animate-fade-in shadow-lg border-0 bg-card/80 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <IdCard className="h-8 w-8 text-primary" />
+            <div className="flex justify-center mb-4">
+              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <IdCard className="h-10 w-10 text-primary" />
+              </div>
             </div>
-            <CardTitle>Enter Matric Number</CardTitle>
+            <CardTitle className="text-2xl">Enter Your Matric Number</CardTitle>
             <CardDescription>We'll verify you're a registered student</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            <Alert className="border-primary/30 bg-primary/5">
+              <User className="h-4 w-4" />
+              <AlertDescription>
+                Enter your matric number exactly as on your student ID (e.g., 21/08NUS014).
+              </AlertDescription>
+            </Alert>
             <div className="space-y-2">
-              <Label>Matric Number</Label>
+              <Label className="text-base font-medium">Matric Number</Label>
               <Input
                 placeholder="e.g., 21/08NUS014"
                 value={matric}
                 onChange={(e) => validateMatric(e.target.value)}
-                className={`h-12 text-center font-mono ${matricError ? 'border-destructive' : ''}`}
+                className={`h-14 text-lg text-center font-mono ${matricError ? 'border-destructive' : ''}`}
               />
               {matricError && <p className="text-sm text-destructive">{matricError}</p>}
             </div>
@@ -143,46 +161,54 @@ const DemoVoterRegistration = () => {
                   return;
                 }
                 toast.success("Demo: Student verified!");
-                setStep('email');
+                setStudentInfo({ matric, name: "Demo Student", department: "Medicine and Surgery" });
+                setCurrentStep('email');
               }}
               disabled={!!matricError || !matric}
             >
               Continue
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-5 w-5" />
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {step === 'email' && (
-        <Card className="animate-fade-in">
+      {/* Step: Email */}
+      {currentStep === 'email' && studentInfo && (
+        <Card className="animate-fade-in shadow-lg border-0 bg-card/80 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="h-8 w-8 text-primary" />
+            <div className="flex justify-center mb-4">
+              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="h-10 w-10 text-primary" />
+              </div>
             </div>
-            <CardTitle>Add Your Email</CardTitle>
-            <CardDescription>We'll send a verification code</CardDescription>
+            <CardTitle className="text-2xl">Add Your Email</CardTitle>
+            <CardDescription>You'll use this to verify your account</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3">
-              <User className="h-5 w-5 text-primary" />
-              <div>
-                <p className="font-medium text-sm">Demo Student</p>
-                <p className="text-xs text-muted-foreground">{matric}</p>
+          <CardContent className="space-y-6">
+            <div className="p-4 bg-muted/50 rounded-xl border">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">{studentInfo.name}</p>
+                  <p className="text-sm text-muted-foreground">{studentInfo.matric} • {studentInfo.department}</p>
+                </div>
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Email Address</Label>
+              <Label className="text-base font-medium">Email Address</Label>
               <Input
                 type="email"
                 placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12"
+                className="h-14 text-lg"
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep('matric')} className="flex-1">
+              <Button variant="outline" onClick={() => setCurrentStep('matric')} className="flex-1">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Button>
@@ -193,56 +219,71 @@ const DemoVoterRegistration = () => {
                     toast.error("Please enter a valid email");
                     return;
                   }
-                  toast.success("Demo: Verification code sent!");
-                  setStep('otp');
+                  setCurrentStep('verify_choice');
                 }}
               >
-                Send Code
-                <ArrowRight className="h-4 w-4" />
+                Continue
+                <ArrowRight className="h-5 w-5" />
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {step === 'otp' && (
-        <Card className="animate-fade-in">
+      {/* Step: Verification Choice */}
+      {currentStep === 'verify_choice' && (
+        <Card className="animate-fade-in shadow-lg border-0 bg-card/80 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="h-8 w-8 text-primary" />
+            <div className="flex justify-center mb-4">
+              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <Shield className="h-10 w-10 text-primary" />
+              </div>
             </div>
-            <CardTitle>Verify Email</CardTitle>
-            <CardDescription>Enter the 6-digit code (use any digits for demo)</CardDescription>
+            <CardTitle className="text-2xl">Choose Verification Method</CardTitle>
+            <CardDescription>How would you like to verify your account?</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex justify-center">
-              <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} className="h-12 w-10" />
-                  <InputOTPSlot index={1} className="h-12 w-10" />
-                  <InputOTPSlot index={2} className="h-12 w-10" />
-                  <InputOTPSlot index={3} className="h-12 w-10" />
-                  <InputOTPSlot index={4} className="h-12 w-10" />
-                  <InputOTPSlot index={5} className="h-12 w-10" />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-            <Button 
-              className="w-full gap-2" 
-              onClick={() => {
-                if (otp.length !== 6) {
-                  toast.error("Please enter 6 digits");
-                  return;
-                }
-                toast.success("Demo: Email verified!");
-                setStep('biometric');
-              }}
-              disabled={otp.length !== 6}
+            {/* Biometric Option */}
+            <button
+              onClick={() => setCurrentStep('biometric')}
+              className="w-full p-5 rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 group text-left"
             >
-              Verify
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" onClick={() => setStep('email')} className="w-full">
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Fingerprint className="h-7 w-7 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-lg flex items-center gap-2">
+                    Biometric Setup
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Recommended</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">Use fingerprint or face ID for quick, secure login</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </div>
+            </button>
+
+            {/* OTP Option */}
+            <button
+              onClick={() => {
+                toast.success("Demo: Verification code sent!");
+                setCurrentStep('otp');
+              }}
+              className="w-full p-5 rounded-xl border-2 border-border hover:border-primary/30 hover:bg-muted/50 transition-all duration-300 group text-left"
+            >
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Mail className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-lg">Email OTP Verification</p>
+                  <p className="text-sm text-muted-foreground">Receive a 6-digit code via email</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </div>
+            </button>
+
+            <Button variant="ghost" onClick={() => setCurrentStep('email')} className="w-full mt-2">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
@@ -250,28 +291,106 @@ const DemoVoterRegistration = () => {
         </Card>
       )}
 
-      {step === 'biometric' && (
-        <Card className="animate-fade-in">
+      {/* Step: Biometric */}
+      {currentStep === 'biometric' && (
+        <Card className="animate-fade-in shadow-lg border-0 bg-card/80 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Fingerprint className="h-8 w-8 text-primary" />
+            <div className="flex justify-center mb-4">
+              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+                <Fingerprint className="h-10 w-10 text-primary" />
+              </div>
             </div>
-            <CardTitle>Set Up Quick Login</CardTitle>
-            <CardDescription>Use biometric for faster access</CardDescription>
+            <CardTitle className="text-2xl">Set Up Biometric Login</CardTitle>
+            <CardDescription>Use fingerprint or face ID for secure access</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <Fingerprint className="h-4 w-4" />
+          <CardContent className="space-y-6">
+            <Alert className="border-primary/30 bg-primary/5">
+              <Smartphone className="h-4 w-4" />
               <AlertDescription>
                 This is a demo. In production, this uses WebAuthn for secure biometric authentication.
               </AlertDescription>
             </Alert>
-            <Button className="w-full h-12 gap-2" onClick={() => { toast.success("Demo: Biometric registered!"); setStep('success'); }}>
-              <Fingerprint className="h-5 w-5" />
-              Enable Biometric (Demo)
+
+            <Button 
+              onClick={() => { 
+                toast.success("Demo: Biometric registered!"); 
+                setBiometricSetupDone(true);
+                setCurrentStep('success'); 
+              }} 
+              className="w-full h-16 text-lg gap-3"
+            >
+              <Fingerprint className="h-6 w-6" />
+              Set Up Biometric (Demo)
             </Button>
-            <Button variant="outline" className="w-full" onClick={() => setStep('success')}>
-              Skip - Use Email OTP
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-4 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                toast.success("Demo: Verification code sent!");
+                setCurrentStep('otp');
+              }}
+              className="w-full h-12 gap-2"
+            >
+              <Mail className="h-5 w-5" />
+              Use Email OTP Instead
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step: OTP */}
+      {currentStep === 'otp' && (
+        <Card className="animate-fade-in shadow-lg border-0 bg-card/80 backdrop-blur-sm">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <Shield className="h-10 w-10 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Verify Your Email</CardTitle>
+            <CardDescription>Enter the 6-digit code (use any digits for demo)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} className="w-12 h-14 text-xl" />
+                  <InputOTPSlot index={1} className="w-12 h-14 text-xl" />
+                  <InputOTPSlot index={2} className="w-12 h-14 text-xl" />
+                  <InputOTPSlot index={3} className="w-12 h-14 text-xl" />
+                  <InputOTPSlot index={4} className="w-12 h-14 text-xl" />
+                  <InputOTPSlot index={5} className="w-12 h-14 text-xl" />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            <p className="text-xs text-center text-muted-foreground">Code expires in 5 minutes</p>
+            <Button 
+              className="w-full h-12 gap-2" 
+              onClick={() => {
+                if (otp.length !== 6) {
+                  toast.error("Please enter 6 digits");
+                  return;
+                }
+                toast.success("Demo: Email verified!");
+                setCurrentStep('success');
+              }}
+              disabled={otp.length !== 6}
+            >
+              Verify & Complete
+              <CheckCircle className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" onClick={() => setCurrentStep('verify_choice')} className="w-full">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
             </Button>
           </CardContent>
         </Card>
@@ -313,7 +432,7 @@ const DemoVoting = () => {
   }
 
   return (
-    <Card className="animate-fade-in">
+    <Card className="animate-fade-in shadow-lg border-0">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -419,7 +538,7 @@ const DemoAspirantApplication = () => {
   }
 
   return (
-    <Card className="animate-fade-in">
+    <Card className="animate-fade-in shadow-lg border-0">
       <CardHeader>
         <div className="flex items-center justify-between mb-4">
           {stepInfo.map((s) => {
@@ -608,7 +727,7 @@ const Demo = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 transition-colors duration-300">
       <SEO 
         title="Interactive Demo - Try ISECO Features" 
         description="Experience the ISECO election system in a sandbox environment. Try voter registration, voting simulation, and aspirant applications without affecting real data."
@@ -621,10 +740,13 @@ const Demo = () => {
       </div>
 
       <div className="relative container mx-auto max-w-4xl px-4 py-8">
-        <Button variant="ghost" onClick={() => navigate("/")} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" onClick={() => navigate("/")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+          <ThemeToggle />
+        </div>
 
         {/* Header */}
         <div className="text-center mb-10">
