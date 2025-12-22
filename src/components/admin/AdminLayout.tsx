@@ -18,8 +18,6 @@ import {
   ChevronRight,
   Bell,
   Search,
-  Moon,
-  Sun,
   Newspaper,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { DualLogo, Logo } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   Sidebar,
   SidebarContent,
@@ -327,6 +326,7 @@ export function AdminLayout({ children, onStartTour }: AdminLayoutProps) {
 
             {/* Header Actions */}
             <div className="flex items-center gap-2 ml-4">
+              <ThemeToggle />
               <Button variant="ghost" size="icon" className="relative hover:bg-primary/10">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full animate-pulse" />

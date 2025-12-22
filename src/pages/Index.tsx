@@ -8,6 +8,7 @@ import {
   Loader2, Sparkles, ChevronRight, HelpCircle, LogOut, GraduationCap, 
   Calendar, Star, Zap, ArrowRight, Home, UserPlus, Eye, Award, Newspaper
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 import { DualLogo, Logo, COHSSALogoImg } from "@/components/NavLink";
 import { driver } from "driver.js";
@@ -330,11 +331,13 @@ const Index = () => {
             <DualLogo logoSize="h-9 w-9" showLabels={true} />
           </div>
           
-          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="hover:bg-primary/10 transition-colors">
-                <Menu className="h-6 w-6" />
-              </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="hover:bg-primary/10 transition-colors">
+                  <Menu className="h-6 w-6" />
+                </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80 bg-background/95 backdrop-blur-xl overflow-y-auto">
               <SheetHeader>
@@ -376,6 +379,7 @@ const Index = () => {
               </nav>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
       </header>
 

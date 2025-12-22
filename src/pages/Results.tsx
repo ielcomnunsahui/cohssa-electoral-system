@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Trophy, Users, BarChart3, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Trophy, Users, BarChart3, Loader2, RefreshCw, Radio, Wifi } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo, DualLogo } from "@/components/NavLink";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { SEO } from "@/components/SEO";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface PositionResult {
   position_id: string;
@@ -34,45 +35,11 @@ const Results = () => {
   const [totalVoters, setTotalVoters] = useState(0);
   const [votedCount, setVotedCount] = useState(0);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isConnected, setIsConnected] = useState(false);
+  const [liveUpdateCount, setLiveUpdateCount] = useState(0);
 
-  useEffect(() => {
-    checkResultsStage();
-    loadResults();
-
-    const channel = supabase
-      .channel('results-updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => {
-        loadResults();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const checkResultsStage = async () => {
+  const loadResultsCallback = useCallback(async () => {
     try {
-      const { data: timeline } = await supabase
-        .from('election_timeline')
-        .select('*')
-        .ilike('stage_name', '%results%')
-        .maybeSingle();
-
-      if (timeline) {
-        const now = new Date();
-        const start = new Date(timeline.start_time);
-        const end = new Date(timeline.end_time);
-        setIsResultsStageActive(timeline.is_active && now >= start && now <= end);
-      }
-    } catch (error) {
-      console.error("Error checking results stage:", error);
-    }
-  };
-
-  const loadResults = async () => {
-    try {
-      // Get voter stats
       const { data: voterData } = await supabase
         .from('voters')
         .select('has_voted, verified');
@@ -81,19 +48,16 @@ const Results = () => {
       setTotalVoters(verified.length);
       setVotedCount(verified.filter(v => v.has_voted).length);
 
-      // Get positions
       const { data: positions } = await supabase
         .from('positions')
         .select('*')
         .eq('is_active', true)
         .order('display_order');
 
-      // Get candidates with their votes
       const { data: candidates } = await supabase
         .from('candidates')
         .select('*, position_id');
 
-      // Get vote counts
       const { data: votes } = await supabase
         .from('votes')
         .select('aspirant_id, position_id');
@@ -130,6 +94,86 @@ const Results = () => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    checkResultsStage();
+    loadResultsCallback();
+
+    // Set up real-time subscription for votes
+    const votesChannel = supabase
+      .channel('realtime-votes')
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'votes' }, 
+        (payload) => {
+          console.log('New vote received:', payload);
+          setLiveUpdateCount(prev => prev + 1);
+          loadResultsCallback();
+        }
+      )
+      .on('postgres_changes', 
+        { event: 'DELETE', schema: 'public', table: 'votes' }, 
+        () => {
+          loadResultsCallback();
+        }
+      )
+      .subscribe((status) => {
+        setIsConnected(status === 'SUBSCRIBED');
+        console.log('Realtime subscription status:', status);
+      });
+
+    // Set up real-time subscription for voters (to track has_voted changes)
+    const votersChannel = supabase
+      .channel('realtime-voters')
+      .on('postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'voters' }, 
+        (payload) => {
+          if (payload.new && (payload.new as any).has_voted !== (payload.old as any)?.has_voted) {
+            loadResultsCallback();
+          }
+        }
+      )
+      .subscribe();
+
+    // Also subscribe to timeline changes to update results stage status
+    const timelineChannel = supabase
+      .channel('realtime-timeline')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'election_timeline' }, 
+        () => {
+          checkResultsStage();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(votesChannel);
+      supabase.removeChannel(votersChannel);
+      supabase.removeChannel(timelineChannel);
+    };
+  }, [loadResultsCallback]);
+
+  const checkResultsStage = async () => {
+    try {
+      const { data: timeline } = await supabase
+        .from('election_timeline')
+        .select('*')
+        .ilike('stage_name', '%results%')
+        .maybeSingle();
+
+      if (timeline) {
+        const now = new Date();
+        const start = new Date(timeline.start_time);
+        const end = new Date(timeline.end_time);
+        setIsResultsStageActive(timeline.is_active && now >= start && now <= end);
+      }
+    } catch (error) {
+      console.error("Error checking results stage:", error);
+    }
+  };
+
+  const loadResults = () => {
+    loadResultsCallback();
   };
 
   const turnoutPercentage = totalVoters > 0 ? (votedCount / totalVoters) * 100 : 0;
@@ -174,13 +218,24 @@ const Results = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <DualLogo className="h-8 w-auto" />
-            <span className="font-bold">Live Results</span>
+            <div className="flex items-center gap-2">
+              <span className="font-bold">Live Results</span>
+              {isConnected && (
+                <Badge variant="outline" className="gap-1 text-xs animate-pulse bg-green-500/10 border-green-500/50 text-green-600">
+                  <Wifi className="h-3 w-3" />
+                  LIVE
+                </Badge>
+              )}
+            </div>
           </div>
-          <Button variant="outline" size="sm" onClick={loadResults} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="outline" size="sm" onClick={loadResults} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -220,10 +275,23 @@ const Results = () => {
           </Card>
         </div>
 
-        {/* Last Updated */}
-        <p className="text-sm text-muted-foreground text-center">
-          Last updated: {lastUpdated.toLocaleTimeString()}
-        </p>
+        {/* Real-time Status */}
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
+          </div>
+          {isConnected && (
+            <Badge variant="secondary" className="gap-1">
+              <Radio className="h-3 w-3 animate-pulse text-green-500" />
+              Real-time updates active
+            </Badge>
+          )}
+          {liveUpdateCount > 0 && (
+            <Badge variant="outline" className="text-xs">
+              {liveUpdateCount} live update{liveUpdateCount > 1 ? 's' : ''} received
+            </Badge>
+          )}
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
