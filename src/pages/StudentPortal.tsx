@@ -9,23 +9,35 @@ import { toast } from "sonner";
 import { 
   ArrowLeft, BookOpen, FileText, GraduationCap, Calendar, Image, 
   ExternalLink, Loader2, Filter, Search, Newspaper, ShoppingBag,
-  Video, Clock, MapPin
+  Video, Clock, MapPin, Tag, Phone, MessageCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/NavLink";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const DEPARTMENTS = [
   "All Departments",
-  "Nursing Sciences",
-  "Medical Laboratory Sciences",
-  "Medicine and Surgery",
-  "Community Medicine and Public Health",
-  "Human Anatomy",
-  "Human Physiology"
+  "Library and Information Science",
+  "Environmental Health",
+  "Health Information Management",
+  "Office Technology Management",
+  "Mass Communication"
 ];
 
-const LEVELS = ["All Levels", "100L", "200L", "300L", "400L", "500L"];
+const LEVELS = ["All Levels", "100", "200", "300", "400"];
+
+const RESOURCE_TYPES = [
+  { value: "all", label: "All Types" },
+  { value: "past_question", label: "Past Questions" },
+  { value: "study_material", label: "Study Materials" },
+  { value: "ebook", label: "E-Books" },
+  { value: "project", label: "Projects" },
+  { value: "course_outline", label: "Course Outlines" },
+  { value: "e_material", label: "E-Materials" },
+];
 
 const StudentPortal = () => {
   const navigate = useNavigate();
@@ -36,8 +48,22 @@ const StudentPortal = () => {
   const [textbooks, setTextbooks] = useState<any[]>([]);
   const [selectedDept, setSelectedDept] = useState("All Departments");
   const [selectedLevel, setSelectedLevel] = useState("All Levels");
+  const [selectedType, setSelectedType] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("course_outlines");
+  const [activeTab, setActiveTab] = useState("resources");
+  
+  // Sell textbook dialog
+  const [sellDialogOpen, setSellDialogOpen] = useState(false);
+  const [sellForm, setSellForm] = useState({
+    title: "",
+    description: "",
+    price: "",
+    department: "",
+    level: "",
+    seller_name: "",
+    seller_phone: ""
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -66,9 +92,49 @@ const StudentPortal = () => {
   const filteredResources = resources.filter(r => {
     const matchesDept = selectedDept === "All Departments" || r.department === selectedDept;
     const matchesLevel = selectedLevel === "All Levels" || r.level === selectedLevel;
+    const matchesType = selectedType === "all" || r.resource_type === selectedType;
     const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesDept && matchesLevel && matchesType && matchesSearch;
+  });
+
+  const filteredTextbooks = textbooks.filter(t => {
+    const matchesDept = selectedDept === "All Departments" || t.department === selectedDept;
+    const matchesLevel = selectedLevel === "All Levels" || t.level === selectedLevel;
+    const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesDept && matchesLevel && matchesSearch;
   });
+
+  const handleSellTextbook = async () => {
+    if (!sellForm.title || !sellForm.price || !sellForm.seller_name || !sellForm.seller_phone) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('resources').insert({
+        title: sellForm.title,
+        description: sellForm.description,
+        price: parseFloat(sellForm.price),
+        department: sellForm.department || null,
+        level: sellForm.level || null,
+        seller_name: sellForm.seller_name,
+        seller_phone: sellForm.seller_phone,
+        resource_type: 'textbook',
+        status: 'pending'
+      });
+
+      if (error) throw error;
+
+      toast.success("Textbook submitted for review! It will appear once approved.");
+      setSellDialogOpen(false);
+      setSellForm({ title: "", description: "", price: "", department: "", level: "", seller_name: "", seller_phone: "" });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit textbook");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const getResourcesByType = (type: string) => filteredResources.filter(r => r.resource_type === type);
 
@@ -162,7 +228,7 @@ const StudentPortal = () => {
                 />
               </div>
               <Select value={selectedDept} onValueChange={setSelectedDept}>
-                <SelectTrigger className="w-full md:w-[200px]">
+                <SelectTrigger className="w-full md:w-[220px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
@@ -173,12 +239,23 @@ const StudentPortal = () => {
                 </SelectContent>
               </Select>
               <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger className="w-full md:w-[150px]">
+                <SelectTrigger className="w-full md:w-[130px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {LEVELS.map(l => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                    <SelectItem key={l} value={l}>{l === "All Levels" ? l : `${l} Level`}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger className="w-full md:w-[160px]">
+                  <Tag className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RESOURCE_TYPES.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -188,22 +265,14 @@ const StudentPortal = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <TabsList className="grid grid-cols-3 md:grid-cols-7 gap-2 h-auto p-2 bg-muted/50">
-            <TabsTrigger value="course_outlines" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Outlines</span>
-            </TabsTrigger>
-            <TabsTrigger value="past_questions" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsList className="grid grid-cols-3 md:grid-cols-6 gap-2 h-auto p-2 bg-muted/50">
+            <TabsTrigger value="resources" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">PQs</span>
-            </TabsTrigger>
-            <TabsTrigger value="e_materials" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <GraduationCap className="h-4 w-4" />
-              <span className="hidden sm:inline">E-Materials</span>
+              <span className="hidden sm:inline">Resources</span>
             </TabsTrigger>
             <TabsTrigger value="marketplace" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ShoppingBag className="h-4 w-4" />
-              <span className="hidden sm:inline">Textbooks</span>
+              <span className="hidden sm:inline">Marketplace</span>
             </TabsTrigger>
             <TabsTrigger value="events" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Calendar className="h-4 w-4" />
@@ -217,52 +286,79 @@ const StudentPortal = () => {
               <Image className="h-4 w-4" />
               <span className="hidden sm:inline">Gallery</span>
             </TabsTrigger>
+            <TabsTrigger value="editorial" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Newspaper className="h-4 w-4" />
+              <span className="hidden sm:inline">Editorial</span>
+            </TabsTrigger>
           </TabsList>
 
-          {/* Course Outlines */}
-          <TabsContent value="course_outlines" className="mt-6">
-            <ResourceGrid resources={getResourcesByType('course_outline')} type="Course Outline" />
+          {/* All Resources */}
+          <TabsContent value="resources" className="mt-6">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredResources.length} resource{filteredResources.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <ResourceGrid resources={filteredResources} type="Resource" />
           </TabsContent>
 
-          {/* Past Questions */}
-          <TabsContent value="past_questions" className="mt-6">
-            <ResourceGrid resources={getResourcesByType('past_question')} type="Past Question" />
-          </TabsContent>
-
-          {/* E-Materials */}
-          <TabsContent value="e_materials" className="mt-6">
-            <ResourceGrid resources={getResourcesByType('e_material')} type="E-Material" />
-          </TabsContent>
-
-          {/* Marketplace */}
+          {/* Marketplace - Textbook Buy/Sell */}
           <TabsContent value="marketplace" className="mt-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold">Textbook Marketplace</h2>
+                <p className="text-sm text-muted-foreground">Buy and sell used textbooks with fellow students</p>
+              </div>
+              <Button onClick={() => setSellDialogOpen(true)} className="gap-2">
+                <ShoppingBag className="h-4 w-4" />
+                Sell Textbook
+              </Button>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {textbooks.length === 0 ? (
+              {filteredTextbooks.length === 0 ? (
                 <div className="col-span-full text-center py-12 text-muted-foreground">
                   <ShoppingBag className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No textbooks available for sale</p>
+                  <p className="font-medium">No textbooks available</p>
+                  <p className="text-sm mt-1">Be the first to list a textbook for sale!</p>
+                  <Button onClick={() => setSellDialogOpen(true)} className="mt-4 gap-2">
+                    <ShoppingBag className="h-4 w-4" />
+                    Sell Your Textbook
+                  </Button>
                 </div>
               ) : (
-                textbooks.map((book, index) => (
+                filteredTextbooks.map((book, index) => (
                   <Card key={book.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
                     <CardContent className="p-4">
                       <div className="flex gap-4">
-                        <div className="w-16 h-20 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                          <BookOpen className="h-8 w-8 text-muted-foreground" />
+                        <div className="w-16 h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <BookOpen className="h-8 w-8 text-primary/60" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">{book.title}</h3>
                           <p className="text-2xl font-bold text-green-600 mt-1">₦{book.price?.toLocaleString()}</p>
                           <div className="flex flex-wrap gap-1 mt-2">
                             {book.department && <Badge variant="secondary" className="text-xs">{book.department}</Badge>}
-                            {book.level && <Badge variant="outline" className="text-xs">{book.level}</Badge>}
+                            {book.level && <Badge variant="outline" className="text-xs">{book.level} Level</Badge>}
                           </div>
-                          <p className="text-xs text-muted-foreground mt-2">Seller: {book.seller_name}</p>
-                          {book.seller_phone && (
-                            <Button size="sm" variant="outline" className="mt-2 gap-1 text-xs" onClick={() => window.open(`tel:${book.seller_phone}`)}>
-                              Contact Seller
-                            </Button>
+                          {book.description && (
+                            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{book.description}</p>
                           )}
+                          <p className="text-xs text-muted-foreground mt-2">Seller: {book.seller_name}</p>
+                          <div className="flex gap-2 mt-3">
+                            {book.seller_phone && (
+                              <>
+                                <Button size="sm" variant="outline" className="gap-1 text-xs flex-1" onClick={() => window.open(`tel:${book.seller_phone}`)}>
+                                  <Phone className="h-3 w-3" />
+                                  Call
+                                </Button>
+                                <Button size="sm" variant="default" className="gap-1 text-xs flex-1" onClick={() => window.open(`https://wa.me/234${book.seller_phone.replace(/^0/, '')}?text=${encodeURIComponent(`Hi, I'm interested in buying "${book.title}" listed on COHSSA Marketplace.`)}`)}>
+                                  <MessageCircle className="h-3 w-3" />
+                                  WhatsApp
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -373,26 +469,33 @@ const StudentPortal = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Editorial Section */}
-        {editorialContent.length > 0 && (
-          <section className="mt-12 animate-fade-in">
+        {/* Editorial Tab Content */}
+        {activeTab === 'editorial' && (
+          <section className="mt-6 animate-fade-in">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Latest from Editorial</h2>
+              <h2 className="text-xl font-bold">Editorial Content</h2>
               <Button variant="outline" onClick={() => navigate('/editorial')} className="gap-2">
                 View All
                 <ExternalLink className="h-4 w-4" />
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {editorialContent.slice(0, 3).map((item, index) => (
-                <Card key={item.id} className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1" onClick={() => navigate('/editorial')}>
-                  <CardContent className="p-4">
-                    <Badge variant="secondary" className="mb-2 capitalize">{item.content_type}</Badge>
-                    <h3 className="font-semibold line-clamp-2 mb-2">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{item.content}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              {editorialContent.length === 0 ? (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <Newspaper className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No editorial content available yet</p>
+                </div>
+              ) : (
+                editorialContent.map((item, index) => (
+                  <Card key={item.id} className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 animate-fade-in" style={{ animationDelay: `${index * 50}ms` }} onClick={() => navigate('/editorial')}>
+                    <CardContent className="p-4">
+                      <Badge variant="secondary" className="mb-2 capitalize">{item.content_type}</Badge>
+                      <h3 className="font-semibold line-clamp-2 mb-2">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{item.content}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </section>
         )}
@@ -407,6 +510,101 @@ const StudentPortal = () => {
             Independent Students Electoral Committee • COHSSA
           </p>
         </footer>
+
+        {/* Sell Textbook Dialog */}
+        <Dialog open={sellDialogOpen} onOpenChange={setSellDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-primary" />
+                Sell Your Textbook
+              </DialogTitle>
+              <DialogDescription>
+                List your textbook for sale. Your listing will be reviewed before appearing on the marketplace.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Book Title *</Label>
+                <Input
+                  value={sellForm.title}
+                  onChange={(e) => setSellForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g., Introduction to Library Science"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={sellForm.description}
+                  onChange={(e) => setSellForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Describe the condition of the book..."
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Price (₦) *</Label>
+                  <Input
+                    type="number"
+                    value={sellForm.price}
+                    onChange={(e) => setSellForm(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="e.g., 2500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Level</Label>
+                  <Select value={sellForm.level} onValueChange={(v) => setSellForm(prev => ({ ...prev, level: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["100", "200", "300", "400"].map(l => (
+                        <SelectItem key={l} value={l}>{l} Level</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Department</Label>
+                <Select value={sellForm.department} onValueChange={(v) => setSellForm(prev => ({ ...prev, department: v }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPARTMENTS.filter(d => d !== "All Departments").map(d => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Your Name *</Label>
+                  <Input
+                    value={sellForm.seller_name}
+                    onChange={(e) => setSellForm(prev => ({ ...prev, seller_name: e.target.value }))}
+                    placeholder="Your full name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone Number *</Label>
+                  <Input
+                    value={sellForm.seller_phone}
+                    onChange={(e) => setSellForm(prev => ({ ...prev, seller_phone: e.target.value }))}
+                    placeholder="e.g., 08012345678"
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSellDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSellTextbook} disabled={submitting}>
+                {submitting ? "Submitting..." : "Submit Listing"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

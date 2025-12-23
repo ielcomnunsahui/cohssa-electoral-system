@@ -277,7 +277,7 @@ const CandidateManagement = () => {
           <Input 
             value={matric} 
             onChange={(e) => setMatric(e.target.value)} 
-            placeholder="e.g., HSS/21/0001"
+            placeholder="e.g., 21/08NUS014"
             className="h-11 font-mono"
           />
         </div>
