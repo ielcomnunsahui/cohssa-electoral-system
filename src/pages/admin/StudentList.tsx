@@ -16,15 +16,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(142 76% 36%)', 'hsl(38 92% 50%)', 'hsl(var(--secondary))', 'hsl(var(--destructive))'];
 
 const DEPARTMENTS = [
-  "Nursing Science",
-  "Medical Laboratory Sciences",
-  "Medicine and Surgery",
-  "Community Medicine and Public Health",
-  "Human Anatomy",
-  "Human Physiology"
+  "Library and Information Science",
+  "Environmental Health",
+  "Health Information Management",
+  "Office Technology Management",
+  "Mass Communication"
 ];
 
-const LEVELS = ["100L", "200L", "300L", "400L", "500L"];
+const LEVELS = ["100", "200", "300", "400"];
 
 const StudentList = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,7 +45,7 @@ const StudentList = () => {
   }, []);
 
   const downloadTemplate = () => {
-    const csvContent = "matric_number,name,department,level,email,phone\n21/08NUS001,John Doe,Nursing Science,200L,john@example.com,08012345678\n21/08MLS002,Jane Smith,Medical Laboratory Sciences,300L,jane@example.com,08087654321";
+    const csvContent = "matric_number,name,department,level,email,phone\n21/08LIS001,John Doe,Library and Information Science,200,john@example.com,08012345678\n21/08EVH002,Jane Smith,Environmental Health,300,jane@example.com,08087654321";
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -284,7 +283,7 @@ const StudentList = () => {
                         <Input 
                           value={newStudent.matric_number} 
                           onChange={(e) => setNewStudent({...newStudent, matric_number: e.target.value})}
-                          placeholder="21/08NUS001"
+                          placeholder="e.g., 21/08LIS001"
                         />
                       </div>
                       <div className="space-y-2">

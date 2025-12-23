@@ -20,15 +20,14 @@ import {
 } from "lucide-react";
 
 const DEPARTMENTS = [
-  "Nursing Sciences",
-  "Medical Laboratory Sciences",
-  "Medicine and Surgery",
-  "Community Medicine and Public Health",
-  "Human Anatomy",
-  "Human Physiology"
+  "Library and Information Science",
+  "Environmental Health",
+  "Health Information Management",
+  "Office Technology Management",
+  "Mass Communication"
 ];
 
-const LEVELS = ["100L", "200L", "300L", "400L", "500L"];
+const LEVELS = ["100", "200", "300", "400"];
 
 const RESOURCE_TYPES = [
   { value: "course_outline", label: "Course Outline", icon: BookOpen },
