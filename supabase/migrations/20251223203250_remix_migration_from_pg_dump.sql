@@ -4,6 +4,8 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "plpgsql" WITH SCHEMA "pg_catalog";
 CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
+BEGIN;
+
 --
 -- PostgreSQL database dump
 --
@@ -106,6 +108,70 @@ CREATE TABLE public.aspirants (
     matric text,
     step_data jsonb DEFAULT '{}'::jsonb
 );
+
+
+--
+-- Name: approved_aspirants_public; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.approved_aspirants_public WITH (security_invoker='true') AS
+ SELECT id,
+    full_name,
+    name,
+    department,
+    level,
+    position_id,
+    manifesto,
+    photo_url,
+    why_running,
+    status
+   FROM public.aspirants
+  WHERE (status = 'approved'::text);
+
+
+--
+-- Name: resources; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.resources (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    title text NOT NULL,
+    description text,
+    resource_type text NOT NULL,
+    department text,
+    level text,
+    file_url text,
+    external_link text,
+    price numeric(10,2),
+    seller_id uuid,
+    seller_name text,
+    seller_phone text,
+    status text DEFAULT 'pending'::text,
+    admin_commission numeric(10,2),
+    is_sold boolean DEFAULT false,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+
+--
+-- Name: approved_resources_public; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.approved_resources_public WITH (security_invoker='true') AS
+ SELECT id,
+    title,
+    description,
+    resource_type,
+    department,
+    level,
+    price,
+    file_url,
+    external_link,
+    created_at,
+    is_sold,
+    seller_name
+   FROM public.resources
+  WHERE (status = 'approved'::text);
 
 
 --
@@ -239,6 +305,8 @@ CREATE TABLE public.election_timeline (
     end_time timestamp with time zone
 );
 
+ALTER TABLE ONLY public.election_timeline REPLICA IDENTITY FULL;
+
 
 --
 -- Name: electoral_committee; Type: TABLE; Schema: public; Owner: -
@@ -330,27 +398,22 @@ CREATE TABLE public.presidential_appointments (
 
 
 --
--- Name: resources; Type: TABLE; Schema: public; Owner: -
+-- Name: published_content_public; Type: VIEW; Schema: public; Owner: -
 --
 
-CREATE TABLE public.resources (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    title text NOT NULL,
-    description text,
-    resource_type text NOT NULL,
-    department text,
-    level text,
-    file_url text,
-    external_link text,
-    price numeric(10,2),
-    seller_id uuid,
-    seller_name text,
-    seller_phone text,
-    status text DEFAULT 'pending'::text,
-    admin_commission numeric(10,2),
-    is_sold boolean DEFAULT false,
-    created_at timestamp with time zone DEFAULT now()
-);
+CREATE VIEW public.published_content_public WITH (security_invoker='true') AS
+ SELECT id,
+    title,
+    content,
+    content_type,
+    department,
+    author_name,
+    image_url,
+    pdf_url,
+    published_at,
+    created_at
+   FROM public.editorial_content
+  WHERE (status = 'published'::text);
 
 
 --
@@ -449,6 +512,8 @@ CREATE TABLE public.voters (
     webauthn_credential jsonb
 );
 
+ALTER TABLE ONLY public.voters REPLICA IDENTITY FULL;
+
 
 --
 -- Name: votes; Type: TABLE; Schema: public; Owner: -
@@ -461,6 +526,8 @@ CREATE TABLE public.votes (
     aspirant_id uuid,
     created_at timestamp with time zone DEFAULT now()
 );
+
+ALTER TABLE ONLY public.votes REPLICA IDENTITY FULL;
 
 
 --
@@ -934,6 +1001,27 @@ CREATE POLICY "Admins can view votes" ON public.votes FOR SELECT USING (public.h
 
 
 --
+-- Name: students Authenticated users can view basic student info; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Authenticated users can view basic student info" ON public.students FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: otp_codes Only service role can manage OTPs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Only service role can manage OTPs" ON public.otp_codes TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: otp_codes Prevent public access to OTPs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Prevent public access to OTPs" ON public.otp_codes TO anon USING (false);
+
+
+--
 -- Name: cohssa_alumni Public can view alumni; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -948,17 +1036,17 @@ CREATE POLICY "Public can view appointments" ON public.presidential_appointments
 
 
 --
--- Name: aspirants Public can view approved aspirants; Type: POLICY; Schema: public; Owner: -
+-- Name: aspirants Public can view approved aspirants basic info; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Public can view approved aspirants" ON public.aspirants FOR SELECT USING ((status = 'approved'::text));
+CREATE POLICY "Public can view approved aspirants basic info" ON public.aspirants FOR SELECT USING (((status = 'approved'::text) AND true));
 
 
 --
--- Name: resources Public can view approved resources; Type: POLICY; Schema: public; Owner: -
+-- Name: resources Public can view approved resources basic info; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Public can view approved resources" ON public.resources FOR SELECT USING ((status = 'approved'::text));
+CREATE POLICY "Public can view approved resources basic info" ON public.resources FOR SELECT USING ((status = 'approved'::text));
 
 
 --
@@ -1039,24 +1127,10 @@ CREATE POLICY "Public can view settings" ON public.system_settings FOR SELECT US
 
 
 --
--- Name: students Public can view students; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Public can view students" ON public.students FOR SELECT USING (true);
-
-
---
 -- Name: election_timeline Public can view timeline; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Public can view timeline" ON public.election_timeline FOR SELECT USING (true);
-
-
---
--- Name: otp_codes Service role can manage OTPs; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Service role can manage OTPs" ON public.otp_codes USING (true) WITH CHECK (true);
 
 
 --
@@ -1262,3 +1336,6 @@ ALTER TABLE public.votes ENABLE ROW LEVEL SECURITY;
 --
 
 
+
+
+COMMIT;
