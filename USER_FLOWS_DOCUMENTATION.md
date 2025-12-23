@@ -1,8 +1,11 @@
-# ISECO Electoral System - User Flows Documentation
+# COHSSA ISECO Electoral System - User Flows Documentation
 
 ## Overview
 
-This document outlines the complete user flows for all three user types in the ISECO Electoral System.
+This document outlines the complete user flows for all user types in the ISECO Electoral System.
+
+🌐 **Website**: [cohssahui.org](https://cohssahui.org)  
+📧 **Email**: cohssahui.iseco@gmail.com
 
 ---
 
@@ -11,27 +14,28 @@ This document outlines the complete user flows for all three user types in the I
 ### Registration Process
 
 1. **Navigate to** `/voter/register`
-2. **Choose authentication method**:
-   - **Biometric (WebAuthn)**: Fingerprint/Face ID
-   - **Email OTP**: One-time password via email
-3. **Enter details**:
-   - Matric number (must exist in student_list table)
+2. **Enter details**:
+   - Matric number (must exist in students table)
    - Email address
-4. **System validates** matric number against student list
-5. **Account created** with `verified: false` status
-6. **Wait for admin verification**
+3. **System validates** matric number against student list
+4. **OTP sent** to email for verification
+5. **Biometric Setup** (optional): Register fingerprint/Face ID
+6. **Account created** with `verified: false` status
+7. **Wait for admin verification**
 
 ### Login Process
 
 1. **Navigate to** `/voter/login`
-2. **Choose authentication method**:
-   - **Biometric**: Enter matric → authenticate with device biometric
-   - **Email OTP**: Enter email → receive OTP → verify code
-3. **System checks**:
+2. **Enter matric number**
+3. **Choose authentication method**:
+   - **Biometric**: Authenticate with device biometric
+   - **Email OTP**: Receive OTP → verify code
+4. **Rate limiting**: Max 5 OTP requests/hour, lockout after 5 failed attempts
+5. **System checks**:
    - Account exists
    - Account is verified by admin
    - User has not already voted
-4. **Redirect to** `/voter/dashboard`
+6. **Redirect to** `/voter/dashboard`
 
 ### Voting Process
 
@@ -49,7 +53,7 @@ This document outlines the complete user flows for all three user types in the I
 **Key Features**:
 - ✅ Cannot vote twice (enforced by database)
 - ✅ Must select candidate for each position
-- ✅ Anonymous voting (uses issuance_token)
+- ✅ Anonymous voting
 - ✅ Real-time validation
 
 ---
@@ -72,9 +76,9 @@ This document outlines the complete user flows for all three user types in the I
 
 #### Step 1: Personal Information
 - Full name
-- Matric number
-- Department
-- Level
+- Matric number (Format: XX/XXaaa000)
+- Department (MLS, NSC, MED, ANA, PHS, PUH)
+- Level (100L - 500L)
 - Date of birth
 - Gender
 - Phone number
@@ -109,27 +113,23 @@ This document outlines the complete user flows for all three user types in the I
 ### Application Tracking
 
 **Status Flow**:
-1. `submitted` → Application received, awaiting payment verification
-2. `payment_verified` → Payment confirmed by admin
-3. `under_review` → Application being reviewed by admin
-4. `screening_scheduled` → Screening interview scheduled
-5. `screening_completed` → Interview done, awaiting decision
-6. `qualified` → Passed screening
-7. `disqualified` → Did not pass screening
-8. `candidate` → Promoted to official candidate
+1. `pending` → Application received, awaiting review
+2. `under_review` → Application being reviewed by admin
+3. `approved` → Application approved
+4. `rejected` → Application rejected
+5. Approved → Promoted to official candidate
 
 **Dashboard Features**:
 - ✅ Visual progress timeline
 - ✅ Application details summary
 - ✅ Admin notes display
-- ✅ Screening date notification
 - ✅ Payment verification status
 
 ---
 
 ## 👨‍💼 ADMIN FLOW
 
-### Login Process (SECURE)
+### Login Process
 
 1. **Navigate to** `/admin/login`
 2. **Enter credentials**:
@@ -140,11 +140,21 @@ This document outlines the complete user flows for all three user types in the I
    - User has 'admin' role in user_roles table
 4. **Redirect to** `/admin/dashboard`
 
+### Password Recovery
+
+1. **Click "Forgot password?"** on login page
+2. **Enter email address**
+3. **Receive reset link** via email
+4. **Click link** → Redirected to `/admin/reset-password`
+5. **Set new password** (requirements: 8+ chars, uppercase, lowercase, number)
+6. **Login with new credentials**
+
 **Security Features**:
 - ✅ Role-based access control using user_roles table
 - ✅ Server-side role validation
-- ✅ Automatic logout if role removed
+- ✅ Zod schema validation
 - ✅ Protected routes for all admin pages
+- ✅ Password recovery via secure email
 
 ### Admin Dashboard Overview
 
@@ -158,47 +168,73 @@ This document outlines the complete user flows for all three user types in the I
 **Management Sections**:
 
 #### 1. Student List (`/admin/students`)
-- View all students in student_list table
+- View all students in students table
+- Add students: Matric Number, Name, Department, Level
+- Import via CSV template
 - Used for voter registration verification
-- Import/export student data
 
-#### 2. Aspirant Review (`/admin/aspirants`)
+#### 2. Voter Management (`/admin/voters`)
+- View all registered voters
+- Verify/unverify voters
+- Check voting status
+
+#### 3. Aspirant Review (`/admin/aspirants`)
 - View all aspirant applications
 - Filter by status
 - Review application details
 - Update application status
 - Verify payment proofs
-- Schedule screening interviews
 - Add admin notes
 - Promote to candidate
 
-#### 3. Candidate Management (`/admin/candidates`)
+#### 4. Candidate Management (`/admin/candidates`)
 - View all official candidates
 - Edit candidate information
 - Upload/update manifestos
 - Manage candidate photos
 - Assign candidates to positions
 
-#### 4. Position Management (`/admin/positions`)
+#### 5. Position Management (`/admin/positions`)
 - Create new positions
-- Set eligibility criteria (level, CGPA)
+- Set eligibility criteria (department, level, gender, CGPA)
 - Set application fees
 - Configure display order
 - Activate/deactivate positions
 
-#### 5. Election Timeline (`/admin/timeline`)
-- Set registration start/end dates
-- Set application period
-- Configure screening dates
-- Set voting start/end times
+#### 6. Election Timeline (`/admin/timeline`)
+- Set stage start/end times
+- Configure stage visibility
+- Activate stages for countdown display
 - Manage election phases
 
-#### 6. Live Control (`/admin/live-control`)
+#### 7. Live Control (`/admin/live-control`)
 - Monitor real-time voting statistics
-- View voter turnout by position
-- Generate election reports
-- Export voting data
+- View all positions and candidates in tabular format (side-by-side)
+- Live vote count animations when new votes come in
+- Voter turnout by position
 - Control voting status (open/close)
+- Publish results
+
+#### 8. Content Management (`/admin/content`)
+- Manage COHSSA executives
+- Manage university leaders
+- Manage electoral committee
+- Manage college departments
+
+#### 9. Resource Management (`/admin/resources`)
+- Academic materials upload
+- Textbook marketplace management
+- Approve/reject listings
+
+#### 10. Events Management (`/admin/events`)
+- Create events and webinars
+- Set dates and locations
+- Publish/unpublish events
+
+#### 11. Editorial Review (`/admin/editorial`)
+- Review student submissions
+- Approve/reject articles
+- Manage publications
 
 ---
 
@@ -208,7 +244,7 @@ This document outlines the complete user flows for all three user types in the I
 
 **Voters**:
 - WebAuthn (Biometric)
-- Email OTP
+- Email OTP with rate limiting
 - Admin verification required
 
 **Aspirants**:
@@ -219,38 +255,41 @@ This document outlines the complete user flows for all three user types in the I
 - Email/Password (Supabase Auth)
 - Must have 'admin' role in user_roles table
 - Role checked on every route access
+- Password recovery available
+
+### Rate Limiting
+
+**OTP Sending**:
+- Maximum 5 requests per hour per email
+- 15-minute lockout when exceeded
+
+**OTP Verification**:
+- Maximum 5 failed attempts
+- 15-minute account lockout after failures
+- Attempts cleared on successful verification
 
 ### Data Security
 
 - ✅ Row Level Security (RLS) policies on all tables
 - ✅ User roles stored in separate table (not on user profile)
-- ✅ Anonymous voting using issuance tokens
+- ✅ Anonymous voting
 - ✅ No voter identity linked to votes
 - ✅ Protected routes with role validation
 - ✅ Server-side authentication checks
+- ✅ Secure views with security_invoker
 
 ---
 
-## 🐛 Known Issues & Limitations
+## ✅ Implemented Features
 
-### Current Limitations
-
-1. **No password reset flow** - Users cannot reset forgotten passwords
-2. **No email notifications** - No automated emails for status updates
-3. **Limited file validation** - Uploaded files not thoroughly validated
-4. **No bulk operations** - Admins cannot perform bulk actions
-5. **Missing audit logs** - No tracking of admin actions
-
-### Future Enhancements
-
-- [ ] Add password reset functionality
-- [ ] Implement email notification system
-- [ ] Add file type and size validation
-- [ ] Create bulk action tools for admins
-- [ ] Add comprehensive audit logging
-- [ ] Implement candidate manifesto page
-- [ ] Add live results page for public viewing
-- [ ] Create voting analytics dashboard
+- [x] Password reset functionality for admins
+- [x] Rate limiting on OTP functions
+- [x] Live vote count animations
+- [x] Textbook condition badges (Excellent, Good, Fair)
+- [x] Image upload for textbook listings
+- [x] Side-by-side tabular results in Live Control
+- [x] Comprehensive audit logging
+- [x] SEO optimization for all pages
 
 ---
 
@@ -267,12 +306,12 @@ All pages are fully responsive and work on:
 ## 🧪 Testing Checklist
 
 ### Voter Flow
-- [ ] Register with biometric authentication
 - [ ] Register with OTP authentication
 - [ ] Login before admin verification (should fail)
 - [ ] Login after admin verification
 - [ ] Cast vote for all positions
 - [ ] Attempt to vote twice (should fail)
+- [ ] Test rate limiting on OTP requests
 
 ### Aspirant Flow
 - [ ] Register new aspirant account
@@ -284,14 +323,14 @@ All pages are fully responsive and work on:
 
 ### Admin Flow
 - [ ] Login with admin credentials
+- [ ] Test password recovery flow
 - [ ] View dashboard statistics
+- [ ] Add students (Matric, Name, Dept, Level)
 - [ ] Review aspirant application
-- [ ] Verify payment
-- [ ] Schedule screening
 - [ ] Promote aspirant to candidate
-- [ ] Manage positions
+- [ ] Manage positions with eligibility
 - [ ] Control election timeline
-- [ ] Monitor live voting
+- [ ] Monitor live voting with animations
 - [ ] Logout securely
 
 ---
@@ -301,16 +340,20 @@ All pages are fully responsive and work on:
 ### Voter Issues
 
 **"Matric number not found"**
-- Student not in student_list table
+- Student not in students table
 - Contact admin to add student
 
 **"Account not verified"**
 - Waiting for admin approval
-- Check with admin office
+- Check with electoral committee
 
 **"Already voted"**
 - Vote already cast
 - Cannot vote again (by design)
+
+**"Too many OTP requests"**
+- Rate limit exceeded
+- Wait 15 minutes or 1 hour
 
 ### Aspirant Issues
 
@@ -331,6 +374,11 @@ All pages are fully responsive and work on:
 - Check user_roles table
 - See SETUP_ADMIN.md for setup
 
+**"Forgot password"**
+- Use "Forgot password?" link
+- Check email for reset link
+- Link expires after use
+
 **"Cannot see statistics"**
 - Check database connection
 - Verify RLS policies
@@ -341,7 +389,9 @@ All pages are fully responsive and work on:
 ## 📞 Support
 
 For technical issues or questions:
-1. Check this documentation
-2. Review SETUP_ADMIN.md for admin setup
-3. Check browser console for errors
-4. Verify database connection in Cloud tab
+- **Email**: cohssahui.iseco@gmail.com
+- **Website**: [cohssahui.org](https://cohssahui.org)
+- Check this documentation
+- Review SETUP_ADMIN.md for admin setup
+- Check browser console for errors
+- Verify database connection in Cloud tab

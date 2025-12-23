@@ -1,18 +1,20 @@
-# ISECO - Independent Students Electoral Committee
+# COHSSA Elections | ISECO Platform
 
 Official digital election platform for the **College of Health Sciences Students Association (COHSSA)** at Al-Hikmah University, Ilorin, Nigeria.
 
-![ISECO Platform](https://iseco.lovable.app/og-image.png)
+🌐 **Website**: [cohssahui.org](https://cohssahui.org)  
+📧 **Email**: cohssahui.iseco@gmail.com
 
 ## 🗳️ Overview
 
-ISECO is a comprehensive election management system that handles the complete election lifecycle:
+ISECO (Independent Students Electoral Committee) is a comprehensive election management system that handles the complete election lifecycle:
 
 - **Voter Registration** with matric verification and biometric authentication
 - **Candidate Applications** with multi-step wizard and admin review
 - **Secure Voting** with WebAuthn and OTP authentication
 - **Live Results** with real-time charts and statistics
 - **Admin Dashboard** for complete election management
+- **Student Portal** with academic resources and textbook marketplace
 
 ## ✨ Key Features
 
@@ -31,8 +33,9 @@ ISECO is a comprehensive election management system that handles the complete el
 - 📊 Dashboard with statistics and charts
 - 👥 Student, voter, and candidate management
 - ⏱️ Election timeline control
-- 🎛️ Live voting controls
+- 🎛️ Live voting controls with countdown
 - 📰 Editorial and content management
+- 📚 Student portal resource management
 
 ## 🚀 Getting Started
 
@@ -44,8 +47,8 @@ ISECO is a comprehensive election management system that handles the complete el
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/iseco.git
-cd iseco
+git clone https://github.com/your-repo/cohssa-elections.git
+cd cohssa-elections
 
 # Install dependencies
 npm install
@@ -56,12 +59,7 @@ npm run dev
 
 ### Environment Setup
 
-Create a `.env` file with:
-
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
-```
+The project uses Lovable Cloud (Supabase) for backend services. Environment variables are automatically configured.
 
 ## 🛠️ Tech Stack
 
@@ -100,6 +98,8 @@ src/
 - **Biometric authentication** via WebAuthn
 - **Anonymous vote recording** for ballot secrecy
 - **Input validation** with Zod schemas
+- **Rate limiting** on OTP functions
+- **Password recovery** with secure email reset
 
 ## 📖 Documentation
 
@@ -108,13 +108,15 @@ For detailed documentation, see:
 - [USER_FLOWS_DOCUMENTATION.md](./USER_FLOWS_DOCUMENTATION.md) - User flow diagrams
 - [SETUP_ADMIN.md](./SETUP_ADMIN.md) - Admin setup guide
 
-## 🤝 Contributing
+## 🏛️ Departments
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+The platform serves students from the following departments:
+- **MLS** - Medical Laboratory Science
+- **NSC** - Nursing Sciences
+- **MED** - Medicine and Surgery
+- **ANA** - Anatomy
+- **PHS** - Physiology
+- **PUH** - Community Medicine and Public Health
 
 ## 📄 License
 
@@ -123,7 +125,8 @@ This project is developed for Al-Hikmah University COHSSA.
 ## 📞 Support
 
 For support, contact the Electoral Committee:
-- Email: iseco@alhikmah.edu.ng
+- **Email**: cohssahui.iseco@gmail.com
+- **Website**: [cohssahui.org](https://cohssahui.org)
 - Visit the Support page in the application
 
 ---
