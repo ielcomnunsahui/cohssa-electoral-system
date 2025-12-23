@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Pause, Play, Download, FileText, RefreshCw, Trophy, Users, Vote, BarChart3, Loader2, AlertTriangle, Zap, Radio, Wifi, WifiOff } from "lucide-react";
@@ -385,8 +386,8 @@ const LiveControl = () => {
           </CardContent>
         </Card>
 
-        {/* Results by Position */}
-        <div className="space-y-6">
+        {/* Results by Position - Side by Side Tables */}
+        <div className="space-y-4">
           <h2 className="text-xl font-semibold animate-fade-in">Live Results by Position</h2>
           
           {results.length === 0 ? (
@@ -397,55 +398,68 @@ const LiveControl = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {results.map((position, index) => (
                 <Card 
                   key={position.position_id} 
-                  className="animate-slide-up hover:shadow-lg transition-shadow" 
-                  style={{ animationDelay: `${(index + 4) * 50}ms` }}
+                  className="animate-slide-up" 
+                  style={{ animationDelay: `${(index + 4) * 30}ms` }}
                 >
-                  <CardHeader className="pb-2">
+                  <CardHeader className="py-3 px-4 border-b bg-muted/30">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{position.position_name}</CardTitle>
-                      <Badge variant="secondary" className="gap-1">
+                      <CardTitle className="text-base font-semibold">{position.position_name}</CardTitle>
+                      <Badge variant="secondary" className="gap-1 text-xs">
                         <Vote className="h-3 w-3" />
-                        {position.total_votes} votes
+                        {position.total_votes}
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0">
                     {position.candidates.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-4">No candidates for this position</p>
+                      <p className="text-muted-foreground text-center py-6 text-sm">No candidates</p>
                     ) : (
-                      <div className="space-y-4">
-                        {position.candidates.map((candidate, cidx) => (
-                          <div 
-                            key={candidate.id} 
-                            className={`space-y-2 p-3 rounded-lg transition-colors ${cidx === 0 && position.total_votes > 0 ? 'bg-amber-500/5 border border-amber-200' : 'hover:bg-muted/50'}`}
-                          >
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                {cidx === 0 && position.total_votes > 0 && (
-                                  <Trophy className="h-4 w-4 text-amber-500" />
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="w-10 text-center">#</TableHead>
+                            <TableHead>Candidate</TableHead>
+                            <TableHead className="text-right w-20">Votes</TableHead>
+                            <TableHead className="text-right w-20">%</TableHead>
+                            <TableHead className="w-32">Progress</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {position.candidates.map((candidate, cidx) => (
+                            <TableRow 
+                              key={candidate.id}
+                              className={cidx === 0 && position.total_votes > 0 ? 'bg-amber-500/10' : ''}
+                            >
+                              <TableCell className="text-center font-medium">
+                                {cidx === 0 && position.total_votes > 0 ? (
+                                  <Trophy className="h-4 w-4 text-amber-500 mx-auto" />
+                                ) : (
+                                  <span className="text-muted-foreground">{cidx + 1}</span>
                                 )}
-                                <span className="font-medium">{candidate.name}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={cidx === 0 && position.total_votes > 0 ? "default" : "outline"}>
-                                  {candidate.votes} votes
+                              </TableCell>
+                              <TableCell className="font-medium">{candidate.name}</TableCell>
+                              <TableCell className="text-right">
+                                <Badge variant={cidx === 0 && position.total_votes > 0 ? "default" : "outline"} className="text-xs">
+                                  {candidate.votes}
                                 </Badge>
-                                <span className="text-sm text-muted-foreground w-16 text-right">
-                                  {candidate.percentage.toFixed(1)}%
-                                </span>
-                              </div>
-                            </div>
-                            <Progress 
-                              value={candidate.percentage} 
-                              className={cidx === 0 && position.total_votes > 0 ? "h-3" : "h-2"}
-                            />
-                          </div>
-                        ))}
-                      </div>
+                              </TableCell>
+                              <TableCell className="text-right text-sm text-muted-foreground">
+                                {candidate.percentage.toFixed(1)}%
+                              </TableCell>
+                              <TableCell>
+                                <Progress 
+                                  value={candidate.percentage} 
+                                  className="h-2"
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     )}
                   </CardContent>
                 </Card>
