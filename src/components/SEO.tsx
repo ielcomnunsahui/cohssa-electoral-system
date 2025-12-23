@@ -10,11 +10,11 @@ interface SEOProps {
 }
 
 const defaultMeta = {
-  title: "ISECO - Independent Students Electoral Committee",
+  title: "COHSSA Elections | ISECO - Al-Hikmah University",
   description: "Official election platform for the College of Health Sciences Students Association (COHSSA) at Al-Hikmah University, Ilorin. Register to vote, apply as candidate, and view election results.",
-  keywords: "ISECO, COHSSA, Al-Hikmah University, student elections, voting, electoral committee, health sciences, Nigeria university elections",
-  image: "/og-image.png",
-  url: "https://iseco.lovable.app",
+  keywords: "COHSSA, ISECO, Al-Hikmah University, student elections, voting, electoral committee, health sciences, Nigeria university elections, COHSSA HUI",
+  image: "https://cohssahui.org/favicon.png",
+  url: "https://cohssahui.org",
   type: "website"
 };
 
@@ -27,7 +27,7 @@ export const SEO = ({
   type = defaultMeta.type,
 }: SEOProps) => {
   const pageTitle = title 
-    ? `${title} | ISECO - COHSSA Elections`
+    ? `${title} | COHSSA Elections - ISECO`
     : defaultMeta.title;
 
   return (
@@ -44,6 +44,7 @@ export const SEO = ({
       <meta property="og:title" content={pageTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={image} />
+      <meta property="og:site_name" content="COHSSA Elections" />
       
       {/* Twitter */}
       <meta property="twitter:card" content="summary_large_image" />
@@ -56,6 +57,8 @@ export const SEO = ({
       <meta name="robots" content="index, follow" />
       <meta name="language" content="English" />
       <meta name="author" content="ISECO - Al-Hikmah University" />
+      <meta name="geo.region" content="NG-KW" />
+      <meta name="geo.placename" content="Ilorin" />
       <link rel="canonical" href={url} />
     </Helmet>
   );
