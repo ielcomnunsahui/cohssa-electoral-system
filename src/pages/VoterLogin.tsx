@@ -186,7 +186,14 @@ const VoterLogin = () => {
       }
 
       toast.success(`Welcome back, ${data.voter?.name || voterInfo.name}!`);
-      sessionStorage.setItem('voter_info', JSON.stringify(data.voter || voterInfo));
+      // Store only minimal, non-sensitive session info
+      sessionStorage.setItem('voter_session', JSON.stringify({
+        id: data.voter?.id,
+        matric: data.voter?.matric,
+        name: data.voter?.name,
+        authenticated: true,
+        timestamp: Date.now()
+      }));
       navigate("/voter/dashboard");
     } catch (error: any) {
       console.error("OTP verification error:", error);

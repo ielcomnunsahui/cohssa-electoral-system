@@ -15,6 +15,101 @@ const generateOTP = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+// Rate limiting configuration
+const RATE_LIMIT_MAX_REQUESTS = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+const checkRateLimit = async (supabase: any, email: string): Promise<{ allowed: boolean; message?: string }> => {
+  const identifier = email.toLowerCase();
+  const actionType = "send_otp";
+
+  // Check for existing rate limit record
+  const { data: rateLimit, error } = await supabase
+    .from("rate_limits")
+    .select("*")
+    .eq("identifier", identifier)
+    .eq("action_type", actionType)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Rate limit check error:", error);
+    return { allowed: true }; // Allow on error to not block legitimate users
+  }
+
+  const now = new Date();
+
+  if (rateLimit) {
+    // Check if currently locked out
+    if (rateLimit.locked_until && new Date(rateLimit.locked_until) > now) {
+      const remainingMinutes = Math.ceil((new Date(rateLimit.locked_until).getTime() - now.getTime()) / 60000);
+      return { 
+        allowed: false, 
+        message: `Too many requests. Please try again in ${remainingMinutes} minute(s).` 
+      };
+    }
+
+    // Check if window has expired
+    const windowStart = new Date(rateLimit.first_attempt_at);
+    const windowExpired = (now.getTime() - windowStart.getTime()) > RATE_LIMIT_WINDOW_MS;
+
+    if (windowExpired) {
+      // Reset the window
+      await supabase
+        .from("rate_limits")
+        .update({
+          attempt_count: 1,
+          first_attempt_at: now.toISOString(),
+          last_attempt_at: now.toISOString(),
+          locked_until: null,
+        })
+        .eq("id", rateLimit.id);
+      return { allowed: true };
+    }
+
+    // Check if over limit
+    if (rateLimit.attempt_count >= RATE_LIMIT_MAX_REQUESTS) {
+      // Lock the account
+      const lockedUntil = new Date(now.getTime() + LOCKOUT_DURATION_MS);
+      await supabase
+        .from("rate_limits")
+        .update({
+          locked_until: lockedUntil.toISOString(),
+        })
+        .eq("id", rateLimit.id);
+
+      return { 
+        allowed: false, 
+        message: "Too many OTP requests. Please try again in 15 minutes." 
+      };
+    }
+
+    // Increment attempt count
+    await supabase
+      .from("rate_limits")
+      .update({
+        attempt_count: rateLimit.attempt_count + 1,
+        last_attempt_at: now.toISOString(),
+      })
+      .eq("id", rateLimit.id);
+
+    return { allowed: true };
+  }
+
+  // Create new rate limit record
+  await supabase
+    .from("rate_limits")
+    .insert({
+      identifier,
+      action_type: actionType,
+      attempt_count: 1,
+      first_attempt_at: now.toISOString(),
+      last_attempt_at: now.toISOString(),
+    });
+
+  return { allowed: true };
+};
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -31,14 +126,33 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate 6-digit OTP
-    const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Store OTP in database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(supabase, email);
+    if (!rateLimitResult.allowed) {
+      console.log(`Rate limit exceeded for ${email}`);
+      return new Response(
+        JSON.stringify({ error: rateLimitResult.message }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Generate 6-digit OTP
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
 
     // Mark any existing unused OTPs for this email as used
     await supabase
@@ -55,6 +169,7 @@ const handler = async (req: Request): Promise<Response> => {
         code: otp,
         expires_at: expiresAt.toISOString(),
         used: false,
+        type: type || "verification",
       });
 
     if (insertError) {
@@ -138,7 +253,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResult = await emailResponse.json();
-    console.log("OTP email sent successfully:", emailResult);
+    console.log("OTP email sent successfully to:", email.substring(0, 3) + "***");
 
     return new Response(
       JSON.stringify({ 
