@@ -31,6 +31,8 @@ const LiveControl = () => {
     autoStart: false,
   });
   const [results, setResults] = useState<PositionResult[]>([]);
+  const [prevResults, setPrevResults] = useState<Map<string, number>>(new Map());
+  const [animatedCandidates, setAnimatedCandidates] = useState<Set<string>>(new Set());
   const [totalVoters, setTotalVoters] = useState(0);
   const [votedCount, setVotedCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -39,6 +41,7 @@ const LiveControl = () => {
   const [activeStage, setActiveStage] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [updateCount, setUpdateCount] = useState(0);
+  const [lastVoteTime, setLastVoteTime] = useState<Date | null>(null);
   const { logAction } = useAuditLog();
 
   const loadResults = useCallback(async () => {
@@ -95,6 +98,32 @@ const LiveControl = () => {
           total_votes: totalVotesForPosition
         };
       });
+
+      // Check for vote changes and trigger animations
+      const newAnimated = new Set<string>();
+      positionResults.forEach(pos => {
+        pos.candidates.forEach(cand => {
+          const prevVotes = prevResults.get(cand.id) || 0;
+          if (cand.votes > prevVotes && prevVotes > 0) {
+            newAnimated.add(cand.id);
+            setLastVoteTime(new Date());
+          }
+        });
+      });
+
+      if (newAnimated.size > 0) {
+        setAnimatedCandidates(newAnimated);
+        setTimeout(() => setAnimatedCandidates(new Set()), 2000);
+      }
+
+      // Update previous results for next comparison
+      const newPrevResults = new Map<string, number>();
+      positionResults.forEach(pos => {
+        pos.candidates.forEach(cand => {
+          newPrevResults.set(cand.id, cand.votes);
+        });
+      });
+      setPrevResults(newPrevResults);
 
       setResults(positionResults);
     } catch (error: any) {
@@ -432,7 +461,9 @@ const LiveControl = () => {
                           {position.candidates.map((candidate, cidx) => (
                             <TableRow 
                               key={candidate.id}
-                              className={cidx === 0 && position.total_votes > 0 ? 'bg-amber-500/10' : ''}
+                              className={`transition-all duration-500 ${
+                                cidx === 0 && position.total_votes > 0 ? 'bg-amber-500/10' : ''
+                              } ${animatedCandidates.has(candidate.id) ? 'animate-pulse bg-green-500/20 ring-2 ring-green-500/50' : ''}`}
                             >
                               <TableCell className="text-center font-medium">
                                 {cidx === 0 && position.total_votes > 0 ? (
@@ -441,10 +472,18 @@ const LiveControl = () => {
                                   <span className="text-muted-foreground">{cidx + 1}</span>
                                 )}
                               </TableCell>
-                              <TableCell className="font-medium">{candidate.name}</TableCell>
+                              <TableCell className="font-medium">
+                                <span className={animatedCandidates.has(candidate.id) ? 'text-green-600 font-bold' : ''}>
+                                  {candidate.name}
+                                </span>
+                              </TableCell>
                               <TableCell className="text-right">
-                                <Badge variant={cidx === 0 && position.total_votes > 0 ? "default" : "outline"} className="text-xs">
+                                <Badge 
+                                  variant={cidx === 0 && position.total_votes > 0 ? "default" : "outline"} 
+                                  className={`text-xs transition-all duration-300 ${animatedCandidates.has(candidate.id) ? 'scale-125 bg-green-500 text-white animate-bounce' : ''}`}
+                                >
                                   {candidate.votes}
+                                  {animatedCandidates.has(candidate.id) && <span className="ml-1">+1</span>}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right text-sm text-muted-foreground">
@@ -453,7 +492,7 @@ const LiveControl = () => {
                               <TableCell>
                                 <Progress 
                                   value={candidate.percentage} 
-                                  className="h-2"
+                                  className={`h-2 transition-all duration-500 ${animatedCandidates.has(candidate.id) ? 'h-3' : ''}`}
                                 />
                               </TableCell>
                             </TableRow>

@@ -17,16 +17,16 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 
-type Department = "Nursing Science" | "Medical Laboratory Sciences" | "Medicine and Surgery" | "Community Medicine and Public Health" | "Human Anatomy" | "Human Physiology";
+type Department = "MLS - Medical Lab Science" | "NSC - Nursing Sciences" | "MED - Medicine and Surgery" | "ANA - Anatomy" | "PHS - Physiology" | "PUH - Community Medicine & Public Health";
 type Level = "100L" | "200L" | "300L" | "400L" | "500L";
 
 const DEPARTMENTS: Department[] = [
-  "Nursing Science",
-  "Medical Laboratory Sciences", 
-  "Medicine and Surgery",
-  "Community Medicine and Public Health",
-  "Human Anatomy",
-  "Human Physiology"
+  "MLS - Medical Lab Science",
+  "NSC - Nursing Sciences",
+  "MED - Medicine and Surgery",
+  "ANA - Anatomy",
+  "PHS - Physiology",
+  "PUH - Community Medicine & Public Health"
 ];
 
 const LEVELS: Level[] = ["100L", "200L", "300L", "400L", "500L"];

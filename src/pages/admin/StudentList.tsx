@@ -16,14 +16,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(142 76% 36%)', 'hsl(38 92% 50%)', 'hsl(var(--secondary))', 'hsl(var(--destructive))'];
 
 const DEPARTMENTS = [
-  "Library and Information Science",
-  "Environmental Health",
-  "Health Information Management",
-  "Office Technology Management",
-  "Mass Communication"
+  "MLS - Medical Lab Science",
+  "NSC - Nursing Sciences",
+  "MED - Medicine and Surgery",
+  "ANA - Anatomy",
+  "PHS - Physiology",
+  "PUH - Community Medicine & Public Health"
 ];
 
-const LEVELS = ["100", "200", "300", "400"];
+const LEVELS = ["100", "200", "300", "400", "500"];
 
 const StudentList = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,9 +35,7 @@ const StudentList = () => {
     matric_number: "",
     name: "",
     department: "",
-    level: "",
-    email: "",
-    phone: ""
+    level: ""
   });
   const { logAction } = useAuditLog();
 
@@ -45,7 +44,7 @@ const StudentList = () => {
   }, []);
 
   const downloadTemplate = () => {
-    const csvContent = "matric_number,name,department,level,email,phone\n21/08LIS001,John Doe,Library and Information Science,200,john@example.com,08012345678\n21/08EVH002,Jane Smith,Environmental Health,300,jane@example.com,08087654321";
+    const csvContent = "matric_number,name,department,level\n21/08MLS001,John Doe,MLS - Medical Lab Science,200\n21/08NSC002,Jane Smith,NSC - Nursing Sciences,300\n21/08MED003,Mary Adamu,MED - Medicine and Surgery,400";
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -139,7 +138,7 @@ const StudentList = () => {
 
       toast.success("Student added successfully");
       setIsDialogOpen(false);
-      setNewStudent({ matric_number: "", name: "", department: "", level: "", email: "", phone: "" });
+      setNewStudent({ matric_number: "", name: "", department: "", level: "" });
       loadStudents();
     } catch (error: any) {
       toast.error(error.message || "Failed to add student");
@@ -283,7 +282,7 @@ const StudentList = () => {
                         <Input 
                           value={newStudent.matric_number} 
                           onChange={(e) => setNewStudent({...newStudent, matric_number: e.target.value})}
-                          placeholder="e.g., 21/08LIS001"
+                          placeholder="e.g., 21/08MLS001"
                         />
                       </div>
                       <div className="space-y-2">
@@ -314,23 +313,6 @@ const StudentList = () => {
                             {LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Email</Label>
-                          <Input 
-                            type="email"
-                            value={newStudent.email} 
-                            onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Phone</Label>
-                          <Input 
-                            value={newStudent.phone} 
-                            onChange={(e) => setNewStudent({...newStudent, phone: e.target.value})}
-                          />
-                        </div>
                       </div>
                     </div>
                     <DialogFooter>
