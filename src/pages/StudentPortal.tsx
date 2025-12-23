@@ -61,9 +61,11 @@ const StudentPortal = () => {
     department: "",
     level: "",
     seller_name: "",
-    seller_phone: ""
+    seller_phone: "",
+    image_url: ""
   });
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -104,6 +106,37 @@ const StudentPortal = () => {
     return matchesDept && matchesLevel && matchesSearch;
   });
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+    
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `textbooks/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('resources')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      const { data } = supabase.storage.from('resources').getPublicUrl(filePath);
+      setSellForm(prev => ({ ...prev, image_url: data.publicUrl }));
+      toast.success("Image uploaded successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSellTextbook = async () => {
     if (!sellForm.title || !sellForm.price || !sellForm.seller_name || !sellForm.seller_phone) {
       toast.error("Please fill all required fields");
@@ -120,6 +153,7 @@ const StudentPortal = () => {
         level: sellForm.level || null,
         seller_name: sellForm.seller_name,
         seller_phone: sellForm.seller_phone,
+        file_url: sellForm.image_url || null,
         resource_type: 'textbook',
         status: 'pending'
       });
@@ -128,7 +162,7 @@ const StudentPortal = () => {
 
       toast.success("Textbook submitted for review! It will appear once approved.");
       setSellDialogOpen(false);
-      setSellForm({ title: "", description: "", price: "", department: "", level: "", seller_name: "", seller_phone: "" });
+      setSellForm({ title: "", description: "", price: "", department: "", level: "", seller_name: "", seller_phone: "", image_url: "" });
     } catch (error: any) {
       toast.error(error.message || "Failed to submit textbook");
     } finally {
@@ -328,12 +362,23 @@ const StudentPortal = () => {
                 </div>
               ) : (
                 filteredTextbooks.map((book, index) => (
-                  <Card key={book.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
+                  <Card key={book.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in overflow-hidden" style={{ animationDelay: `${index * 50}ms` }}>
+                    {book.file_url && (
+                      <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
+                        <img 
+                          src={book.file_url} 
+                          alt={book.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
                     <CardContent className="p-4">
                       <div className="flex gap-4">
-                        <div className="w-16 h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <BookOpen className="h-8 w-8 text-primary/60" />
-                        </div>
+                        {!book.file_url && (
+                          <div className="w-16 h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <BookOpen className="h-8 w-8 text-primary/60" />
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">{book.title}</h3>
                           <p className="text-2xl font-bold text-green-600 mt-1">₦{book.price?.toLocaleString()}</p>
@@ -588,12 +633,50 @@ const StudentPortal = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Phone Number *</Label>
+                  <Label>Phone *</Label>
                   <Input
                     value={sellForm.seller_phone}
                     onChange={(e) => setSellForm(prev => ({ ...prev, seller_phone: e.target.value }))}
                     placeholder="e.g., 08012345678"
                   />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Book Photo (Optional)</Label>
+                <div className="flex items-center gap-4">
+                  {sellForm.image_url ? (
+                    <div className="relative w-24 h-24">
+                      <img src={sellForm.image_url} alt="Book preview" className="w-full h-full object-cover rounded-lg border" />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={() => setSellForm(prev => ({ ...prev, image_url: "" }))}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors">
+                      {uploadingImage ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      ) : (
+                        <>
+                          <Image className="h-6 w-6 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground mt-1">Upload</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  )}
+                  <p className="text-xs text-muted-foreground">Add a photo to help buyers see the book's condition</p>
                 </div>
               </div>
             </div>
