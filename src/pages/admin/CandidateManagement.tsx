@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Upload, Plus, Trash2, FileText, Users, Award, Camera, X } from "lucide-react";
+import { Upload, Plus, Trash2, FileText, Users, Award, Camera, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -18,12 +18,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import SEO from "@/components/SEO";
 
 const DEPARTMENTS = [
-  "Nursing Science",
-  "Medical Laboratory Sciences",
-  "Medicine and Surgery",
-  "Community Medicine and Public Health",
-  "Human Anatomy",
-  "Human Physiology"
+  "Library and Information Science",
+  "Environmental Health",
+  "Health Information Management",
+  "Office Technology Management",
+  "Mass Communication"
 ];
 
 const CandidateManagement = () => {
@@ -31,10 +30,11 @@ const CandidateManagement = () => {
   const [positions, setPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isManifestoDialogOpen, setIsManifestoDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState<any>(null);
   const { logAction } = useAuditLog();
   
+  // Form states
   const [name, setName] = useState("");
   const [matric, setMatric] = useState("");
   const [positionId, setPositionId] = useState("");
@@ -42,6 +42,7 @@ const CandidateManagement = () => {
   const [manifesto, setManifesto] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadCandidates();
@@ -125,6 +126,48 @@ const CandidateManagement = () => {
     }
   };
 
+  const handleEditCandidate = async () => {
+    if (!editingCandidate) return;
+    if (!name || !matric || !positionId || !department) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('candidates')
+        .update({
+          name,
+          matric,
+          position_id: positionId,
+          department,
+          photo_url: photoPreview || editingCandidate.photo_url || null,
+          manifesto: manifesto || null
+        })
+        .eq('id', editingCandidate.id);
+
+      if (error) throw error;
+
+      await logAction({
+        action: 'candidate_edit',
+        entity_type: 'candidates',
+        entity_id: editingCandidate.id,
+        details: { name, matric, position_id: positionId }
+      });
+
+      toast.success("Candidate updated successfully");
+      setIsEditDialogOpen(false);
+      resetForm();
+      setEditingCandidate(null);
+      loadCandidates();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update candidate");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteCandidate = async (id: string, candidateName: string) => {
     if (!confirm("Are you sure you want to delete this candidate?")) return;
 
@@ -150,40 +193,15 @@ const CandidateManagement = () => {
     }
   };
 
-  const openManifestoEditor = (candidate: any) => {
+  const openEditDialog = (candidate: any) => {
     setEditingCandidate(candidate);
+    setName(candidate.name || "");
+    setMatric(candidate.matric || "");
+    setPositionId(candidate.position_id || "");
+    setDepartment(candidate.department || "");
     setManifesto(candidate.manifesto || "");
-    setIsManifestoDialogOpen(true);
-  };
-
-  const handleSaveManifesto = async () => {
-    if (!editingCandidate) return;
-
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('candidates')
-        .update({ manifesto })
-        .eq('id', editingCandidate.id);
-
-      if (error) throw error;
-
-      await logAction({
-        action: 'candidate_edit',
-        entity_type: 'candidates',
-        entity_id: editingCandidate.id,
-        details: { name: editingCandidate.name, action: 'manifesto_updated' }
-      });
-
-      toast.success("Manifesto updated successfully");
-      setIsManifestoDialogOpen(false);
-      setEditingCandidate(null);
-      loadCandidates();
-    } catch (error: any) {
-      toast.error("Failed to update manifesto");
-    } finally {
-      setLoading(false);
-    }
+    setPhotoPreview(candidate.photo_url || "");
+    setIsEditDialogOpen(true);
   };
 
   const resetForm = () => {
@@ -194,7 +212,127 @@ const CandidateManagement = () => {
     setManifesto("");
     setPhotoPreview("");
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (editFileInputRef.current) editFileInputRef.current.value = "";
   };
+
+  const CandidateFormContent = ({ isEdit = false }: { isEdit?: boolean }) => (
+    <div className="space-y-6 py-6">
+      {/* Photo Upload Section */}
+      <div className="flex flex-col items-center space-y-4">
+        <div className="relative">
+          {photoPreview ? (
+            <div className="relative">
+              <img 
+                src={photoPreview} 
+                alt="Preview" 
+                className="w-32 h-32 rounded-full object-cover border-4 border-primary/20" 
+              />
+              <button
+                type="button"
+                onClick={() => setPhotoPreview("")}
+                className="absolute -top-2 -right-2 w-8 h-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="w-32 h-32 rounded-full bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+              <Camera className="h-10 w-10 text-muted-foreground/50" />
+            </div>
+          )}
+        </div>
+        <input
+          ref={isEdit ? editFileInputRef : fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoUpload}
+          className="hidden"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => (isEdit ? editFileInputRef : fileInputRef).current?.click()}
+          className="gap-2"
+        >
+          <Upload className="h-4 w-4" />
+          {photoPreview ? "Change Photo" : "Upload Photo"}
+        </Button>
+        <p className="text-xs text-muted-foreground">Max 2MB, JPG/PNG format</p>
+      </div>
+
+      {/* Form Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Full Name *</Label>
+          <Input 
+            value={name} 
+            onChange={(e) => setName(e.target.value)} 
+            placeholder="Enter full name"
+            className="h-11"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Matric Number *</Label>
+          <Input 
+            value={matric} 
+            onChange={(e) => setMatric(e.target.value)} 
+            placeholder="e.g., HSS/21/0001"
+            className="h-11 font-mono"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Position *</Label>
+          <Select value={positionId} onValueChange={setPositionId}>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Select position" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              {positions.map((pos) => (
+                <SelectItem key={pos.id} value={pos.id}>
+                  {pos.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Department *</Label>
+          <Select value={department} onValueChange={setDepartment}>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Select department" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              {DEPARTMENTS.map(d => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Manifesto Section */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium flex items-center gap-2">
+          <FileText className="h-4 w-4 text-primary" />
+          Manifesto
+        </Label>
+        <Textarea 
+          value={manifesto} 
+          onChange={(e) => setManifesto(e.target.value)}
+          placeholder="Enter candidate's manifesto, goals, vision, and what they plan to achieve if elected..."
+          rows={8}
+          className="resize-none"
+        />
+        <p className="text-xs text-muted-foreground">
+          Write the candidate's campaign promises, objectives, and vision for their tenure.
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <AdminLayout>
@@ -233,116 +371,7 @@ const CandidateManagement = () => {
                   <DialogDescription>Fill in the candidate details below. Fields marked with * are required.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="flex-1 px-6">
-                  <div className="space-y-6 py-6">
-                    {/* Photo Upload Section */}
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="relative">
-                        {photoPreview ? (
-                          <div className="relative">
-                            <img 
-                              src={photoPreview} 
-                              alt="Preview" 
-                              className="w-32 h-32 rounded-full object-cover border-4 border-primary/20" 
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setPhotoPreview("")}
-                              className="absolute -top-2 -right-2 w-8 h-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="w-32 h-32 rounded-full bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                            <Camera className="h-10 w-10 text-muted-foreground/50" />
-                          </div>
-                        )}
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="gap-2"
-                      >
-                        <Upload className="h-4 w-4" />
-                        {photoPreview ? "Change Photo" : "Upload Photo"}
-                      </Button>
-                      <p className="text-xs text-muted-foreground">Max 2MB, JPG/PNG format</p>
-                    </div>
-
-                    {/* Form Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Full Name *</Label>
-                        <Input 
-                          value={name} 
-                          onChange={(e) => setName(e.target.value)} 
-                          placeholder="Enter full name"
-                          className="h-11"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Matric Number *</Label>
-                        <Input 
-                          value={matric} 
-                          onChange={(e) => setMatric(e.target.value)} 
-                          placeholder="e.g., 21/08NUS014"
-                          className="h-11 font-mono"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Position *</Label>
-                        <Select value={positionId} onValueChange={setPositionId}>
-                          <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Select position" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover">
-                            {positions.map((pos) => (
-                              <SelectItem key={pos.id} value={pos.id}>
-                                {pos.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Department *</Label>
-                        <Select value={department} onValueChange={setDepartment}>
-                          <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Select department" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover">
-                            {DEPARTMENTS.map(d => (
-                              <SelectItem key={d} value={d}>{d}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Manifesto (Optional)</Label>
-                      <Textarea 
-                        value={manifesto} 
-                        onChange={(e) => setManifesto(e.target.value)}
-                        placeholder="Enter candidate's manifesto, goals, and vision..."
-                        rows={5}
-                        className="resize-none"
-                      />
-                      <p className="text-xs text-muted-foreground">You can also add the manifesto later by editing the candidate.</p>
-                    </div>
-                  </div>
+                  <CandidateFormContent isEdit={false} />
                 </ScrollArea>
                 <DialogFooter className="px-6 py-4 border-t bg-muted/30">
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
@@ -431,12 +460,12 @@ const CandidateManagement = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => openManifestoEditor(candidate)}
-                              title="Edit Manifesto"
+                              onClick={() => openEditDialog(candidate)}
+                              title="Edit Candidate"
                               className="gap-1"
                             >
-                              <FileText className="h-4 w-4" />
-                              <span className="hidden sm:inline">Manifesto</span>
+                              <Pencil className="h-4 w-4" />
+                              <span className="hidden sm:inline">Edit</span>
                             </Button>
                             <Button
                               size="sm"
@@ -457,37 +486,36 @@ const CandidateManagement = () => {
           </CardContent>
         </Card>
 
-        {/* Manifesto Editor Dialog */}
-        <Dialog open={isManifestoDialogOpen} onOpenChange={setIsManifestoDialogOpen}>
+        {/* Edit Candidate Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => { 
+          setIsEditDialogOpen(open); 
+          if (!open) { 
+            resetForm(); 
+            setEditingCandidate(null); 
+          } 
+        }}>
           <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
             <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
-              <DialogTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Edit Manifesto
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Pencil className="h-5 w-5 text-primary" />
+                Edit Candidate
               </DialogTitle>
-              <DialogDescription className="flex items-center gap-2">
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={editingCandidate?.photo_url} />
-                  <AvatarFallback className="text-xs">{editingCandidate?.name?.charAt(0)}</AvatarFallback>
-                </Avatar>
-                {editingCandidate?.name} - {editingCandidate?.positions?.title}
+              <DialogDescription>
+                Update the candidate details below. Fields marked with * are required.
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="flex-1 px-6">
-              <div className="py-6">
-                <Textarea 
-                  value={manifesto} 
-                  onChange={(e) => setManifesto(e.target.value)}
-                  placeholder="Enter candidate's manifesto, goals, vision, and what they plan to achieve if elected..."
-                  rows={15}
-                  className="resize-none min-h-[300px]"
-                />
-              </div>
+              <CandidateFormContent isEdit={true} />
             </ScrollArea>
             <DialogFooter className="px-6 py-4 border-t bg-muted/30">
-              <Button variant="outline" onClick={() => setIsManifestoDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveManifesto} disabled={loading} className="gap-2">
-                {loading ? "Saving..." : "Save Manifesto"}
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleEditCandidate} disabled={loading} className="gap-2">
+                {loading ? "Saving..." : (
+                  <>
+                    <Pencil className="h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
