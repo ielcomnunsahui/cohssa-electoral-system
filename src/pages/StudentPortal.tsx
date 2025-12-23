@@ -20,14 +20,21 @@ import { Textarea } from "@/components/ui/textarea";
 
 const DEPARTMENTS = [
   "All Departments",
-  "Library and Information Science",
-  "Environmental Health",
-  "Health Information Management",
-  "Office Technology Management",
-  "Mass Communication"
+  "MLS - Medical Lab Science",
+  "NSC - Nursing Sciences",
+  "MED - Medicine and Surgery",
+  "ANA - Anatomy",
+  "PHS - Physiology",
+  "PUH - Community Medicine & Public Health"
 ];
 
-const LEVELS = ["All Levels", "100", "200", "300", "400"];
+const LEVELS = ["All Levels", "100", "200", "300", "400", "500"];
+
+const CONDITION_BADGES = [
+  { value: "excellent", label: "Excellent", color: "bg-green-500/10 text-green-600 border-green-500/30" },
+  { value: "good", label: "Good", color: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
+  { value: "fair", label: "Fair", color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
+];
 
 const RESOURCE_TYPES = [
   { value: "all", label: "All Types" },
@@ -62,7 +69,8 @@ const StudentPortal = () => {
     level: "",
     seller_name: "",
     seller_phone: "",
-    image_url: ""
+    image_url: "",
+    condition: "good"
   });
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -147,7 +155,7 @@ const StudentPortal = () => {
     try {
       const { error } = await supabase.from('resources').insert({
         title: sellForm.title,
-        description: sellForm.description,
+        description: `[${sellForm.condition.toUpperCase()}] ${sellForm.description}`,
         price: parseFloat(sellForm.price),
         department: sellForm.department || null,
         level: sellForm.level || null,
@@ -162,12 +170,19 @@ const StudentPortal = () => {
 
       toast.success("Textbook submitted for review! It will appear once approved.");
       setSellDialogOpen(false);
-      setSellForm({ title: "", description: "", price: "", department: "", level: "", seller_name: "", seller_phone: "", image_url: "" });
+      setSellForm({ title: "", description: "", price: "", department: "", level: "", seller_name: "", seller_phone: "", image_url: "", condition: "good" });
     } catch (error: any) {
       toast.error(error.message || "Failed to submit textbook");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const getConditionBadge = (description: string) => {
+    if (description?.includes('[EXCELLENT]')) return CONDITION_BADGES[0];
+    if (description?.includes('[GOOD]')) return CONDITION_BADGES[1];
+    if (description?.includes('[FAIR]')) return CONDITION_BADGES[2];
+    return null;
   };
 
   const getResourcesByType = (type: string) => filteredResources.filter(r => r.resource_type === type);
@@ -361,33 +376,47 @@ const StudentPortal = () => {
                   </Button>
                 </div>
               ) : (
-                filteredTextbooks.map((book, index) => (
+                filteredTextbooks.map((book, index) => {
+                  const condition = getConditionBadge(book.description);
+                  return (
                   <Card key={book.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in overflow-hidden" style={{ animationDelay: `${index * 50}ms` }}>
                     {book.file_url && (
-                      <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
+                      <div className="aspect-[4/3] w-full overflow-hidden bg-muted relative">
                         <img 
                           src={book.file_url} 
                           alt={book.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
+                        {condition && (
+                          <Badge className={`absolute top-2 right-2 ${condition.color} border`}>
+                            {condition.label}
+                          </Badge>
+                        )}
                       </div>
                     )}
                     <CardContent className="p-4">
                       <div className="flex gap-4">
                         {!book.file_url && (
-                          <div className="w-16 h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <div className="w-16 h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center flex-shrink-0 relative">
                             <BookOpen className="h-8 w-8 text-primary/60" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">{book.title}</h3>
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">{book.title}</h3>
+                            {!book.file_url && condition && (
+                              <Badge className={`shrink-0 ${condition.color} border text-xs`}>
+                                {condition.label}
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-2xl font-bold text-green-600 mt-1">₦{book.price?.toLocaleString()}</p>
                           <div className="flex flex-wrap gap-1 mt-2">
                             {book.department && <Badge variant="secondary" className="text-xs">{book.department}</Badge>}
                             {book.level && <Badge variant="outline" className="text-xs">{book.level} Level</Badge>}
                           </div>
                           {book.description && (
-                            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{book.description}</p>
+                            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{book.description.replace(/\[(EXCELLENT|GOOD|FAIR)\]\s*/i, '')}</p>
                           )}
                           <p className="text-xs text-muted-foreground mt-2">Seller: {book.seller_name}</p>
                           <div className="flex gap-2 mt-3">
@@ -408,7 +437,8 @@ const StudentPortal = () => {
                       </div>
                     </CardContent>
                   </Card>
-                ))
+                  );
+                })
               )}
             </div>
           </TabsContent>
@@ -586,6 +616,19 @@ const StudentPortal = () => {
                   rows={3}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Book Condition *</Label>
+                <Select value={sellForm.condition} onValueChange={(v) => setSellForm(prev => ({ ...prev, condition: v }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select condition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONDITION_BADGES.map(c => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Price (₦) *</Label>
@@ -603,7 +646,7 @@ const StudentPortal = () => {
                       <SelectValue placeholder="Select level" />
                     </SelectTrigger>
                     <SelectContent>
-                      {["100", "200", "300", "400"].map(l => (
+                      {["100", "200", "300", "400", "500"].map(l => (
                         <SelectItem key={l} value={l}>{l} Level</SelectItem>
                       ))}
                     </SelectContent>
