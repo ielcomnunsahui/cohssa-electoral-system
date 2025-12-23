@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +27,8 @@ import {
   Clock,
   Lock,
   Zap,
-  Smartphone
+  Smartphone,
+  Trophy
 } from "lucide-react";
 import { DualLogo } from "@/components/NavLink";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -500,6 +501,160 @@ const DemoVoting = () => {
   );
 };
 
+const DemoLiveResults = () => {
+  const [results, setResults] = useState([
+    {
+      position: "President",
+      candidates: [
+        { name: "Adebayo Johnson", votes: 145, percentage: 48.3 },
+        { name: "Fatima Ibrahim", votes: 98, percentage: 32.7 },
+        { name: "Emmanuel Okonkwo", votes: 57, percentage: 19.0 },
+      ],
+      total: 300
+    },
+    {
+      position: "Vice President",
+      candidates: [
+        { name: "Grace Obi", votes: 167, percentage: 55.7 },
+        { name: "Samuel Adeyemi", votes: 133, percentage: 44.3 },
+      ],
+      total: 300
+    },
+    {
+      position: "General Secretary",
+      candidates: [
+        { name: "Mary Eze", votes: 189, percentage: 63.0 },
+        { name: "John Okoro", votes: 111, percentage: 37.0 },
+      ],
+      total: 300
+    },
+  ]);
+
+  const [isLive, setIsLive] = useState(true);
+  const [updateCount, setUpdateCount] = useState(0);
+
+  // Simulate live updates
+  useEffect(() => {
+    if (!isLive) return;
+    
+    const interval = setInterval(() => {
+      setResults(prev => prev.map(pos => {
+        const newCandidates = pos.candidates.map(c => {
+          const newVotes = c.votes + Math.floor(Math.random() * 3);
+          return { ...c, votes: newVotes };
+        });
+        const newTotal = newCandidates.reduce((sum, c) => sum + c.votes, 0);
+        return {
+          ...pos,
+          candidates: newCandidates.map(c => ({
+            ...c,
+            percentage: (c.votes / newTotal) * 100
+          })).sort((a, b) => b.votes - a.votes),
+          total: newTotal
+        };
+      }));
+      setUpdateCount(prev => prev + 1);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isLive]);
+
+  const totalVoters = 450;
+  const votedCount = results[0]?.total || 0;
+  const turnout = ((votedCount / totalVoters) * 100).toFixed(1);
+
+  return (
+    <Card className="animate-fade-in shadow-lg border-0">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-primary" />
+              Live Election Results
+            </CardTitle>
+            <CardDescription>Real-time vote counting demo</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            {isLive ? (
+              <Badge className="gap-1 bg-green-500/10 text-green-600 border-green-500/30 animate-pulse">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                Live
+              </Badge>
+            ) : (
+              <Badge variant="secondary">Paused</Badge>
+            )}
+            <Badge variant="outline" className="gap-1">
+              <Zap className="h-3 w-3" />
+              {updateCount} updates
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="p-4 rounded-xl bg-muted/50 text-center">
+            <p className="text-2xl font-bold text-primary">{totalVoters}</p>
+            <p className="text-xs text-muted-foreground">Registered</p>
+          </div>
+          <div className="p-4 rounded-xl bg-muted/50 text-center">
+            <p className="text-2xl font-bold text-green-600">{votedCount}</p>
+            <p className="text-xs text-muted-foreground">Voted</p>
+          </div>
+          <div className="p-4 rounded-xl bg-muted/50 text-center">
+            <p className="text-2xl font-bold text-amber-600">{turnout}%</p>
+            <p className="text-xs text-muted-foreground">Turnout</p>
+          </div>
+        </div>
+
+        {/* Results by Position */}
+        <div className="space-y-4">
+          {results.map((position) => (
+            <div key={position.position} className="p-4 border rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold">{position.position}</h4>
+                <Badge variant="outline">{position.total} votes</Badge>
+              </div>
+              {position.candidates.map((candidate, idx) => (
+                <div key={candidate.name} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      {idx === 0 && <Trophy className="h-4 w-4 text-amber-500" />}
+                      <span className={idx === 0 ? "font-semibold" : ""}>{candidate.name}</span>
+                    </div>
+                    <span className="font-mono">{candidate.votes} ({candidate.percentage.toFixed(1)}%)</span>
+                  </div>
+                  <Progress value={candidate.percentage} className={idx === 0 ? "h-3" : "h-2"} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Controls */}
+        <div className="flex gap-2">
+          <Button 
+            variant={isLive ? "destructive" : "default"} 
+            onClick={() => setIsLive(!isLive)}
+            className="flex-1"
+          >
+            {isLive ? "Pause Updates" : "Resume Updates"}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setUpdateCount(0);
+              toast.success("Demo: Counter reset!");
+            }}
+          >
+            Reset Counter
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 const DemoAspirantApplication = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -763,20 +918,25 @@ const Demo = () => {
 
         {/* Demo Tabs */}
         <Tabs defaultValue="registration" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 h-14">
+          <TabsList className="grid w-full grid-cols-4 mb-8 h-14">
             <TabsTrigger value="registration" className="flex items-center gap-2 text-sm">
               <UserPlus className="h-4 w-4" />
-              <span className="hidden sm:inline">Voter Registration</span>
+              <span className="hidden sm:inline">Register</span>
               <span className="sm:hidden">Register</span>
             </TabsTrigger>
             <TabsTrigger value="voting" className="flex items-center gap-2 text-sm">
               <Vote className="h-4 w-4" />
-              <span className="hidden sm:inline">Voting</span>
+              <span className="hidden sm:inline">Vote</span>
               <span className="sm:hidden">Vote</span>
+            </TabsTrigger>
+            <TabsTrigger value="results" className="flex items-center gap-2 text-sm">
+              <Award className="h-4 w-4" />
+              <span className="hidden sm:inline">Results</span>
+              <span className="sm:hidden">Results</span>
             </TabsTrigger>
             <TabsTrigger value="aspirant" className="flex items-center gap-2 text-sm">
               <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Aspirant Application</span>
+              <span className="hidden sm:inline">Apply</span>
               <span className="sm:hidden">Apply</span>
             </TabsTrigger>
           </TabsList>
@@ -787,6 +947,10 @@ const Demo = () => {
 
           <TabsContent value="voting" className="mt-0">
             <DemoVoting />
+          </TabsContent>
+
+          <TabsContent value="results" className="mt-0">
+            <DemoLiveResults />
           </TabsContent>
 
           <TabsContent value="aspirant" className="mt-0">

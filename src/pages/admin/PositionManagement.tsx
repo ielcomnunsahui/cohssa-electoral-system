@@ -297,12 +297,12 @@ const PositionManagement = () => {
                       </div>
                       <div className="space-y-2">
                         <Label>Gender Restriction</Label>
-                        <Select value={form.eligible_gender} onValueChange={(v) => setForm({...form, eligible_gender: v})}>
+                        <Select value={form.eligible_gender || "any"} onValueChange={(v) => setForm({...form, eligible_gender: v === "any" ? "" : v})}>
                           <SelectTrigger>
                             <SelectValue placeholder="Any" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Any</SelectItem>
+                            <SelectItem value="any">Any</SelectItem>
                             <SelectItem value="male">Male Only</SelectItem>
                             <SelectItem value="female">Female Only</SelectItem>
                           </SelectContent>

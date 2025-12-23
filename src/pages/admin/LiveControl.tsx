@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Pause, Play, Download, FileText, RefreshCw, Trophy, Users, Vote, BarChart3, Loader2, AlertTriangle, Zap, Radio } from "lucide-react";
+import { Pause, Play, Download, FileText, RefreshCw, Trophy, Users, Vote, BarChart3, Loader2, AlertTriangle, Zap, Radio, Wifi, WifiOff } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { useAdminTour, liveControlTourSteps } from "@/hooks/useAdminTour";
@@ -36,44 +36,11 @@ const LiveControl = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [votingActive, setVotingActive] = useState(false);
   const [activeStage, setActiveStage] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [updateCount, setUpdateCount] = useState(0);
   const { logAction } = useAuditLog();
 
-  useEffect(() => {
-    loadResults();
-    loadTimelineStatus();
-    const interval = setInterval(loadResults, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadTimelineStatus = async () => {
-    try {
-      // Check if voting stage is active from election_timeline
-      const { data: stages } = await supabase
-        .from('election_timeline')
-        .select('*')
-        .eq('is_active', true)
-        .or('stage_name.ilike.%voting%,title.ilike.%voting%');
-
-      if (stages && stages.length > 0) {
-        const now = new Date();
-        const activeVoting = stages.find(stage => {
-          const start = new Date(stage.start_date);
-          const end = stage.end_date ? new Date(stage.end_date) : null;
-          return now >= start && (!end || now <= end);
-        });
-        
-        setVotingActive(!!activeVoting);
-        setActiveStage(activeVoting?.stage_name || activeVoting?.title || null);
-      } else {
-        setVotingActive(false);
-        setActiveStage(null);
-      }
-    } catch (error) {
-      console.error("Error loading timeline status:", error);
-    }
-  };
-
-  const loadResults = async () => {
+  const loadResults = useCallback(async () => {
     try {
       const { data: voterData, error: voterError } = await supabase
         .from('voters')
@@ -136,7 +103,84 @@ const LiveControl = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
+
+  const loadTimelineStatus = useCallback(async () => {
+    try {
+      const { data: stages } = await supabase
+        .from('election_timeline')
+        .select('*')
+        .eq('is_active', true)
+        .or('stage_name.ilike.%voting%,title.ilike.%voting%');
+
+      if (stages && stages.length > 0) {
+        const now = new Date();
+        const activeVoting = stages.find(stage => {
+          const start = new Date(stage.start_date);
+          const end = stage.end_date ? new Date(stage.end_date) : null;
+          return now >= start && (!end || now <= end);
+        });
+        
+        setVotingActive(!!activeVoting);
+        setActiveStage(activeVoting?.stage_name || activeVoting?.title || null);
+      } else {
+        setVotingActive(false);
+        setActiveStage(null);
+      }
+    } catch (error) {
+      console.error("Error loading timeline status:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadResults();
+    loadTimelineStatus();
+
+    // Set up real-time subscriptions
+    const votesChannel = supabase
+      .channel('admin-votes-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'votes' },
+        () => {
+          loadResults();
+          setUpdateCount(prev => prev + 1);
+        }
+      )
+      .subscribe((status) => {
+        setIsConnected(status === 'SUBSCRIBED');
+      });
+
+    const votersChannel = supabase
+      .channel('admin-voters-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'voters' },
+        () => {
+          loadResults();
+          setUpdateCount(prev => prev + 1);
+        }
+      )
+      .subscribe();
+
+    const timelineChannel = supabase
+      .channel('admin-timeline-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'election_timeline' },
+        () => {
+          loadTimelineStatus();
+          setUpdateCount(prev => prev + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(votesChannel);
+      supabase.removeChannel(votersChannel);
+      supabase.removeChannel(timelineChannel);
+    };
+  }, [loadResults, loadTimelineStatus]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -216,6 +260,27 @@ const LiveControl = () => {
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+        </div>
+
+        {/* Connection Status */}
+        <div className="flex items-center gap-2 text-sm">
+          {isConnected ? (
+            <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600 border-green-500/30">
+              <Wifi className="h-3 w-3" />
+              Live Connected
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="gap-1 bg-amber-500/10 text-amber-600 border-amber-500/30">
+              <WifiOff className="h-3 w-3" />
+              Connecting...
+            </Badge>
+          )}
+          {updateCount > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              <Zap className="h-3 w-3" />
+              {updateCount} updates
+            </Badge>
+          )}
         </div>
 
         {/* Status Banner */}
