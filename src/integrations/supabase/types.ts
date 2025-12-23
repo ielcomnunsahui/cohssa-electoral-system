@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_login_attempts: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          ip_address: string | null
+          success: boolean | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       aspirants: {
         Row: {
           application_data: Json | null
@@ -633,6 +660,39 @@ export type Database = {
           name?: string
           photo_url?: string | null
           position?: string
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          action_type: string
+          attempt_count: number | null
+          created_at: string | null
+          first_attempt_at: string | null
+          id: string
+          identifier: string
+          last_attempt_at: string | null
+          locked_until: string | null
+        }
+        Insert: {
+          action_type: string
+          attempt_count?: number | null
+          created_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          identifier: string
+          last_attempt_at?: string | null
+          locked_until?: string | null
+        }
+        Update: {
+          action_type?: string
+          attempt_count?: number | null
+          created_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          identifier?: string
+          last_attempt_at?: string | null
+          locked_until?: string | null
         }
         Relationships: []
       }
