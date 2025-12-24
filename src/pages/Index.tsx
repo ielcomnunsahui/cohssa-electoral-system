@@ -6,14 +6,14 @@ import { CountdownTimer } from "@/components/HomePage/CountdownTimer";
 import { 
   Vote, Users, BarChart3, FileText, Shield, BookOpen, Menu, BookOpenCheck, 
   Loader2, Sparkles, ChevronRight, HelpCircle, LogOut, GraduationCap, 
-  Calendar, Star, Zap, ArrowRight, Home, UserPlus, Eye, Award, Newspaper
+  Calendar, Star, Zap, ArrowRight, Home, UserPlus, Eye, Award, Newspaper, LogIn
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 import { DualLogo, Logo, COHSSALogoImg } from "@/components/NavLink";
 import { driver } from "driver.js";
 import { supabase } from "@/integrations/supabase/client";
-// AuthGate no longer wraps homepage - it's now fully public
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import heroStudents from "@/assets/hero-students.jpg";
 import "driver.js/dist/driver.css";
@@ -35,12 +35,12 @@ interface TimelineStage {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, openAuthDialog, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [timelineStages, setTimelineStages] = useState<TimelineStage[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeStage, setActiveStage] = useState<TimelineStage | null>(null);
   const [nextStage, setNextStage] = useState<TimelineStage | null>(null);
-  const [user, setUser] = useState<any>(null);
   const [hasSeenTour, setHasSeenTour] = useState(false);
 
   const getStageStart = (stage: TimelineStage): Date | null => {
@@ -54,19 +54,9 @@ const Index = () => {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-    });
-
     // Check if user has seen the tour
     const tourSeen = localStorage.getItem('iseco_tour_completed');
     setHasSeenTour(!!tourSeen);
-
-    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -265,12 +255,13 @@ const Index = () => {
 
   const handleSignOut = async () => {
     setIsMenuOpen(false);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Failed to sign out");
-    } else {
-      toast.success("Signed out successfully");
-    }
+    await signOut();
+    toast.success("Signed out successfully");
+  };
+
+  const handleSignIn = () => {
+    setIsMenuOpen(false);
+    openAuthDialog();
   };
 
   const startTour = () => {
@@ -389,6 +380,27 @@ const Index = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            {user ? (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="hidden sm:flex gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </Button>
+            ) : (
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="hidden sm:flex gap-2"
+                onClick={handleSignIn}
+              >
+                <LogIn className="h-4 w-4" />
+                Sign In
+              </Button>
+            )}
             <ThemeToggle />
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
               <SheetTrigger asChild>
@@ -426,10 +438,15 @@ const Index = () => {
                     <BookOpenCheck className="h-4 w-4" />
                     Take a Tour
                   </Button>
-                  {user && (
+                  {user ? (
                     <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleSignOut}>
                       <LogOut className="h-4 w-4" />
                       Sign Out
+                    </Button>
+                  ) : (
+                    <Button variant="default" className="w-full justify-start gap-2" onClick={handleSignIn}>
+                      <LogIn className="h-4 w-4" />
+                      Sign In
                     </Button>
                   )}
                 </div>
