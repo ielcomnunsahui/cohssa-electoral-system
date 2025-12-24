@@ -20,9 +20,15 @@ import "driver.js/dist/driver.css";
 
 interface TimelineStage {
   id: string;
-  stage_name: string;
-  start_time: string;
-  end_time: string;
+  title?: string | null;
+  description?: string | null;
+  stage_name: string | null;
+  // Newer timeline fields used across admin/public
+  start_date: string | null;
+  end_date: string | null;
+  // Legacy fields (may be null)
+  start_time?: string | null;
+  end_time?: string | null;
   is_active: boolean;
   is_publicly_visible: boolean;
 }
@@ -36,6 +42,16 @@ const Index = () => {
   const [nextStage, setNextStage] = useState<TimelineStage | null>(null);
   const [user, setUser] = useState<any>(null);
   const [hasSeenTour, setHasSeenTour] = useState(false);
+
+  const getStageStart = (stage: TimelineStage): Date | null => {
+    const raw = stage.start_date ?? stage.start_time ?? null;
+    return raw ? new Date(raw) : null;
+  };
+
+  const getStageEnd = (stage: TimelineStage): Date | null => {
+    const raw = stage.end_date ?? stage.end_time ?? null;
+    return raw ? new Date(raw) : null;
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -94,25 +110,31 @@ const Index = () => {
         .from('election_timeline')
         .select('*')
         .eq('is_publicly_visible', true)
-        .order('start_time', { ascending: true });
+        .order('start_date', { ascending: true });
 
       if (error) throw error;
 
-      setTimelineStages(data || []);
-      
+      const stages = (data || []) as TimelineStage[];
+      setTimelineStages(stages);
+
       const now = new Date();
-      const active = data?.find(stage => {
-        const start = new Date(stage.start_time);
-        const end = new Date(stage.end_time);
-        return stage.is_active && now >= start && now <= end;
+      const active = stages.find((stage) => {
+        if (!stage.is_active) return false;
+        const start = getStageStart(stage);
+        const end = getStageEnd(stage);
+        if (!start) return false;
+        if (now < start) return false;
+        if (end && now > end) return false;
+        return true;
       });
-      
+
       setActiveStage(active || null);
 
-      const upcoming = data?.find(stage => {
-        const start = new Date(stage.start_time);
-        return start > now;
+      const upcoming = stages.find((stage) => {
+        const start = getStageStart(stage);
+        return start ? start > now : false;
       });
+
       setNextStage(upcoming || null);
     } catch (error) {
       console.error("Error fetching timeline:", error);
@@ -123,28 +145,42 @@ const Index = () => {
 
   const isStageActive = (stageName: string): boolean => {
     const now = new Date();
-    const stage = timelineStages.find(s => 
-      s.stage_name.toLowerCase().includes(stageName.toLowerCase())
+    const stage = timelineStages.find(s =>
+      (s.stage_name || '').toLowerCase().includes(stageName.toLowerCase())
     );
     if (!stage) return false;
-    const start = new Date(stage.start_time);
-    const end = new Date(stage.end_time);
-    return stage.is_active && now >= start && now <= end;
+
+    const start = getStageStart(stage);
+    const end = getStageEnd(stage);
+
+    if (!stage.is_active) return false;
+    if (!start) return false;
+    if (now < start) return false;
+    if (end && now > end) return false;
+    return true;
   };
 
   const getCountdownTarget = (): { date: Date; title: string } | null => {
     if (activeStage) {
-      return {
-        date: new Date(activeStage.end_time),
-        title: `${activeStage.stage_name} Ends In`
-      };
+      const end = getStageEnd(activeStage);
+      if (end) {
+        return {
+          date: end,
+          title: `${activeStage.stage_name || 'Stage'} Ends In`
+        };
+      }
     }
+
     if (nextStage) {
-      return {
-        date: new Date(nextStage.start_time),
-        title: `${nextStage.stage_name} Begins In`
-      };
+      const start = getStageStart(nextStage);
+      if (start) {
+        return {
+          date: start,
+          title: `${nextStage.stage_name || 'Stage'} Begins In`
+        };
+      }
     }
+
     return null;
   };
 
@@ -550,12 +586,13 @@ const Index = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {timelineStages.map((stage) => {
                         const now = new Date();
-                        const start = new Date(stage.start_time);
-                        const end = new Date(stage.end_time);
-                        const isActive = stage.is_active && now >= start && now <= end;
-                        const isPast = now > end;
-                        const isUpcoming = now < start;
-                        
+                        const start = getStageStart(stage);
+                        const end = getStageEnd(stage);
+
+                        const isActive = !!start && stage.is_active && now >= start && (!end || now <= end);
+                        const isPast = !!end && now > end;
+                        const isUpcoming = !!start && now < start;
+
                         return (
                           <div 
                             key={stage.id} 
@@ -568,8 +605,8 @@ const Index = () => {
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
-                              <span className={`font-medium text-sm ${isActive ? 'text-primary' : isPast ? 'text-muted-foreground' : 'text-foreground'}`}>
-                                {stage.stage_name}
+                              <span className={`font-medium text-sm ${isActive ? 'text-primary' : isPast ? 'text-muted-foreground' : 'text-foreground'}`}> 
+                                {(stage.stage_name || stage.title || 'Stage')}
                               </span>
                               {isActive && (
                                 <span className="flex items-center gap-1 text-xs text-primary">
@@ -581,7 +618,7 @@ const Index = () => {
                               {isUpcoming && <span className="text-xs text-muted-foreground">Upcoming</span>}
                             </div>
                             <div className="mt-1 text-xs text-muted-foreground">
-                              {start.toLocaleDateString()} - {end.toLocaleDateString()}
+                              {start ? start.toLocaleDateString() : '-'}{end ? ` - ${end.toLocaleDateString()}` : ''}
                             </div>
                           </div>
                         );
@@ -638,12 +675,15 @@ const Index = () => {
                     Upcoming Stages
                   </h4>
                   <div className="space-y-3">
-                    {timelineStages.slice(0, 3).map((stage) => (
-                      <div key={stage.id} className="flex justify-between items-center p-3 bg-background rounded-lg border border-border/50">
-                        <span className="font-medium">{stage.stage_name}</span>
-                        <span className="text-sm text-muted-foreground">{new Date(stage.start_time).toLocaleDateString()}</span>
-                      </div>
-                    ))}
+                    {timelineStages.slice(0, 3).map((stage) => {
+                      const start = getStageStart(stage);
+                      return (
+                        <div key={stage.id} className="flex justify-between items-center p-3 bg-background rounded-lg border border-border/50">
+                          <span className="font-medium">{stage.stage_name || stage.title || 'Stage'}</span>
+                          <span className="text-sm text-muted-foreground">{start ? start.toLocaleDateString() : '-'}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
