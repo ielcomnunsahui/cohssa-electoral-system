@@ -6,7 +6,7 @@ import { CountdownTimer } from "@/components/HomePage/CountdownTimer";
 import { 
   Vote, Users, BarChart3, FileText, Shield, BookOpen, Menu, BookOpenCheck, 
   Loader2, Sparkles, ChevronRight, HelpCircle, LogOut, GraduationCap, 
-  Calendar, Star, Zap, ArrowRight, Home, UserPlus, Eye, Award, Newspaper, LogIn
+  Calendar, Star, Zap, ArrowRight, Home, UserPlus, Eye, Award, Newspaper, LogIn, User
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
@@ -381,15 +381,25 @@ const Index = () => {
           
           <div className="flex items-center gap-2">
             {user ? (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="hidden sm:flex gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
-                onClick={handleSignOut}
-              >
-                <LogOut className="h-4 w-4" />
-                Sign Out
-              </Button>
+              <>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-full border border-primary/20">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
+                    <User className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground max-w-[120px] truncate">
+                    {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
+                  </span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="hidden sm:flex gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </Button>
+              </>
             ) : (
               <Button 
                 variant="default" 
