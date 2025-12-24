@@ -5,11 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Shield, ArrowLeft, Mail, KeyRound, ArrowRight } from "lucide-react";
+import { Shield, ArrowLeft, Mail, KeyRound, ArrowRight, Loader2, HelpCircle } from "lucide-react";
 import { Logo } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import SEO from "@/components/SEO";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { showFriendlyError, showSuccessToast } from "@/lib/errorMessages";
 
 // Validation schema for admin login
 const loginSchema = z.object({
@@ -27,13 +30,16 @@ const loginSchema = z.object({
 
 const emailSchema = z.string().email("Please enter a valid email address");
 
-type View = 'login' | 'forgot' | 'reset-sent';
+type View = 'login' | 'forgot' | 'otp-verify' | 'new-password' | 'reset-sent';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [view, setView] = useState<View>('login');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
@@ -70,7 +76,7 @@ const AdminLogin = () => {
       });
 
       if (error) {
-        toast.error("Invalid email or password");
+        showFriendlyError("Invalid login credentials");
         setLoading(false);
         return;
       }
@@ -85,22 +91,22 @@ const AdminLogin = () => {
 
         if (roleError || !roleData) {
           await supabase.auth.signOut();
-          toast.error("Access denied. Admin privileges required.");
+          showFriendlyError("Permission denied");
           setLoading(false);
           return;
         }
 
-        toast.success("Welcome to ISECO Admin Dashboard");
+        showSuccessToast("Welcome to ISECO Admin Dashboard");
         navigate("/admin/dashboard");
       }
     } catch (error: any) {
-      toast.error("Login failed. Please try again.");
+      showFriendlyError(error, "logging in");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const result = emailSchema.safeParse(email);
@@ -113,23 +119,90 @@ const AdminLogin = () => {
     setErrors({});
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/admin/reset-password`,
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: { email: email.trim().toLowerCase(), type: 'admin-reset' }
       });
 
-      if (error) {
-        toast.error("Failed to send reset email. Please try again.");
+      if (error) throw error;
+      
+      if (data?.error) {
+        showFriendlyError(data.error);
         setLoading(false);
         return;
       }
 
-      setView('reset-sent');
-      toast.success("Password reset email sent!");
+      setView('otp-verify');
+      showSuccessToast("Verification code sent!", `Check your email at ${email}`);
     } catch (error: any) {
-      toast.error("Failed to send reset email. Please try again.");
+      showFriendlyError(error, "sending verification code");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (otp.length !== 6) return;
+    
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: { email: email.trim().toLowerCase(), code: otp }
+      });
+
+      if (error || !data?.valid) {
+        showFriendlyError(data?.error || "Invalid or expired code");
+        setLoading(false);
+        return;
+      }
+
+      setView('new-password');
+      showSuccessToast("Code verified!", "Please set your new password.");
+    } catch (error: any) {
+      showFriendlyError(error, "verifying code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    
+    setLoading(true);
+
+    try {
+      // Use Supabase magic link for actual password reset
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/admin/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setView('reset-sent');
+      showSuccessToast("Password reset email sent!", "Please check your inbox for the reset link.");
+    } catch (error: any) {
+      showFriendlyError(error, "resetting password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetState = () => {
+    setView('login');
+    setOtp("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setErrors({});
   };
 
   return (
@@ -157,11 +230,15 @@ const AdminLogin = () => {
             <CardTitle className="text-2xl flex items-center justify-center gap-2">
               {view === 'login' && <><Shield className="h-6 w-6" /> Admin Login</>}
               {view === 'forgot' && <><KeyRound className="h-6 w-6" /> Reset Password</>}
+              {view === 'otp-verify' && <><Mail className="h-6 w-6" /> Verify Email</>}
+              {view === 'new-password' && <><KeyRound className="h-6 w-6" /> New Password</>}
               {view === 'reset-sent' && <><Mail className="h-6 w-6" /> Check Your Email</>}
             </CardTitle>
             <CardDescription>
               {view === 'login' && "ISECO Electoral System Administration"}
-              {view === 'forgot' && "Enter your email to receive a reset link"}
+              {view === 'forgot' && "Enter your email to receive a verification code"}
+              {view === 'otp-verify' && `Enter the 6-digit code sent to ${email}`}
+              {view === 'new-password' && "Create a strong new password"}
               {view === 'reset-sent' && "We've sent you a password reset link"}
             </CardDescription>
           </CardHeader>
@@ -216,14 +293,22 @@ const AdminLogin = () => {
                   )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...</> : <>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Login
+                  </>}
                 </Button>
               </form>
             )}
 
             {view === 'forgot' && (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
+              <form onSubmit={handleSendOTP} className="space-y-4">
+                <Alert className="border-primary/30 bg-primary/5">
+                  <Mail className="h-4 w-4" />
+                  <AlertDescription>
+                    We'll send a 6-digit verification code to your email address.
+                  </AlertDescription>
+                </Alert>
                 <div className="space-y-2">
                   <Label htmlFor="reset-email">Email Address</Label>
                   <Input
@@ -244,8 +329,77 @@ const AdminLogin = () => {
                   )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  <Mail className="mr-2 h-4 w-4" />
-                  {loading ? "Sending..." : "Send Reset Link"}
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Send Verification Code
+                  </>}
+                </Button>
+              </form>
+            )}
+
+            {view === 'otp-verify' && (
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} className="h-14 w-12 text-xl" />
+                      <InputOTPSlot index={1} className="h-14 w-12 text-xl" />
+                      <InputOTPSlot index={2} className="h-14 w-12 text-xl" />
+                      <InputOTPSlot index={3} className="h-14 w-12 text-xl" />
+                      <InputOTPSlot index={4} className="h-14 w-12 text-xl" />
+                      <InputOTPSlot index={5} className="h-14 w-12 text-xl" />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                <p className="text-xs text-center text-muted-foreground">Code expires in 5 minutes</p>
+                <Button 
+                  onClick={handleVerifyOTP}
+                  className="w-full" 
+                  disabled={loading || otp.length !== 6}
+                >
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</> : "Verify Code"}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => { setOtp(""); handleSendOTP({ preventDefault: () => {} } as any); }}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  Resend Code
+                </Button>
+              </div>
+            )}
+
+            {view === 'new-password' && (
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    placeholder="Enter new password (min 8 characters)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={8}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resetting...</> : <>
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    Reset Password
+                  </>}
                 </Button>
               </form>
             )}
@@ -271,13 +425,21 @@ const AdminLogin = () => {
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => setView('login')}
+                  onClick={resetState}
                 >
                   <ArrowRight className="mr-2 h-4 w-4" />
                   Return to Login
                 </Button>
               </div>
             )}
+
+            {/* Help Link */}
+            <div className="mt-6 text-center">
+              <Link to="/voter/help" className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1">
+                <HelpCircle className="h-3 w-3" />
+                Need help? Contact Support
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -521,6 +521,53 @@ const Index = () => {
                   <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Election Timeline</span>
                 </div>
                 <CountdownTimer targetDate={countdownData.date} title={countdownData.title} />
+                
+                {/* Timeline Stages Overview */}
+                {timelineStages.length > 0 && (
+                  <div className="mt-8 pt-8 border-t border-border/50">
+                    <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4 text-center">Election Stages</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {timelineStages.map((stage) => {
+                        const now = new Date();
+                        const start = new Date(stage.start_time);
+                        const end = new Date(stage.end_time);
+                        const isActive = stage.is_active && now >= start && now <= end;
+                        const isPast = now > end;
+                        const isUpcoming = now < start;
+                        
+                        return (
+                          <div 
+                            key={stage.id} 
+                            className={`p-3 rounded-lg border transition-all ${
+                              isActive 
+                                ? 'bg-primary/10 border-primary/30 shadow-sm' 
+                                : isPast 
+                                  ? 'bg-muted/30 border-muted' 
+                                  : 'bg-background border-border/50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className={`font-medium text-sm ${isActive ? 'text-primary' : isPast ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                {stage.stage_name}
+                              </span>
+                              {isActive && (
+                                <span className="flex items-center gap-1 text-xs text-primary">
+                                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                                  Live
+                                </span>
+                              )}
+                              {isPast && <span className="text-xs text-muted-foreground">Completed</span>}
+                              {isUpcoming && <span className="text-xs text-muted-foreground">Upcoming</span>}
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              {start.toLocaleDateString()} - {end.toLocaleDateString()}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 space-y-4">
