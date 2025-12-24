@@ -443,6 +443,21 @@ const Index = () => {
                     </Button>
                   );
                 })}
+                {user && (
+                  <div className="flex items-center gap-3 px-3 py-3 mb-2 bg-primary/5 rounded-lg border border-primary/20">
+                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      <User className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {user.user_metadata?.full_name || 'Welcome!'}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div className="pt-4 border-t space-y-2">
                   <Button variant="outline" className="w-full justify-start gap-2 hover:bg-primary/10" onClick={startTour}>
                     <BookOpenCheck className="h-4 w-4" />
