@@ -55,6 +55,27 @@ const Index = () => {
 
   useEffect(() => {
     fetchTimeline();
+
+    // Subscribe to real-time updates for election_timeline table
+    const channel = supabase
+      .channel('election-timeline-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'election_timeline'
+        },
+        (payload) => {
+          console.log('Timeline updated:', payload);
+          fetchTimeline();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Auto-start tour for first-time visitors
