@@ -27,10 +27,11 @@ const Candidates = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCandidates = async () => {
-    setLoading(true);
+  const fetchCandidates = async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent ?? false;
+    if (!silent) setLoading(true);
     setError(null);
-    
+
     try {
       const { data, error } = await supabase
         .from("candidates")
@@ -49,29 +50,58 @@ const Candidates = () => {
         `);
 
       if (error) {
-        console.error("Supabase error:", error);
-        setError("Failed to load candidates. Please check your connection.");
-        toast.error("Failed to load candidates");
+        console.error("Backend error:", error);
+        setError("Failed to load candidates. Please check your connection and try again.");
+        toast.error("Couldn't load candidates", {
+          description: "Please refresh the page. If this continues, contact the electoral committee."
+        });
         return;
       }
-      
+
       // Transform data to expected format
-      const validCandidates = (data || []).filter(c => c.positions !== null).map(c => ({
-        ...c,
-        voting_positions: c.positions ? { position_name: c.positions.title, display_order: c.positions.display_order } : null
-      })) as Candidate[];
+      const validCandidates = (data || [])
+        .filter((c) => c.positions !== null)
+        .map((c) => ({
+          ...c,
+          voting_positions: c.positions
+            ? { position_name: c.positions.title, display_order: c.positions.display_order }
+            : null,
+        })) as Candidate[];
+
       setCandidates(validCandidates);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Network error. Please check your internet connection.");
-      toast.error("Network error");
+      toast.error("Network error", {
+        description: "Check your data connection and try again."
+      });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchCandidates();
+
+    const channel = supabase
+      .channel('candidates-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'candidates',
+        },
+        () => {
+          // Refresh in the background (no loading spinner)
+          fetchCandidates({ silent: true });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Group candidates by position
@@ -132,7 +162,7 @@ const Candidates = () => {
             <CardContent className="p-12 text-center">
               <WifiOff className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <p className="text-lg text-muted-foreground mb-4">{error}</p>
-              <Button onClick={fetchCandidates} className="gap-2">
+              <Button onClick={() => fetchCandidates()} className="gap-2">
                 <RefreshCw className="h-4 w-4" />
                 Try Again
               </Button>
