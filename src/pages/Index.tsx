@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { DualLogo, Logo, COHSSALogoImg } from "@/components/NavLink";
 import { driver } from "driver.js";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthGate } from "@/components/AuthGate";
+// AuthGate no longer wraps homepage - it's now fully public
 import { toast } from "sonner";
 import heroStudents from "@/assets/hero-students.jpg";
 import "driver.js/dist/driver.css";
@@ -842,10 +842,4 @@ const Index = () => {
   );
 };
 
-const IndexWithAuth = () => (
-  <AuthGate>
-    <Index />
-  </AuthGate>
-);
-
-export default IndexWithAuth;
+export default Index;
