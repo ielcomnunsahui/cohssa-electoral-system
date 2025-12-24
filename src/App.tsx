@@ -16,6 +16,7 @@ import AspirantLogin from "./pages/AspirantLogin";
 import Rules from "./pages/Rules";
 import Candidates from "./pages/Candidates";
 import Support from "./pages/Support";
+import VoterHelpDesk from "./pages/VoterHelpDesk";
 import Demo from "./pages/Demo";
 import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
@@ -177,6 +178,7 @@ const App = () => (
           <Route path="/committee" element={<Committee />} />
           <Route path="/voter/register" element={<VoterRegister />} />
           <Route path="/voter/login" element={<VoterLogin />} />
+          <Route path="/voter/help" element={<VoterHelpDesk />} />
           <Route 
             path="/voter/dashboard" 
             element={

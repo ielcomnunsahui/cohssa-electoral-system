@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Mail, AlertCircle, Fingerprint, CheckCircle, User, IdCard, Shield, Loader2, Check, Smartphone } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail, AlertCircle, Fingerprint, CheckCircle, User, IdCard, Shield, Loader2, Check, Smartphone, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { DualLogo } from "@/components/NavLink";
@@ -14,6 +13,8 @@ import { useWebAuthn } from "@/hooks/useWebAuthn";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Progress } from "@/components/ui/progress";
 import { SEO } from "@/components/SEO";
+import { showFriendlyError, showSuccessToast, showInfoToast } from "@/lib/errorMessages";
+import { toast } from "sonner";
 
 // Strict matric validation regex: XX/XXaaa000 (e.g., 21/08nus014)
 const MATRIC_REGEX = /^\d{2}\/\d{2}[A-Za-z]{3}\d{3}$/;
