@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, Users, CheckCircle, Vote, Filter, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import VoterOTPInfo from "@/components/admin/VoterOTPInfo";
 
 const VoterManagement = () => {
   const [search, setSearch] = useState("");
@@ -93,10 +94,13 @@ const VoterManagement = () => {
               Manage and monitor registered voters
             </p>
           </div>
-          <Button onClick={() => refetch()} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <VoterOTPInfo />
+            <Button onClick={() => refetch()} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}

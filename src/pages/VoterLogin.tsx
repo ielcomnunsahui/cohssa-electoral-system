@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { ArrowLeft, Mail, Fingerprint, Loader2, IdCard, Shield, ArrowRight, Vote, AlertCircle } from "lucide-react";
+import { ArrowLeft, Mail, Fingerprint, Loader2, IdCard, Shield, ArrowRight, Vote, AlertCircle, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { DualLogo } from "@/components/NavLink";
 import { useWebAuthn } from "@/hooks/useWebAuthn";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "@/components/SEO";
+import { showFriendlyError, showSuccessToast, showInfoToast } from "@/lib/errorMessages";
 
 // Matric validation regex
 const MATRIC_REGEX = /^\d{2}\/\d{2}[A-Za-z]{3}\d{3}$/;
@@ -50,7 +50,7 @@ const VoterLogin = () => {
   const handleMatricSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!MATRIC_REGEX.test(matric)) {
-      toast.error("Please enter a valid matric number");
+      showFriendlyError("Invalid format. Please enter a valid matric number (e.g., 21/08NUS014)");
       return;
     }
     
@@ -66,13 +66,13 @@ const VoterLogin = () => {
         .maybeSingle();
 
       if (profileError || !profile) {
-        toast.error("Matric not found. Please register first.");
+        showFriendlyError("Matric not found");
         setLoading(false);
         return;
       }
 
       if (!profile.verified) {
-        toast.error("Your account is pending verification. Please wait for admin approval.");
+        showFriendlyError("pending verification");
         setLoading(false);
         return;
       }
@@ -85,10 +85,10 @@ const VoterLogin = () => {
       }
 
       setCurrentStep('auth');
-      toast.success(`Welcome back, ${profile.name}!`);
+      showSuccessToast(`Welcome back, ${profile.name}!`);
     } catch (error: any) {
       console.error("Matric check error:", error);
-      toast.error(error.message || "Failed to verify matric");
+      showFriendlyError(error, "verifying your matric number");
     } finally {
       setLoading(false);
     }
@@ -99,7 +99,7 @@ const VoterLogin = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('send-otp', {
+      const { data, error } = await supabase.functions.invoke('send-otp', {
         body: { email: voterInfo.email, type: 'login' }
       });
 
@@ -107,11 +107,17 @@ const VoterLogin = () => {
         throw error;
       }
 
+      if (data?.error) {
+        showFriendlyError(data.error);
+        setLoading(false);
+        return;
+      }
+
       setOtpSent(true);
-      toast.success("Login code sent to your email!");
+      showSuccessToast("Login code sent!", `Check your email at ${voterInfo.email}`);
     } catch (error: any) {
       console.error("OTP send error:", error);
-      toast.error("Failed to send login code. Please try again.");
+      showFriendlyError(error, "sending login code");
     } finally {
       setLoading(false);
     }
@@ -124,7 +130,7 @@ const VoterLogin = () => {
     try {
       const credential = await getCredential(voterInfo.email);
       if (!credential) {
-        toast.error("No biometric credential found. Please use email OTP.");
+        showFriendlyError("biometric_failed");
         setLoading(false);
         return;
       }
@@ -141,17 +147,17 @@ const VoterLogin = () => {
 
         if (otpError) {
           // If magic link fails, still proceed with OTP fallback
-          toast.success("Biometric verified! Please enter the OTP sent to your email.");
+          showInfoToast("Biometric verified!", "Please enter the OTP sent to your email.");
           await sendOTP();
           return;
         }
         
-        toast.success("Login successful!");
+        showSuccessToast("Login successful!");
         navigate("/voter/dashboard");
       }
     } catch (error: any) {
       console.error("Biometric login error:", error);
-      toast.error("Biometric login failed. Please use email OTP.");
+      showFriendlyError("biometric_failed");
     } finally {
       setLoading(false);
     }
@@ -168,7 +174,7 @@ const VoterLogin = () => {
       });
 
       if (error || !data?.valid) {
-        toast.error(data?.error || "Invalid or expired code. Please try again.");
+        showFriendlyError(data?.error || "Invalid or expired code");
         setLoading(false);
         return;
       }
@@ -185,7 +191,7 @@ const VoterLogin = () => {
         console.log("Supabase OTP sign-in skipped, using custom verification");
       }
 
-      toast.success(`Welcome back, ${data.voter?.name || voterInfo.name}!`);
+      showSuccessToast(`Welcome back, ${data.voter?.name || voterInfo.name}!`);
       // Store only minimal, non-sensitive session info
       sessionStorage.setItem('voter_session', JSON.stringify({
         id: data.voter?.id,
@@ -197,7 +203,7 @@ const VoterLogin = () => {
       navigate("/voter/dashboard");
     } catch (error: any) {
       console.error("OTP verification error:", error);
-      toast.error("Verification failed. Please try again.");
+      showFriendlyError(error, "verifying your code");
     } finally {
       setLoading(false);
     }
@@ -288,12 +294,20 @@ const VoterLogin = () => {
                 </Button>
               </form>
 
-              <p className="text-sm text-center text-muted-foreground mt-6">
-                Not registered yet?{" "}
-                <button onClick={() => navigate("/voter/register")} className="text-primary hover:underline font-medium">
-                  Register here
-                </button>
-              </p>
+              <div className="text-sm text-center text-muted-foreground mt-6 space-y-2">
+                <p>
+                  Not registered yet?{" "}
+                  <button onClick={() => navigate("/voter/register")} className="text-primary hover:underline font-medium">
+                    Register here
+                  </button>
+                </p>
+                <p>
+                  <Link to="/voter/help" className="text-muted-foreground hover:text-primary inline-flex items-center gap-1">
+                    <HelpCircle className="h-3 w-3" />
+                    Need help? Contact Support
+                  </Link>
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
