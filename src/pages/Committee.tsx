@@ -18,16 +18,18 @@ const Committee = () => {
   };
 
   const committeeMembers = [
-    { name: "Awwal Abubakar Sadik", position: "Chairman", level: "500L Nursing Sciences", photo: "/src/assets/chairman.jpg", order: 1 },
+    { name: "Awwal Abubakar Sadik", position: "Chairman", level: "500L Nursing Sciences", photo: "/src/assets/chairman.png", order: 1 },
     { name: "Suleiman Uthman Nurraini", position: "Deputy Chairman", level: "400L Medical Laboratory Sciences", photo: "/src/assets/Deputychairman.jpg", order: 2 },
     { name: "Abdullahi Fatimah", position: "Secretary", level: "200L Medicine and Surgery", photo: "/src/assets/secretary.jpg", order: 3 },
     { name: "Mustapha Rahmatullah O.", position: "Treasurer", level: "400L Nursing Sciences", photo: "/src/assets/treasurer.jpg", order: 4 },
     { name: "Yusuf Abdulazeez", position: "Electoral Organizer", level: "400L Human Anatomy", photo: "/src/assets/EO.jpg", order: 5 },
     { name: "Suleiman Siddiqah", position: "P.R.O I", level: "400L Human Physiology", photo: "/src/assets/PROI.jpg", order: 6 },
-    { name: "Lawal Awal Pelumi", position: "Member", level: "400L Nursing Sciences", photo: "/src/assets/awal.jpg", order: 7 },
-    { name: "Abdulsalam Aaliyah Ayomide", position: "Member", level: "200L Medicine and Surgery", photo: "/src/assets/memberii.jpg", order: 8 },
-    { name: "Olaniyi Mariam Ololade", position: "Member", level: "400L Human Anatomy", photo: "/src/assets/memberiii.jpg", order: 9 },
-    { name: "Imam Robiah Abdulkadir", position: "Member", level: "300L Medical Laboratory Sciences", photo: "/src/assets/memberiv.jpg", order: 10 }
+    { name: "Aisha Ahmad yahaya", position: "P.R.O II", level: "300L Community Medicine and Public Health", photo: "/src/assets/PROII.jpg", order: 7 },
+    { name: "Lawal Awal Pelumi", position: "Member", level: "400L Nursing Sciences", photo: "/src/assets/awal.jpg", order: 8 },
+    { name: "Abdulsalam Aaliyah Ayomide", position: "Member", level: "200L Medicine and Surgery", photo: "/src/assets/memberii.jpg", order: 9 },
+    { name: "Olaniyi Mariam Ololade", position: "Member", level: "400L Human Anatomy", photo: "/src/assets/memberiii.jpg", order: 10 },
+    { name: "Imam Robiah Abdulkadir", position: "Member", level: "300L Medical Laboratory Sciences", photo: "/src/assets/memberiv.jpg", order: 11 },
+    { name: "Zakari Aisha Ribadu", position: "Member", level: "300L Community Medicine and Public Health", photo: "/src/assets/membervi.jpg", order: 12 },
   ];
 
   const getPositionIcon = (position: string) => {

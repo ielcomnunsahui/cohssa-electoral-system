@@ -277,7 +277,7 @@ const Index = () => {
         { 
           element: "#hero-section", 
           popover: { 
-            title: "🎓 Welcome to ISECO!", 
+            title: "🎓 Welcome to COHSSA ELECTORAL SYSTEM", 
             description: "The official Independent Students Electoral Committee platform for the College of Health Sciences Students Association (COHSSA) at Al-Hikmah University.", 
             side: "bottom", 
             align: "center" 
@@ -360,9 +360,9 @@ const Index = () => {
   const visibleFeatures = features.filter(f => f.visible);
 
   const stats = [
-    { icon: GraduationCap, label: "Active Students", value: "2,500+", color: "text-blue-500" },
-    { icon: Vote, label: "Votes Cast", value: "10K+", color: "text-green-500" },
-    { icon: Star, label: "Elections Held", value: "5", color: "text-amber-500" },
+    { icon: GraduationCap, label: "Active Students", value: "1,350+", color: "text-blue-500" },
+    { icon: Vote, label: "Faculties", value: "2", color: "text-green-500" },
+    { icon: Star, label: "Departments", value: "6", color: "text-amber-500" },
     { icon: Zap, label: "Instant Results", value: "24/7", color: "text-purple-500" },
   ];
 
