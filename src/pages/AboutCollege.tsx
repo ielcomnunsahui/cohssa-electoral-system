@@ -240,52 +240,73 @@ const AboutCollege = () => {
               </div>
 
               {category === 'Founder' ? (
-                // Special layout for Founder - side by side photo and info
-                <div className="max-w-5xl mx-auto">
+                // Special layout for Founder - side by side with gold accents
+                <div className="max-w-5xl mx-auto px-4">
                   {categoryLeaders.map((leader) => (
-                    <Card 
-                      key={leader.id} 
-                      className="overflow-hidden animate-fade-in border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5"
+                    <div 
+                      key={leader.id}
+                      className="relative animate-fade-in"
                       style={{ animationDelay: `${350 + catIndex * 50}ms` }}
                     >
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row items-center">
-                          {/* Photo Section */}
-                          <div className="w-full md:w-2/5 flex-shrink-0">
-                            <div className="aspect-square md:aspect-[3/4] overflow-hidden bg-muted">
-                              {getLeaderPhoto(leader) ? (
-                                <img 
-                                  src={getLeaderPhoto(leader)} 
-                                  alt={leader.name} 
-                                  className="w-full h-full object-cover object-top"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Award className="h-24 w-24 text-primary/30" />
-                                </div>
+                      {/* Decorative gold corner accents */}
+                      <div className="absolute -top-2 -left-2 w-16 h-16 border-l-4 border-t-4 border-amber-500/70 rounded-tl-lg" />
+                      <div className="absolute -top-2 -right-2 w-16 h-16 border-r-4 border-t-4 border-amber-500/70 rounded-tr-lg" />
+                      <div className="absolute -bottom-2 -left-2 w-16 h-16 border-l-4 border-b-4 border-amber-500/70 rounded-bl-lg" />
+                      <div className="absolute -bottom-2 -right-2 w-16 h-16 border-r-4 border-b-4 border-amber-500/70 rounded-br-lg" />
+                      
+                      <Card className="overflow-hidden border-2 border-amber-500/30 bg-gradient-to-br from-amber-50/50 via-background to-amber-100/30 dark:from-amber-950/20 dark:via-background dark:to-amber-900/10 shadow-xl shadow-amber-500/10">
+                        <CardContent className="p-0">
+                          <div className="flex flex-col md:flex-row items-stretch">
+                            {/* Photo Section with gold frame */}
+                            <div className="w-full md:w-2/5 flex-shrink-0 relative">
+                              <div className="absolute inset-0 bg-gradient-to-br from-amber-400/20 to-amber-600/20" />
+                              <div className="aspect-square md:aspect-[3/4] overflow-hidden">
+                                {getLeaderPhoto(leader) ? (
+                                  <img 
+                                    src={getLeaderPhoto(leader)} 
+                                    alt={leader.name} 
+                                    className="w-full h-full object-cover object-top"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/30">
+                                    <Award className="h-24 w-24 text-amber-500/50" />
+                                  </div>
+                                )}
+                              </div>
+                              {/* Gold ribbon accent */}
+                              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400" />
+                            </div>
+                            
+                            {/* Info Section */}
+                            <div className="w-full md:w-3/5 p-8 md:p-10 flex flex-col justify-center text-center md:text-left relative">
+                              {/* Decorative gold line */}
+                              <div className="hidden md:block absolute left-0 top-1/4 bottom-1/4 w-1 bg-gradient-to-b from-transparent via-amber-500 to-transparent" />
+                              
+                              <div className="inline-flex items-center justify-center md:justify-start gap-2 text-amber-600 dark:text-amber-400 font-semibold text-sm uppercase tracking-widest mb-4">
+                                <Award className="h-5 w-5" />
+                                <span>Founder & Visionary</span>
+                              </div>
+                              <h4 className="text-2xl md:text-3xl font-bold text-foreground mb-3 leading-tight">
+                                {leader.name}
+                              </h4>
+                              <p className="text-lg text-amber-600 dark:text-amber-400 font-medium mb-4">{leader.position}</p>
+                              {leader.bio && (
+                                <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
+                                  {leader.bio}
+                                </p>
                               )}
+                              
+                              {/* Decorative divider */}
+                              <div className="mt-6 flex items-center justify-center md:justify-start gap-2">
+                                <div className="w-8 h-0.5 bg-amber-500/50" />
+                                <Award className="h-4 w-4 text-amber-500/50" />
+                                <div className="w-8 h-0.5 bg-amber-500/50" />
+                              </div>
                             </div>
                           </div>
-                          
-                          {/* Info Section */}
-                          <div className="w-full md:w-3/5 p-8 md:p-10 flex flex-col justify-center text-center md:text-left">
-                            <div className="inline-flex items-center gap-2 text-primary font-semibold text-sm uppercase tracking-wider mb-3">
-                              <Award className="h-4 w-4" />
-                              <span>Founder</span>
-                            </div>
-                            <h4 className="text-2xl md:text-3xl font-bold text-foreground mb-3 leading-tight">
-                              {leader.name}
-                            </h4>
-                            <p className="text-lg text-primary font-medium mb-4">{leader.position}</p>
-                            {leader.bio && (
-                              <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                                {leader.bio}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </div>
                   ))}
                 </div>
               ) : (
