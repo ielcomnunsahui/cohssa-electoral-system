@@ -215,9 +215,9 @@ const VoterRegister = () => {
     
     setOtpLoading(true);
     try {
-      // Verify OTP via edge function
+      // Verify OTP via edge function - pass type='registration' so it doesn't require voter profile
       const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { email: email.toLowerCase(), code: otp }
+        body: { email: email.toLowerCase(), code: otp, type: 'registration' }
       });
 
       if (error || !data?.valid) {

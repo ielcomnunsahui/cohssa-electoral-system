@@ -9,6 +9,7 @@ const corsHeaders = {
 interface VerifyOTPRequest {
   email: string;
   code: string;
+  type?: 'registration' | 'login'; // registration = voter may not exist yet, login = voter must exist
 }
 
 // Rate limiting configuration for failed attempts
@@ -114,7 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, code }: VerifyOTPRequest = await req.json();
+    const { email, code, type = 'login' }: VerifyOTPRequest = await req.json();
 
     if (!email || !code) {
       return new Response(
@@ -184,7 +185,21 @@ const handler = async (req: Request): Promise<Response> => {
     // Clear failed attempts on success
     await clearFailedAttempts(supabase, email);
 
-    // Get voter profile with user_id
+    console.log("OTP verified successfully for:", email.substring(0, 3) + "***", "type:", type);
+
+    // For registration, voter profile doesn't exist yet - just confirm OTP is valid
+    if (type === 'registration') {
+      return new Response(
+        JSON.stringify({ 
+          valid: true, 
+          message: "OTP verified successfully",
+          type: 'registration'
+        }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // For login, get voter profile with user_id
     const { data: voterProfile, error: profileError } = await supabase
       .from("voters")
       .select("id, matric_number, name, email, verified, has_voted, user_id")
@@ -193,7 +208,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (profileError || !voterProfile) {
       return new Response(
-        JSON.stringify({ error: "Voter profile not found", valid: false }),
+        JSON.stringify({ error: "Voter profile not found. Please register first.", valid: false }),
         { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -227,8 +242,6 @@ const handler = async (req: Request): Promise<Response> => {
         // Continue without magic link - user can still be verified
       }
     }
-
-    console.log("OTP verified successfully for:", email.substring(0, 3) + "***");
 
     return new Response(
       JSON.stringify({ 
