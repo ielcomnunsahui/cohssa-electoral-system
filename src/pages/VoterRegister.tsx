@@ -730,8 +730,8 @@ const VoterRegister = () => {
                   <CheckCircle className="h-10 w-10 text-green-600" />
                 </div>
               </div>
-              <CardTitle className="text-2xl text-green-600">Registration Complete!</CardTitle>
-              <CardDescription>You're all set to participate in elections</CardDescription>
+              <CardTitle className="text-2xl text-green-600">Registration Successful!</CardTitle>
+              <CardDescription>You're all set to participate in the elections</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="p-4 bg-muted/50 rounded-xl text-center">
@@ -746,18 +746,18 @@ const VoterRegister = () => {
                 )}
               </div>
 
-              <Alert className="border-amber-500/30 bg-amber-500/5">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-amber-700">
-                  Your account is pending admin verification. You'll be notified when approved.
+              <Alert className="border-green-500/30 bg-green-500/5">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-700">
+                  Thank you for registering! Your voice matters. Return on election day to cast your vote and make a difference in shaping COHSSA's future.
                 </AlertDescription>
               </Alert>
 
               <Button 
-                onClick={() => navigate("/voter/login")}
+                onClick={() => navigate("/")}
                 className="w-full h-12 text-base gap-2"
               >
-                Go to Login
+                Back to Homepage
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </CardContent>
