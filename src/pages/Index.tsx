@@ -491,8 +491,12 @@ const Index = () => {
             alt="College students" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/80 to-background" />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10" />
+          {/* Primary gradient overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/95" />
+          {/* Secondary subtle color accent overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/15 via-transparent to-accent/15" />
+          {/* Dark vignette effect for depth */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,hsl(var(--background)/0.4)_100%)]" />
         </div>
 
         {/* Animated Elements */}
