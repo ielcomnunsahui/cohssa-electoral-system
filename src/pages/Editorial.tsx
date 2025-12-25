@@ -27,14 +27,7 @@ const CONTENT_TYPES = [
   { value: "writing", label: "Writing", icon: PenTool },
 ];
 
-const DEPARTMENTS = [
-  "Nursing Sciences",
-  "Medical Laboratory Sciences",
-  "Medicine and Surgery",
-  "Community Medicine and Public Health",
-  "Human Anatomy",
-  "Human Physiology"
-];
+import { DEPARTMENTS } from "@/lib/constants";
 
 const Editorial = () => {
   const navigate = useNavigate();

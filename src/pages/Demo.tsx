@@ -407,7 +407,7 @@ const DemoVoting = () => {
   const candidates = [
     { id: "1", name: "Adebayo Johnson", department: "Medicine and Surgery", photo: "AJ" },
     { id: "2", name: "Fatima Ibrahim", department: "Nursing Sciences", photo: "FI" },
-    { id: "3", name: "Emmanuel Okonkwo", department: "Human Anatomy", photo: "EO" },
+    { id: "3", name: "Emmanuel Okonkwo", department: "Medical Biochemistry", photo: "EO" },
   ];
 
   if (submitted) {
@@ -756,8 +756,12 @@ const DemoAspirantApplication = () => {
                 >
                   <option value="">Select...</option>
                   <option value="Nursing Sciences">Nursing Sciences</option>
+                  <option value="Medical Laboratory Sciences">Medical Laboratory Sciences</option>
+                  <option value="Community Medicine and Public Health">Community Medicine and Public Health</option>
                   <option value="Medicine and Surgery">Medicine and Surgery</option>
                   <option value="Human Anatomy">Human Anatomy</option>
+                  <option value="Human Physiology">Human Physiology</option>
+                  <option value="Medical Biochemistry">Medical Biochemistry</option>
                 </select>
               </div>
               <div className="space-y-2">

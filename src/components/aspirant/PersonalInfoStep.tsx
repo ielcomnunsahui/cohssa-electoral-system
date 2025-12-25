@@ -162,10 +162,11 @@ const PersonalInfoStep = ({ data, onUpdate }: PersonalInfoStepProps) => {
             <SelectContent>
               <SelectItem value="Nursing Sciences">Nursing Sciences</SelectItem>
               <SelectItem value="Medical Laboratory Sciences">Medical Laboratory Sciences</SelectItem>
-              <SelectItem value="Medicine and Surgery">Medicine and Surgery</SelectItem>
               <SelectItem value="Community Medicine and Public Health">Community Medicine and Public Health</SelectItem>
+              <SelectItem value="Medicine and Surgery">Medicine and Surgery</SelectItem>
               <SelectItem value="Human Anatomy">Human Anatomy</SelectItem>
               <SelectItem value="Human Physiology">Human Physiology</SelectItem>
+              <SelectItem value="Medical Biochemistry">Medical Biochemistry</SelectItem>
             </SelectContent>
           </Select>
         </div>

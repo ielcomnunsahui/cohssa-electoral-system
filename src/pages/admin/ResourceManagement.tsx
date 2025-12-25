@@ -19,13 +19,7 @@ import {
   ExternalLink, Save, Lightbulb, FileQuestion, Youtube, Link
 } from "lucide-react";
 
-const DEPARTMENTS = [
-  "Library and Information Science",
-  "Environmental Health",
-  "Health Information Management",
-  "Office Technology Management",
-  "Mass Communication"
-];
+import { DEPARTMENTS } from "@/lib/constants";
 
 const LEVELS = ["100", "200", "300", "400"];
 

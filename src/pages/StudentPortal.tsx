@@ -18,15 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const DEPARTMENTS = [
-  "All Departments",
-  "MLS - Medical Lab Science",
-  "NSC - Nursing Sciences",
-  "MED - Medicine and Surgery",
-  "ANA - Anatomy",
-  "PHS - Physiology",
-  "PUH - Community Medicine & Public Health"
-];
+import { DEPARTMENTS_WITH_ALL as DEPARTMENTS } from "@/lib/constants";
 
 const LEVELS = ["All Levels", "100", "200", "300", "400", "500"];
 

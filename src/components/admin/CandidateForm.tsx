@@ -9,13 +9,7 @@ import { Upload, FileText, Award, Camera, X, User, GraduationCap, AlertCircle, C
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 
-const DEPARTMENTS = [
-  "Library and Information Science",
-  "Environmental Health",
-  "Health Information Management",
-  "Office Technology Management",
-  "Mass Communication"
-];
+import { DEPARTMENTS } from "@/lib/constants";
 
 interface CandidateFormProps {
   name: string;

@@ -18,14 +18,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const DEPARTMENTS = [
-  "Nursing Sciences",
-  "Medical Laboratory Sciences",
-  "Medicine and Surgery",
-  "Community Medicine and Public Health",
-  "Human Anatomy",
-  "Human Physiology"
-];
+import { DEPARTMENTS } from "@/lib/constants";
 
 const LEVELS = ["100L", "200L", "300L", "400L", "500L"];
 

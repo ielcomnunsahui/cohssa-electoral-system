@@ -362,7 +362,7 @@ const Index = () => {
   const stats = [
     { icon: GraduationCap, label: "Active Students", value: "1,350+", color: "text-blue-500" },
     { icon: Vote, label: "Faculties", value: "2", color: "text-green-500" },
-    { icon: Star, label: "Departments", value: "6", color: "text-amber-500" },
+    { icon: Star, label: "Departments", value: "7", color: "text-amber-500" },
     { icon: Zap, label: "Instant Results", value: "24/7", color: "text-purple-500" },
   ];
 

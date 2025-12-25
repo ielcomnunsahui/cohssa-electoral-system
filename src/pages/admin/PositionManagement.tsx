@@ -17,17 +17,11 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 
-type Department = "MLS - Medical Lab Science" | "NSC - Nursing Sciences" | "MED - Medicine and Surgery" | "ANA - Anatomy" | "PHS - Physiology" | "PUH - Community Medicine & Public Health";
+import { DEPARTMENT_CODES, DepartmentCode } from "@/lib/constants";
+type Department = DepartmentCode;
 type Level = "100L" | "200L" | "300L" | "400L" | "500L";
 
-const DEPARTMENTS: Department[] = [
-  "MLS - Medical Lab Science",
-  "NSC - Nursing Sciences",
-  "MED - Medicine and Surgery",
-  "ANA - Anatomy",
-  "PHS - Physiology",
-  "PUH - Community Medicine & Public Health"
-];
+const DEPARTMENTS: Department[] = [...DEPARTMENT_CODES];
 
 const LEVELS: Level[] = ["100L", "200L", "300L", "400L", "500L"];
 
