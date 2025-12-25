@@ -418,7 +418,7 @@ const LiveControl = () => {
           </CardContent>
         </Card>
 
-        {/* Results by Position - Side by Side Tables */}
+        {/* Results by Position - Compact Tabular Format for Projection */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold animate-fade-in">Live Results by Position</h2>
           
@@ -430,82 +430,70 @@ const LiveControl = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {results.map((position, index) => (
-                <Card 
-                  key={position.position_id} 
-                  className="animate-slide-up" 
-                  style={{ animationDelay: `${(index + 4) * 30}ms` }}
-                >
-                  <CardHeader className="py-3 px-4 border-b bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-semibold">{position.position_name}</CardTitle>
-                      <Badge variant="secondary" className="gap-1 text-xs">
-                        <Vote className="h-3 w-3" />
-                        {position.total_votes}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    {position.candidates.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-6 text-sm">No candidates</p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="hover:bg-transparent">
-                            <TableHead className="w-10 text-center">#</TableHead>
-                            <TableHead>Candidate</TableHead>
-                            <TableHead className="text-right w-20">Votes</TableHead>
-                            <TableHead className="text-right w-20">%</TableHead>
-                            <TableHead className="w-32">Progress</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
+            <div className="overflow-x-auto">
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(results.length, 4)}, minmax(200px, 1fr))` }}>
+                {results.map((position, index) => (
+                  <Card 
+                    key={position.position_id} 
+                    className="animate-slide-up min-w-[200px]" 
+                    style={{ animationDelay: `${index * 20}ms` }}
+                  >
+                    <CardHeader className="py-2 px-3 border-b bg-muted/30">
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="text-sm font-semibold truncate">{position.position_name}</CardTitle>
+                        <Badge variant="secondary" className="gap-1 text-xs shrink-0">
+                          <Vote className="h-3 w-3" />
+                          {position.total_votes}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {position.candidates.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-4 text-xs">No candidates</p>
+                      ) : (
+                        <div className="divide-y">
                           {position.candidates.map((candidate, cidx) => (
-                            <TableRow 
+                            <div 
                               key={candidate.id}
-                              className={`transition-all duration-500 ${
+                              className={`px-3 py-2 flex items-center gap-2 transition-all duration-500 ${
                                 cidx === 0 && position.total_votes > 0 ? 'bg-amber-500/10' : ''
                               } ${animatedCandidates.has(candidate.id) ? 'animate-pulse bg-green-500/20 ring-2 ring-green-500/50' : ''}`}
                             >
-                              <TableCell className="text-center font-medium">
+                              <div className="w-5 shrink-0 text-center">
                                 {cidx === 0 && position.total_votes > 0 ? (
-                                  <Trophy className="h-4 w-4 text-amber-500 mx-auto" />
+                                  <Trophy className="h-4 w-4 text-amber-500" />
                                 ) : (
-                                  <span className="text-muted-foreground">{cidx + 1}</span>
+                                  <span className="text-xs text-muted-foreground">{cidx + 1}</span>
                                 )}
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                <span className={animatedCandidates.has(candidate.id) ? 'text-green-600 font-bold' : ''}>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium truncate ${animatedCandidates.has(candidate.id) ? 'text-green-600 font-bold' : ''}`}>
                                   {candidate.name}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Badge 
-                                  variant={cidx === 0 && position.total_votes > 0 ? "default" : "outline"} 
-                                  className={`text-xs transition-all duration-300 ${animatedCandidates.has(candidate.id) ? 'scale-125 bg-green-500 text-white animate-bounce' : ''}`}
-                                >
-                                  {candidate.votes}
-                                  {animatedCandidates.has(candidate.id) && <span className="ml-1">+1</span>}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right text-sm text-muted-foreground">
-                                {candidate.percentage.toFixed(1)}%
-                              </TableCell>
-                              <TableCell>
+                                </p>
                                 <Progress 
                                   value={candidate.percentage} 
-                                  className={`h-2 transition-all duration-500 ${animatedCandidates.has(candidate.id) ? 'h-3' : ''}`}
+                                  className={`h-1.5 mt-1 transition-all duration-500 ${animatedCandidates.has(candidate.id) ? 'h-2' : ''}`}
                                 />
-                              </TableCell>
-                            </TableRow>
+                              </div>
+                              <div className="shrink-0 text-right">
+                                <Badge 
+                                  variant={cidx === 0 && position.total_votes > 0 ? "default" : "outline"} 
+                                  className={`text-xs transition-all duration-300 ${animatedCandidates.has(candidate.id) ? 'scale-110 bg-green-500 text-white' : ''}`}
+                                >
+                                  {candidate.votes}
+                                </Badge>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {candidate.percentage.toFixed(0)}%
+                                </p>
+                              </div>
+                            </div>
                           ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
         </div>
