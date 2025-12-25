@@ -240,34 +240,49 @@ const AboutCollege = () => {
               </div>
 
               {category === 'Founder' ? (
-                // Special layout for Founder - centered
-                <div className="max-w-4xl mx-auto flex justify-center">
-                  {categoryLeaders.map((leader, index) => (
+                // Special layout for Founder - side by side photo and info
+                <div className="max-w-5xl mx-auto">
+                  {categoryLeaders.map((leader) => (
                     <Card 
                       key={leader.id} 
-                      className="overflow-hidden animate-fade-in border-primary/30 w-full"
+                      className="overflow-hidden animate-fade-in border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5"
                       style={{ animationDelay: `${350 + catIndex * 50}ms` }}
                     >
-                      <CardContent className="p-8 md:p-12">
-                        <div className="flex flex-col items-center text-center">
-                          <div className="w-48 h-48 rounded-full overflow-hidden bg-muted mb-6">
-                            {getLeaderPhoto(leader) ? (
-                              <img 
-                                src={getLeaderPhoto(leader)} 
-                                alt={leader.name} 
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Award className="h-20 w-20 text-primary/30" />
-                              </div>
+                      <CardContent className="p-0">
+                        <div className="flex flex-col md:flex-row items-center">
+                          {/* Photo Section */}
+                          <div className="w-full md:w-2/5 flex-shrink-0">
+                            <div className="aspect-square md:aspect-[3/4] overflow-hidden bg-muted">
+                              {getLeaderPhoto(leader) ? (
+                                <img 
+                                  src={getLeaderPhoto(leader)} 
+                                  alt={leader.name} 
+                                  className="w-full h-full object-cover object-top"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Award className="h-24 w-24 text-primary/30" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Info Section */}
+                          <div className="w-full md:w-3/5 p-8 md:p-10 flex flex-col justify-center text-center md:text-left">
+                            <div className="inline-flex items-center gap-2 text-primary font-semibold text-sm uppercase tracking-wider mb-3">
+                              <Award className="h-4 w-4" />
+                              <span>Founder</span>
+                            </div>
+                            <h4 className="text-2xl md:text-3xl font-bold text-foreground mb-3 leading-tight">
+                              {leader.name}
+                            </h4>
+                            <p className="text-lg text-primary font-medium mb-4">{leader.position}</p>
+                            {leader.bio && (
+                              <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
+                                {leader.bio}
+                              </p>
                             )}
                           </div>
-                          <h4 className="text-2xl font-bold text-foreground mb-2">{leader.name}</h4>
-                          <p className="text-lg text-primary font-medium mb-4">{leader.position}</p>
-                          {leader.bio && (
-                            <p className="text-muted-foreground leading-relaxed max-w-2xl">{leader.bio}</p>
-                          )}
                         </div>
                       </CardContent>
                     </Card>
