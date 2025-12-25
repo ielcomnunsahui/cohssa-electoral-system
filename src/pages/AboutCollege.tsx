@@ -289,11 +289,16 @@ const AboutCollege = () => {
                               <h4 className="text-2xl md:text-3xl font-bold text-foreground mb-3 leading-tight">
                                 {leader.name}
                               </h4>
-                              <p className="text-lg text-amber-600 dark:text-amber-400 font-medium mb-4">{leader.position}</p>
+                              <p className="text-lg text-amber-600 dark:text-amber-400 font-medium mb-6">{leader.position}</p>
+                              
                               {leader.bio && (
-                                <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                                  {leader.bio}
-                                </p>
+                                <div className="space-y-4 text-muted-foreground leading-relaxed text-sm md:text-base max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+                                  {leader.bio.split('\n\n').map((paragraph: string, idx: number) => (
+                                    <p key={idx} className="first-letter:text-lg first-letter:font-semibold first-letter:text-amber-600 dark:first-letter:text-amber-400">
+                                      {paragraph}
+                                    </p>
+                                  ))}
+                                </div>
                               )}
                               
                               {/* Decorative divider */}
