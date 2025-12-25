@@ -4,7 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, AlertCircle, Vote, LogOut, ArrowLeft, ClipboardList, MinusCircle } from "lucide-react";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog";
+import { CheckCircle, AlertCircle, Vote, LogOut, ArrowLeft, ClipboardList, MinusCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/NavLink";
@@ -229,6 +240,11 @@ const VoterDashboard = () => {
     setShowReview(false);
   };
 
+  const handleEditPosition = (positionIndex: number) => {
+    setCurrentPositionIndex(positionIndex);
+    setShowReview(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-medical-50 to-medical-100">
       <header className="bg-white border-b shadow-sm">
@@ -326,14 +342,15 @@ const VoterDashboard = () => {
               </Alert>
 
               <div className="space-y-3">
-                {positions.map((position) => {
+                {positions.map((position, index) => {
                   const selectedCandidateId = selectedCandidates[position.id];
                   const hasSelection = !!selectedCandidateId;
 
                   return (
                     <div 
                       key={position.id} 
-                      className={`p-4 rounded-lg border ${hasSelection ? 'bg-green-50 border-green-200' : 'bg-muted/50 border-muted'}`}
+                      className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${hasSelection ? 'bg-green-50 border-green-200 hover:border-green-400' : 'bg-muted/50 border-muted hover:border-muted-foreground/30'}`}
+                      onClick={() => handleEditPosition(index)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -358,11 +375,17 @@ const VoterDashboard = () => {
                             </div>
                           )}
                         </div>
-                        {hasSelection ? (
-                          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                        ) : (
-                          <Badge variant="secondary">Skipped</Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground">
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </Button>
+                          {hasSelection ? (
+                            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                          ) : (
+                            <Badge variant="secondary">Skipped</Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -385,14 +408,46 @@ const VoterDashboard = () => {
                   Go Back & Edit
                 </Button>
 
-                <Button
-                  onClick={handleSubmitVote}
-                  disabled={!hasAtLeastOneSelection || submitting}
-                  className="bg-success hover:bg-success/90 gap-2"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  {submitting ? "Submitting..." : "Confirm & Submit"}
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      disabled={!hasAtLeastOneSelection || submitting}
+                      className="bg-success hover:bg-success/90 gap-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Confirm & Submit
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <Vote className="h-5 w-5 text-medical-600" />
+                        Final Confirmation
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-3">
+                        <p>
+                          You are about to submit your vote for <strong>{Object.keys(selectedCandidates).length}</strong> out of <strong>{positions.length}</strong> positions.
+                        </p>
+                        <p className="text-destructive font-medium">
+                          This action cannot be undone. Once submitted, your vote is final and cannot be changed.
+                        </p>
+                        <p>
+                          Are you absolutely sure you want to proceed?
+                        </p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Go Back</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleSubmitVote}
+                        disabled={submitting}
+                        className="bg-success hover:bg-success/90"
+                      >
+                        {submitting ? "Submitting..." : "Yes, Submit My Vote"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>
