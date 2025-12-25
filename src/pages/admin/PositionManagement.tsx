@@ -236,12 +236,12 @@ const PositionManagement = () => {
                   Add Position
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader className="flex-shrink-0">
                   <DialogTitle>{editingPosition ? "Edit Position" : "Add New Position"}</DialogTitle>
                   <DialogDescription>Configure position details and eligibility criteria</DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-1 pr-4">
+                <ScrollArea className="flex-1 overflow-y-auto pr-4 -mr-4">
                   <div className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">

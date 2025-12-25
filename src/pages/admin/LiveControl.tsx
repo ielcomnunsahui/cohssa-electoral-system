@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Pause, Play, Download, FileText, RefreshCw, Trophy, Users, Vote, BarChart3, Loader2, AlertTriangle, Zap, Radio, Wifi, WifiOff, Maximize, Minimize, Grid3X3 } from "lucide-react";
+import { Pause, Play, Download, FileText, RefreshCw, Trophy, Users, Vote, BarChart3, Loader2, AlertTriangle, Zap, Radio, Wifi, WifiOff, Maximize, Minimize, Grid3X3, Monitor } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { useAdminTour, liveControlTourSteps } from "@/hooks/useAdminTour";
@@ -46,6 +46,7 @@ const LiveControl = () => {
   const [lastVoteTime, setLastVoteTime] = useState<Date | null>(null);
   const [gridColumns, setGridColumns] = useState<GridColumns>("auto");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [presentationMode, setPresentationMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { logAction } = useAuditLog();
 
@@ -325,19 +326,28 @@ const LiveControl = () => {
         title="Live Election Control" 
         description="Monitor live election progress, view real-time results, and manage voting controls for COHSSA elections."
       />
-      <div className="space-y-6">
+      <div className={`space-y-6 transition-all duration-300 ${presentationMode ? 'bg-gray-950 -m-6 p-6 min-h-screen' : ''}`}>
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${votingActive ? 'bg-green-500/10' : 'bg-amber-500/10'}`}>
-              <Radio className={`h-6 w-6 ${votingActive ? 'text-green-500 animate-pulse' : 'text-amber-500'}`} />
+              <Radio className={`h-6 w-6 ${votingActive ? 'text-green-500 animate-pulse' : 'text-amber-500'} ${presentationMode ? 'h-8 w-8' : ''}`} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Live Election Control</h1>
-              <p className="text-muted-foreground">Monitor voting progress and manage results</p>
+              <h1 className={`font-bold ${presentationMode ? 'text-4xl text-white' : 'text-3xl'}`}>Live Election Control</h1>
+              <p className={`${presentationMode ? 'text-gray-400 text-lg' : 'text-muted-foreground'}`}>Monitor voting progress and manage results</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setPresentationMode(!presentationMode)} 
+              variant={presentationMode ? "default" : "outline"} 
+              size="icon" 
+              title={presentationMode ? "Exit Presentation Mode" : "Enter Presentation Mode"}
+              className={presentationMode ? "bg-primary" : ""}
+            >
+              <Monitor className="h-4 w-4" />
+            </Button>
             <Button onClick={toggleFullscreen} variant="outline" size="icon" title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
               {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </Button>
@@ -388,56 +398,56 @@ const LiveControl = () => {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-slide-up" style={{ animationDelay: '100ms' }} data-tour="live-stats">
-          <Card className="hover:shadow-md transition-shadow">
+        <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 animate-slide-up ${presentationMode ? 'gap-6' : ''}`} style={{ animationDelay: '100ms' }} data-tour="live-stats">
+          <Card className={`hover:shadow-md transition-shadow ${presentationMode ? 'bg-gray-900 border-gray-800' : ''}`}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4 text-blue-500" />
+              <CardTitle className={`font-medium flex items-center gap-2 ${presentationMode ? 'text-base text-gray-300' : 'text-sm'}`}>
+                <Users className={`text-blue-500 ${presentationMode ? 'h-5 w-5' : 'h-4 w-4'}`} />
                 Registered Voters
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-blue-600">{totalVoters}</p>
-              <p className="text-xs text-muted-foreground mt-1">Verified voters</p>
+              <p className={`font-bold text-blue-500 ${presentationMode ? 'text-5xl' : 'text-3xl'}`}>{totalVoters}</p>
+              <p className={`mt-1 ${presentationMode ? 'text-sm text-gray-500' : 'text-xs text-muted-foreground'}`}>Verified voters</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className={`hover:shadow-md transition-shadow ${presentationMode ? 'bg-gray-900 border-gray-800' : ''}`}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Vote className="h-4 w-4 text-green-500" />
+              <CardTitle className={`font-medium flex items-center gap-2 ${presentationMode ? 'text-base text-gray-300' : 'text-sm'}`}>
+                <Vote className={`text-green-500 ${presentationMode ? 'h-5 w-5' : 'h-4 w-4'}`} />
                 Votes Cast
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-600">{votedCount}</p>
-              <p className="text-xs text-muted-foreground mt-1">Voters who voted</p>
+              <p className={`font-bold text-green-500 ${presentationMode ? 'text-5xl' : 'text-3xl'}`}>{votedCount}</p>
+              <p className={`mt-1 ${presentationMode ? 'text-sm text-gray-500' : 'text-xs text-muted-foreground'}`}>Voters who voted</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className={`hover:shadow-md transition-shadow ${presentationMode ? 'bg-gray-900 border-gray-800' : ''}`}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-purple-500" />
+              <CardTitle className={`font-medium flex items-center gap-2 ${presentationMode ? 'text-base text-gray-300' : 'text-sm'}`}>
+                <BarChart3 className={`text-purple-500 ${presentationMode ? 'h-5 w-5' : 'h-4 w-4'}`} />
                 Voter Turnout
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-purple-600">{turnoutPercentage.toFixed(1)}%</p>
-              <Progress value={turnoutPercentage} className="mt-2 h-2" />
+              <p className={`font-bold text-purple-500 ${presentationMode ? 'text-5xl' : 'text-3xl'}`}>{turnoutPercentage.toFixed(1)}%</p>
+              <Progress value={turnoutPercentage} className={`mt-2 ${presentationMode ? 'h-3' : 'h-2'}`} />
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className={`hover:shadow-md transition-shadow ${presentationMode ? 'bg-gray-900 border-gray-800' : ''}`}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Zap className="h-4 w-4 text-amber-500" />
+              <CardTitle className={`font-medium flex items-center gap-2 ${presentationMode ? 'text-base text-gray-300' : 'text-sm'}`}>
+                <Zap className={`text-amber-500 ${presentationMode ? 'h-5 w-5' : 'h-4 w-4'}`} />
                 Total Votes
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-amber-600">{totalVotesCast}</p>
-              <p className="text-xs text-muted-foreground mt-1">All positions</p>
+              <p className={`font-bold text-amber-500 ${presentationMode ? 'text-5xl' : 'text-3xl'}`}>{totalVotesCast}</p>
+              <p className={`mt-1 ${presentationMode ? 'text-sm text-gray-500' : 'text-xs text-muted-foreground'}`}>All positions</p>
             </CardContent>
           </Card>
         </div>
@@ -474,11 +484,11 @@ const LiveControl = () => {
         {/* Results by Position - Compact Tabular Format for Projection */}
         <div className="space-y-4" ref={containerRef}>
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold animate-fade-in">Live Results by Position</h2>
+            <h2 className={`font-semibold animate-fade-in ${presentationMode ? 'text-2xl text-white' : 'text-xl'}`}>Live Results by Position</h2>
             <div className="flex items-center gap-2">
-              <Grid3X3 className="h-4 w-4 text-muted-foreground" />
+              <Grid3X3 className={`h-4 w-4 ${presentationMode ? 'text-gray-400' : 'text-muted-foreground'}`} />
               <Select value={gridColumns} onValueChange={(v) => setGridColumns(v as GridColumns)}>
-                <SelectTrigger className="w-[120px] h-8">
+                <SelectTrigger className={`w-[120px] h-8 ${presentationMode ? 'bg-gray-800 border-gray-700 text-white' : ''}`}>
                   <SelectValue placeholder="Columns" />
                 </SelectTrigger>
                 <SelectContent>
@@ -492,66 +502,66 @@ const LiveControl = () => {
           </div>
           
           {results.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
+            <Card className={presentationMode ? 'bg-gray-900 border-gray-800' : ''}>
+              <CardContent className={`py-12 text-center ${presentationMode ? 'text-gray-400' : 'text-muted-foreground'}`}>
                 <Vote className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No positions or votes recorded yet</p>
               </CardContent>
             </Card>
           ) : (
             <div className="overflow-x-auto">
-              <div className="grid gap-2" style={{ gridTemplateColumns: getGridTemplate() }}>
+              <div className={`grid ${presentationMode ? 'gap-4' : 'gap-2'}`} style={{ gridTemplateColumns: getGridTemplate() }}>
                 {results.map((position, index) => (
                   <Card 
                     key={position.position_id} 
-                    className="animate-slide-up min-w-[200px]" 
+                    className={`animate-slide-up min-w-[200px] ${presentationMode ? 'bg-gray-900 border-gray-800' : ''}`}
                     style={{ animationDelay: `${index * 20}ms` }}
                   >
-                    <CardHeader className="py-2 px-3 border-b bg-muted/30">
+                    <CardHeader className={`py-2 px-3 border-b ${presentationMode ? 'bg-gray-800/50 border-gray-700 py-3' : 'bg-muted/30'}`}>
                       <div className="flex items-center justify-between gap-2">
-                        <CardTitle className="text-sm font-semibold truncate">{position.position_name}</CardTitle>
-                        <Badge variant="secondary" className="gap-1 text-xs shrink-0">
-                          <Vote className="h-3 w-3" />
+                        <CardTitle className={`font-semibold truncate ${presentationMode ? 'text-base text-white' : 'text-sm'}`}>{position.position_name}</CardTitle>
+                        <Badge variant="secondary" className={`gap-1 shrink-0 ${presentationMode ? 'text-sm bg-gray-700 text-white' : 'text-xs'}`}>
+                          <Vote className={presentationMode ? 'h-4 w-4' : 'h-3 w-3'} />
                           {position.total_votes}
                         </Badge>
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
                       {position.candidates.length === 0 ? (
-                        <p className="text-muted-foreground text-center py-4 text-xs">No candidates</p>
+                        <p className={`text-center py-4 ${presentationMode ? 'text-sm text-gray-500' : 'text-xs text-muted-foreground'}`}>No candidates</p>
                       ) : (
-                        <div className="divide-y">
+                        <div className={`divide-y ${presentationMode ? 'divide-gray-800' : ''}`}>
                           {position.candidates.map((candidate, cidx) => (
                             <div 
                               key={candidate.id}
-                              className={`px-3 py-2 flex items-center gap-2 transition-all duration-500 ${
+                              className={`flex items-center gap-2 transition-all duration-500 ${presentationMode ? 'px-4 py-3' : 'px-3 py-2'} ${
                                 cidx === 0 && position.total_votes > 0 ? 'bg-amber-500/10' : ''
                               } ${animatedCandidates.has(candidate.id) ? 'animate-pulse bg-green-500/20 ring-2 ring-green-500/50' : ''}`}
                             >
-                              <div className="w-5 shrink-0 text-center">
+                              <div className={`shrink-0 text-center ${presentationMode ? 'w-6' : 'w-5'}`}>
                                 {cidx === 0 && position.total_votes > 0 ? (
-                                  <Trophy className="h-4 w-4 text-amber-500" />
+                                  <Trophy className={`text-amber-500 ${presentationMode ? 'h-5 w-5' : 'h-4 w-4'}`} />
                                 ) : (
-                                  <span className="text-xs text-muted-foreground">{cidx + 1}</span>
+                                  <span className={`${presentationMode ? 'text-sm text-gray-500' : 'text-xs text-muted-foreground'}`}>{cidx + 1}</span>
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-medium truncate ${animatedCandidates.has(candidate.id) ? 'text-green-600 font-bold' : ''}`}>
+                                <p className={`font-medium truncate ${presentationMode ? 'text-base text-white' : 'text-sm'} ${animatedCandidates.has(candidate.id) ? 'text-green-500 font-bold' : ''}`}>
                                   {candidate.name}
                                 </p>
                                 <Progress 
                                   value={candidate.percentage} 
-                                  className={`h-1.5 mt-1 transition-all duration-500 ${animatedCandidates.has(candidate.id) ? 'h-2' : ''}`}
+                                  className={`mt-1 transition-all duration-500 ${presentationMode ? 'h-2' : 'h-1.5'} ${animatedCandidates.has(candidate.id) ? (presentationMode ? 'h-3' : 'h-2') : ''}`}
                                 />
                               </div>
                               <div className="shrink-0 text-right">
                                 <Badge 
                                   variant={cidx === 0 && position.total_votes > 0 ? "default" : "outline"} 
-                                  className={`text-xs transition-all duration-300 ${animatedCandidates.has(candidate.id) ? 'scale-110 bg-green-500 text-white' : ''}`}
+                                  className={`transition-all duration-300 ${presentationMode ? 'text-sm' : 'text-xs'} ${animatedCandidates.has(candidate.id) ? 'scale-110 bg-green-500 text-white' : ''}`}
                                 >
                                   {candidate.votes}
                                 </Badge>
-                                <p className="text-xs text-muted-foreground mt-0.5">
+                                <p className={`mt-0.5 ${presentationMode ? 'text-sm text-gray-400' : 'text-xs text-muted-foreground'}`}>
                                   {candidate.percentage.toFixed(0)}%
                                 </p>
                               </div>
