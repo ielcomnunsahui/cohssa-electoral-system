@@ -1005,6 +1005,13 @@ export type Database = {
             referencedRelation: "voters"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "voters_login_lookup"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -1270,6 +1277,33 @@ export type Database = {
           pdf_url?: string | null
           published_at?: string | null
           title?: string | null
+        }
+        Relationships: []
+      }
+      voters_login_lookup: {
+        Row: {
+          email: string | null
+          has_biometric: boolean | null
+          id: string | null
+          matric_number: string | null
+          name: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          email?: string | null
+          has_biometric?: never
+          id?: string | null
+          matric_number?: string | null
+          name?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          email?: string | null
+          has_biometric?: never
+          id?: string | null
+          matric_number?: string | null
+          name?: string | null
+          verified?: boolean | null
         }
         Relationships: []
       }
