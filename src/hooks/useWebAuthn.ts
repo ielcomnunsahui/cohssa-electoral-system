@@ -67,13 +67,8 @@ export const useWebAuthn = () => {
       return webauthnCredential;
     } catch (error: any) {
       console.error('WebAuthn registration error:', error);
-      if (error.name === 'NotAllowedError') {
-        toast.error('Biometric registration was cancelled or not allowed');
-      } else if (error.name === 'SecurityError') {
-        toast.error('WebAuthn is not available in this context (requires HTTPS or localhost)');
-      } else {
-        toast.error('Biometric registration failed. Using email OTP instead.');
-      }
+      // Don't show toast here - let the caller handle fallback gracefully
+      // The error will be caught and handled by the registration flow
       return null;
     } finally {
       setIsLoading(false);
