@@ -100,30 +100,32 @@ const LiveControl = () => {
       });
 
       // Check for vote changes and trigger animations
-      const newAnimated = new Set<string>();
-      positionResults.forEach(pos => {
-        pos.candidates.forEach(cand => {
-          const prevVotes = prevResults.get(cand.id) || 0;
-          if (cand.votes > prevVotes && prevVotes > 0) {
-            newAnimated.add(cand.id);
-            setLastVoteTime(new Date());
-          }
+      setPrevResults(prev => {
+        const newAnimated = new Set<string>();
+        positionResults.forEach(pos => {
+          pos.candidates.forEach(cand => {
+            const prevVotes = prev.get(cand.id) || 0;
+            if (cand.votes > prevVotes && prevVotes > 0) {
+              newAnimated.add(cand.id);
+              setLastVoteTime(new Date());
+            }
+          });
         });
-      });
 
-      if (newAnimated.size > 0) {
-        setAnimatedCandidates(newAnimated);
-        setTimeout(() => setAnimatedCandidates(new Set()), 2000);
-      }
+        if (newAnimated.size > 0) {
+          setAnimatedCandidates(newAnimated);
+          setTimeout(() => setAnimatedCandidates(new Set()), 2000);
+        }
 
-      // Update previous results for next comparison
-      const newPrevResults = new Map<string, number>();
-      positionResults.forEach(pos => {
-        pos.candidates.forEach(cand => {
-          newPrevResults.set(cand.id, cand.votes);
+        // Return new previous results for next comparison
+        const newPrevResults = new Map<string, number>();
+        positionResults.forEach(pos => {
+          pos.candidates.forEach(cand => {
+            newPrevResults.set(cand.id, cand.votes);
+          });
         });
+        return newPrevResults;
       });
-      setPrevResults(newPrevResults);
 
       setResults(positionResults);
     } catch (error: any) {
