@@ -137,22 +137,18 @@ const VoterLogin = () => {
 
       const success = await authenticate(credential.credentialId);
       if (success) {
-        // Biometric verified, try to sign in
-        const { error: otpError } = await supabase.auth.signInWithOtp({
+        // Biometric verified - mark voter as authenticated via session storage
+        // and store voter info for the dashboard
+        sessionStorage.setItem('voter_session', JSON.stringify({
+          matric: voterInfo.matric,
+          name: voterInfo.name,
           email: voterInfo.email,
-          options: {
-            shouldCreateUser: false,
-          }
-        });
-
-        if (otpError) {
-          // If magic link fails, still proceed with OTP fallback
-          showInfoToast("Biometric verified!", "Please enter the OTP sent to your email.");
-          await sendOTP();
-          return;
-        }
+          authenticated: true,
+          method: 'biometric',
+          timestamp: Date.now()
+        }));
         
-        showSuccessToast("Login successful!");
+        showSuccessToast("Biometric login successful!");
         navigate("/voter/dashboard");
       }
     } catch (error: any) {

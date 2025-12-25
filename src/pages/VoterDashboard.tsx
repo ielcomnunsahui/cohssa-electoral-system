@@ -25,19 +25,58 @@ const VoterDashboard = () => {
 
   const loadVoterData = async () => {
     try {
+      // First try Supabase auth
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      
+      // Fallback to session storage for biometric login
+      const sessionData = sessionStorage.getItem('voter_session');
+      const voterSession = sessionData ? JSON.parse(sessionData) : null;
+      
+      if (!user && !voterSession?.authenticated) {
         navigate("/voter/login");
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('voters')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Check session validity (max 1 hour)
+      if (voterSession && !user) {
+        const sessionAge = Date.now() - (voterSession.timestamp || 0);
+        if (sessionAge > 60 * 60 * 1000) {
+          sessionStorage.removeItem('voter_session');
+          toast.error("Session expired. Please login again.");
+          navigate("/voter/login");
+          return;
+        }
+      }
 
-      if (profileError) throw profileError;
+      let profile;
+      
+      if (user) {
+        // Load from Supabase auth user
+        const { data, error: profileError } = await supabase
+          .from('voters')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileError) throw profileError;
+        profile = data;
+      } else if (voterSession?.matric) {
+        // Load from session storage (biometric login)
+        const { data, error: profileError } = await supabase
+          .from('voters')
+          .select('*')
+          .ilike('matric_number', voterSession.matric)
+          .single();
+
+        if (profileError) throw profileError;
+        profile = data;
+      }
+      
+      if (!profile) {
+        toast.error("Voter profile not found");
+        navigate("/voter/login");
+        return;
+      }
       
       if (!profile.verified) {
         toast.error("Your account is not verified yet");
@@ -71,6 +110,7 @@ const VoterDashboard = () => {
     } catch (error: any) {
       console.error("Error loading voter data:", error);
       toast.error(error.message || "Failed to load voter data");
+      navigate("/voter/login");
     } finally {
       setLoading(false);
     }
@@ -152,6 +192,7 @@ const VoterDashboard = () => {
   };
 
   const handleLogout = async () => {
+    sessionStorage.removeItem('voter_session');
     await supabase.auth.signOut();
     navigate("/");
   };

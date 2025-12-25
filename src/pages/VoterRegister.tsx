@@ -276,7 +276,7 @@ const VoterRegister = () => {
         return;
       }
 
-      // Create voter profile
+      // Create voter profile - mark as verified since email was verified via OTP
       const profileData: any = {
         user_id: authData.user.id,
         matric_number: studentInfo.matric,
@@ -284,7 +284,7 @@ const VoterRegister = () => {
         department: studentInfo.department,
         level: studentInfo.level,
         email: email.toLowerCase(),
-        verified: false,
+        verified: true, // Email verified through OTP/biometric process
         has_voted: false
       };
 
