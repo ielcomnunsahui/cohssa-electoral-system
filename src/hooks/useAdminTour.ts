@@ -140,6 +140,24 @@ export const liveControlTourSteps: DriveStep[] = [
     },
   },
   {
+    element: '[data-tour="display-controls"]',
+    popover: {
+      title: "🖥️ Display Controls",
+      description: "Toggle Presentation Mode for projector-optimized dark theme with larger fonts. Use Fullscreen for maximum display area.",
+      side: "bottom",
+      align: "center",
+    },
+  },
+  {
+    element: '[data-tour="grid-columns"]',
+    popover: {
+      title: "📐 Grid Layout",
+      description: "Configure how many columns to display for live results - Auto, 2, 3, or 4 columns to fit your screen size.",
+      side: "left",
+      align: "center",
+    },
+  },
+  {
     element: '[data-tour="emergency-controls"]',
     popover: {
       title: "⚠️ Emergency Controls",
@@ -151,7 +169,7 @@ export const liveControlTourSteps: DriveStep[] = [
   {
     popover: {
       title: "✅ Live Control Tour Complete!",
-      description: "You can now monitor and control live election status.",
+      description: "You can now monitor and control live election status with presentation-ready display options.",
     },
   },
 ];
