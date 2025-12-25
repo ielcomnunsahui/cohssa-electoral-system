@@ -15,7 +15,7 @@ import { driver } from "driver.js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import heroStudents from "@/assets/hero-students.jpg";
+import heroStudents from "@/assets/hero-students-group.jpg";
 import "driver.js/dist/driver.css";
 
 interface TimelineStage {
