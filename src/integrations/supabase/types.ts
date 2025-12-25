@@ -1093,6 +1093,147 @@ export type Database = {
         }
         Relationships: []
       }
+      cohssa_alumni_public: {
+        Row: {
+          administration_number: number | null
+          created_at: string | null
+          current_workplace: string | null
+          department: string | null
+          display_order: number | null
+          graduation_year: number | null
+          id: string | null
+          name: string | null
+          photo_url: string | null
+          position: string | null
+        }
+        Insert: {
+          administration_number?: number | null
+          created_at?: string | null
+          current_workplace?: string | null
+          department?: string | null
+          display_order?: number | null
+          graduation_year?: number | null
+          id?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Update: {
+          administration_number?: number | null
+          created_at?: string | null
+          current_workplace?: string | null
+          department?: string | null
+          display_order?: number | null
+          graduation_year?: number | null
+          id?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Relationships: []
+      }
+      cohssa_executives_public: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          id: string | null
+          level: string | null
+          name: string | null
+          photo_url: string | null
+          position: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Relationships: []
+      }
+      cohssa_senate_public: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          id: string | null
+          level: string | null
+          name: string | null
+          photo_url: string | null
+          position: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Relationships: []
+      }
+      electoral_committee_public: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          id: string | null
+          is_staff_adviser: boolean | null
+          level: string | null
+          name: string | null
+          photo_url: string | null
+          position: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          is_staff_adviser?: boolean | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          is_staff_adviser?: boolean | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Relationships: []
+      }
       published_content_public: {
         Row: {
           author_name: string | null

@@ -184,10 +184,10 @@ const handler = async (req: Request): Promise<Response> => {
     // Clear failed attempts on success
     await clearFailedAttempts(supabase, email);
 
-    // Get voter profile
+    // Get voter profile with user_id
     const { data: voterProfile, error: profileError } = await supabase
       .from("voters")
-      .select("id, matric_number, name, email, verified, has_voted")
+      .select("id, matric_number, name, email, verified, has_voted, user_id")
       .eq("email", email.toLowerCase())
       .maybeSingle();
 
@@ -196,6 +196,36 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ error: "Voter profile not found", valid: false }),
         { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
+    }
+
+    // Mark voter as verified if not already
+    if (!voterProfile.verified) {
+      await supabase
+        .from("voters")
+        .update({ verified: true })
+        .eq("id", voterProfile.id);
+    }
+
+    // Generate a magic link for the user to sign in
+    let magicLink = null;
+    if (voterProfile.user_id) {
+      try {
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+          type: 'magiclink',
+          email: email.toLowerCase(),
+        });
+
+        if (!linkError && linkData?.properties?.hashed_token) {
+          // Return the verification token that can be used client-side
+          magicLink = {
+            token_hash: linkData.properties.hashed_token,
+            type: 'magiclink'
+          };
+        }
+      } catch (linkError) {
+        console.error("Magic link generation error:", linkError);
+        // Continue without magic link - user can still be verified
+      }
     }
 
     console.log("OTP verified successfully for:", email.substring(0, 3) + "***");
@@ -208,9 +238,11 @@ const handler = async (req: Request): Promise<Response> => {
           id: voterProfile.id,
           matric: voterProfile.matric_number,
           name: voterProfile.name,
-          verified: voterProfile.verified,
-          has_voted: voterProfile.has_voted
-        }
+          verified: true,
+          has_voted: voterProfile.has_voted,
+          user_id: voterProfile.user_id
+        },
+        magicLink: magicLink
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
