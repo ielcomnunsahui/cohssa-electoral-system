@@ -21,10 +21,11 @@ const AboutCOHSSA = () => {
 
   const fetchData = async () => {
     try {
+      // Use public views that exclude sensitive contact information
       const [execRes, senateRes, alumniRes] = await Promise.all([
-        supabase.from('cohssa_executives').select('*').order('display_order', { ascending: true }),
-        supabase.from('cohssa_senate').select('*').order('display_order', { ascending: true }),
-        supabase.from('cohssa_alumni').select('*').order('administration_number', { ascending: true })
+        supabase.from('cohssa_executives_public').select('*').order('display_order', { ascending: true }),
+        supabase.from('cohssa_senate_public').select('*').order('display_order', { ascending: true }),
+        supabase.from('cohssa_alumni_public').select('*').order('administration_number', { ascending: true })
       ]);
 
       if (execRes.data) setExecutives(execRes.data);
