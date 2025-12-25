@@ -137,22 +137,18 @@ const VoterLogin = () => {
 
       const success = await authenticate(credential.credentialId);
       if (success) {
-        // Biometric verified, try to sign in
-        const { error: otpError } = await supabase.auth.signInWithOtp({
+        // Biometric verified - mark voter as authenticated via session storage
+        // and store voter info for the dashboard
+        sessionStorage.setItem('voter_session', JSON.stringify({
+          matric: voterInfo.matric,
+          name: voterInfo.name,
           email: voterInfo.email,
-          options: {
-            shouldCreateUser: false,
-          }
-        });
-
-        if (otpError) {
-          // If magic link fails, still proceed with OTP fallback
-          showInfoToast("Biometric verified!", "Please enter the OTP sent to your email.");
-          await sendOTP();
-          return;
-        }
+          authenticated: true,
+          method: 'biometric',
+          timestamp: Date.now()
+        }));
         
-        showSuccessToast("Login successful!");
+        showSuccessToast("Biometric login successful!");
         navigate("/voter/dashboard");
       }
     } catch (error: any) {
@@ -179,20 +175,20 @@ const VoterLogin = () => {
         return;
       }
 
-      // OTP verified, sign in user
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email: voterInfo.email,
-        options: {
-          shouldCreateUser: false,
+      // If magic link token is provided, use it to sign in
+      if (data.magicLink?.token_hash) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: data.magicLink.token_hash,
+          type: 'magiclink'
+        });
+        
+        if (verifyError) {
+          console.log("Magic link verification failed, proceeding with session storage");
         }
-      });
-
-      if (signInError) {
-        console.log("Supabase OTP sign-in skipped, using custom verification");
       }
 
       showSuccessToast(`Welcome back, ${data.voter?.name || voterInfo.name}!`);
-      // Store only minimal, non-sensitive session info
+      // Store session info for backup
       sessionStorage.setItem('voter_session', JSON.stringify({
         id: data.voter?.id,
         matric: data.voter?.matric,

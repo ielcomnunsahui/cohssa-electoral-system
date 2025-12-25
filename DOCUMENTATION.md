@@ -224,7 +224,7 @@ Approved candidates for voting.
 
 #### `votes`
 Cast votes (anonymous).
-- voter_id, position_id, aspirant_id
+- voter_id, position_id, candidate_id
 - created_at
 
 #### `election_timeline`
@@ -239,12 +239,13 @@ OTP rate limiting.
 - attempt_count, locked_until
 
 ### Departments
-- **MLS** - Medical Laboratory Science
 - **NSC** - Nursing Sciences
-- **MED** - Medicine and Surgery
-- **ANA** - Anatomy
-- **PHS** - Physiology
+- **MLS** - Medical Laboratory Sciences
 - **PUH** - Community Medicine and Public Health
+- **MED** - Medicine and Surgery
+- **ANA** - Human Anatomy
+- **PHS** - Human Physiology
+- **BCH** - Medical Biochemistry
 
 ---
 

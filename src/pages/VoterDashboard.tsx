@@ -1,10 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import confetti from "canvas-confetti";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, AlertCircle, Vote, LogOut } from "lucide-react";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog";
+import { CheckCircle, AlertCircle, Vote, LogOut, ArrowLeft, ClipboardList, MinusCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/NavLink";
@@ -17,6 +29,7 @@ const VoterDashboard = () => {
   const [currentPositionIndex, setCurrentPositionIndex] = useState(0);
   const [selectedCandidates, setSelectedCandidates] = useState<{[key: string]: string}>({});
   const [votingStarted, setVotingStarted] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -25,19 +38,58 @@ const VoterDashboard = () => {
 
   const loadVoterData = async () => {
     try {
+      // First try Supabase auth
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      
+      // Fallback to session storage for biometric login
+      const sessionData = sessionStorage.getItem('voter_session');
+      const voterSession = sessionData ? JSON.parse(sessionData) : null;
+      
+      if (!user && !voterSession?.authenticated) {
         navigate("/voter/login");
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('voters')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Check session validity (max 1 hour)
+      if (voterSession && !user) {
+        const sessionAge = Date.now() - (voterSession.timestamp || 0);
+        if (sessionAge > 60 * 60 * 1000) {
+          sessionStorage.removeItem('voter_session');
+          toast.error("Session expired. Please login again.");
+          navigate("/voter/login");
+          return;
+        }
+      }
 
-      if (profileError) throw profileError;
+      let profile;
+      
+      if (user) {
+        // Load from Supabase auth user
+        const { data, error: profileError } = await supabase
+          .from('voters')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileError) throw profileError;
+        profile = data;
+      } else if (voterSession?.matric) {
+        // Load from session storage (biometric login)
+        const { data, error: profileError } = await supabase
+          .from('voters')
+          .select('*')
+          .ilike('matric_number', voterSession.matric)
+          .single();
+
+        if (profileError) throw profileError;
+        profile = data;
+      }
+      
+      if (!profile) {
+        toast.error("Voter profile not found");
+        navigate("/voter/login");
+        return;
+      }
       
       if (!profile.verified) {
         toast.error("Your account is not verified yet");
@@ -71,6 +123,7 @@ const VoterDashboard = () => {
     } catch (error: any) {
       console.error("Error loading voter data:", error);
       toast.error(error.message || "Failed to load voter data");
+      navigate("/voter/login");
     } finally {
       setLoading(false);
     }
@@ -93,12 +146,7 @@ const VoterDashboard = () => {
   };
 
   const handleNext = () => {
-    const position = positions[currentPositionIndex];
-    if (!selectedCandidates[position.id]) {
-      toast.error("Please select a candidate before proceeding");
-      return;
-    }
-
+    // Allow proceeding without selecting a candidate for a position
     if (currentPositionIndex < positions.length - 1) {
       setCurrentPositionIndex(currentPositionIndex + 1);
     }
@@ -120,7 +168,7 @@ const VoterDashboard = () => {
     try {
       const votes = Object.entries(selectedCandidates).map(([positionId, candidateId]) => ({
         position_id: positionId,
-        aspirant_id: candidateId,
+        candidate_id: candidateId,
         voter_id: voterProfile.id
       }));
 
@@ -139,10 +187,34 @@ const VoterDashboard = () => {
 
       if (profileError) throw profileError;
 
+      // Trigger confetti celebration
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0']
+      });
+
+      // Second burst for more impact
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        });
+        confetti({
+          particleCount: 100,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        });
+      }, 250);
+
       toast.success("Your vote has been recorded successfully!");
       setTimeout(() => {
         navigate("/");
-      }, 2000);
+      }, 3000);
     } catch (error: any) {
       console.error("Error submitting vote:", error);
       toast.error(error.message || "Failed to submit vote");
@@ -152,6 +224,7 @@ const VoterDashboard = () => {
   };
 
   const handleLogout = async () => {
+    sessionStorage.removeItem('voter_session');
     await supabase.auth.signOut();
     navigate("/");
   };
@@ -169,7 +242,33 @@ const VoterDashboard = () => {
 
   const currentPosition = positions[currentPositionIndex];
   const isLastPosition = currentPositionIndex === positions.length - 1;
-  const allPositionsSelected = positions.every(pos => selectedCandidates[pos.id]);
+  const hasAtLeastOneSelection = Object.keys(selectedCandidates).length > 0;
+
+  // Helper to get candidate name by ID
+  const getCandidateName = (positionId: string, candidateId: string) => {
+    const position = positions.find(p => p.id === positionId);
+    const candidate = position?.candidates?.find((c: any) => c.id === candidateId);
+    return candidate?.name || "Unknown";
+  };
+
+  const getCandidatePhoto = (positionId: string, candidateId: string) => {
+    const position = positions.find(p => p.id === positionId);
+    const candidate = position?.candidates?.find((c: any) => c.id === candidateId);
+    return candidate?.photo_url || "/placeholder.svg";
+  };
+
+  const handleProceedToReview = () => {
+    setShowReview(true);
+  };
+
+  const handleBackToVoting = () => {
+    setShowReview(false);
+  };
+
+  const handleEditPosition = (positionIndex: number) => {
+    setCurrentPositionIndex(positionIndex);
+    setShowReview(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-medical-50 to-medical-100">
@@ -247,7 +346,138 @@ const VoterDashboard = () => {
               )}
             </CardContent>
           </Card>
+        ) : showReview ? (
+          // Review Summary Screen
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <ClipboardList className="h-6 w-6 text-medical-600" />
+                <div>
+                  <CardTitle>Review Your Votes</CardTitle>
+                  <CardDescription>Please confirm your selections before submitting</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert className="border-amber-500/30 bg-amber-500/5">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-700">
+                  Once submitted, your vote cannot be changed. Please review carefully.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                {positions.map((position, index) => {
+                  const selectedCandidateId = selectedCandidates[position.id];
+                  const hasSelection = !!selectedCandidateId;
+
+                  return (
+                    <div 
+                      key={position.id} 
+                      className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${hasSelection ? 'bg-green-50 border-green-200 hover:border-green-400' : 'bg-muted/50 border-muted hover:border-muted-foreground/30'}`}
+                      onClick={() => handleEditPosition(index)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground font-medium">
+                            {position.position_name || position.title}
+                          </p>
+                          {hasSelection ? (
+                            <div className="flex items-center gap-3 mt-2">
+                              <img
+                                src={getCandidatePhoto(position.id, selectedCandidateId)}
+                                alt=""
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                              <p className="font-semibold text-green-700">
+                                {getCandidateName(position.id, selectedCandidateId)}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 mt-2">
+                              <MinusCircle className="h-5 w-5 text-muted-foreground" />
+                              <p className="text-muted-foreground italic">Abstained</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground">
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </Button>
+                          {hasSelection ? (
+                            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                          ) : (
+                            <Badge variant="secondary">Skipped</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="p-4 bg-muted/30 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">
+                  You voted for <span className="font-semibold text-foreground">{Object.keys(selectedCandidates).length}</span> out of <span className="font-semibold text-foreground">{positions.length}</span> positions
+                </p>
+              </div>
+
+              <div className="flex justify-between pt-4 border-t gap-4">
+                <Button
+                  variant="outline"
+                  onClick={handleBackToVoting}
+                  className="gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Go Back & Edit
+                </Button>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      disabled={!hasAtLeastOneSelection || submitting}
+                      className="bg-success hover:bg-success/90 gap-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Confirm & Submit
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <Vote className="h-5 w-5 text-medical-600" />
+                        Final Confirmation
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-3">
+                        <p>
+                          You are about to submit your vote for <strong>{Object.keys(selectedCandidates).length}</strong> out of <strong>{positions.length}</strong> positions.
+                        </p>
+                        <p className="text-destructive font-medium">
+                          This action cannot be undone. Once submitted, your vote is final and cannot be changed.
+                        </p>
+                        <p>
+                          Are you absolutely sure you want to proceed?
+                        </p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Go Back</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleSubmitVote}
+                        disabled={submitting}
+                        className="bg-success hover:bg-success/90"
+                      >
+                        {submitting ? "Submitting..." : "Yes, Submit My Vote"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
+          // Voting Screen
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -297,6 +527,12 @@ const VoterDashboard = () => {
                 ))}
               </div>
 
+              {!selectedCandidates[currentPosition?.id] && (
+                <p className="text-center text-sm text-muted-foreground italic">
+                  You can skip this position if you don't want to vote for any candidate
+                </p>
+              )}
+
               <div className="flex justify-between pt-4 border-t">
                 <Button
                   variant="outline"
@@ -308,11 +544,12 @@ const VoterDashboard = () => {
 
                 {isLastPosition ? (
                   <Button
-                    onClick={handleSubmitVote}
-                    disabled={!allPositionsSelected || submitting}
-                    className="bg-success hover:bg-success/90"
+                    onClick={handleProceedToReview}
+                    disabled={!hasAtLeastOneSelection}
+                    className="gap-2"
                   >
-                    {submitting ? "Submitting..." : "Submit Vote"}
+                    <ClipboardList className="h-4 w-4" />
+                    Review Votes
                   </Button>
                 ) : (
                   <Button onClick={handleNext}>

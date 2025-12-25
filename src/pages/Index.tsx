@@ -9,13 +9,13 @@ import {
   Calendar, Star, Zap, ArrowRight, Home, UserPlus, Eye, Award, Newspaper, LogIn, User
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { DualLogo, Logo, COHSSALogoImg } from "@/components/NavLink";
 import { driver } from "driver.js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import heroStudents from "@/assets/hero-students.jpg";
+import heroStudents from "@/assets/hero-students-group.jpg";
 import "driver.js/dist/driver.css";
 
 interface TimelineStage {
@@ -362,7 +362,7 @@ const Index = () => {
   const stats = [
     { icon: GraduationCap, label: "Active Students", value: "1,350+", color: "text-blue-500" },
     { icon: Vote, label: "Faculties", value: "2", color: "text-green-500" },
-    { icon: Star, label: "Departments", value: "6", color: "text-amber-500" },
+    { icon: Star, label: "Departments", value: "7", color: "text-amber-500" },
     { icon: Zap, label: "Instant Results", value: "24/7", color: "text-purple-500" },
   ];
 
@@ -491,8 +491,12 @@ const Index = () => {
             alt="College students" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/80 to-background" />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10" />
+          {/* Primary gradient overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/95" />
+          {/* Secondary subtle color accent overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/15 via-transparent to-accent/15" />
+          {/* Dark vignette effect for depth */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,hsl(var(--background)/0.4)_100%)]" />
         </div>
 
         {/* Animated Elements */}
@@ -864,11 +868,22 @@ const Index = () => {
               <DualLogo logoSize="h-8 w-8" />
             </div>
             <div className="text-center text-sm text-muted-foreground">
-              <p>© 2025 Independent Students Electoral Committee</p>
+              <p>© {new Date().getFullYear()} Independent Students Electoral Committee</p>
               <p className="mt-1 flex items-center justify-center gap-1">
                 <GraduationCap className="h-3 w-3" />
                 Al-Hikmah University, Ilorin, Nigeria
               </p>
+              <div className="mt-2 flex items-center justify-center gap-3">
+                <Link to="/terms" className="hover:text-primary transition-colors inline-flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Terms
+                </Link>
+                <span className="text-muted-foreground/30">•</span>
+                <Link to="/privacy" className="hover:text-primary transition-colors inline-flex items-center gap-1">
+                  <Shield className="h-3 w-3" />
+                  Privacy
+                </Link>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => navigate("/support")} className="text-xs">Support</Button>

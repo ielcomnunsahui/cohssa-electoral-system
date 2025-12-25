@@ -5,13 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Mail, Lock, User, LogIn, KeyRound, ArrowLeft } from "lucide-react";
+import { Loader2, Mail, Lock, User, LogIn, KeyRound, ArrowLeft, ShieldCheck, ExternalLink } from "lucide-react";
 import { Logo } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 
-type AuthView = "main" | "forgot-password" | "verify-otp" | "reset-password";
+type AuthView = "consent" | "main" | "forgot-password" | "verify-otp" | "reset-password";
 
 export const GlobalAuthDialog = () => {
   const { showAuthDialog, closeAuthDialog } = useAuth();
@@ -22,8 +23,15 @@ export const GlobalAuthDialog = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [otp, setOtp] = useState("");
-  const [authView, setAuthView] = useState<AuthView>("main");
+  const [authView, setAuthView] = useState<AuthView>("consent");
   const [otpSending, setOtpSending] = useState(false);
+  
+  // Consent states
+  const [consentDataCollection, setConsentDataCollection] = useState(false);
+  const [consentDataStorage, setConsentDataStorage] = useState(false);
+  const [consentTerms, setConsentTerms] = useState(false);
+
+  const allConsentsChecked = consentDataCollection && consentDataStorage && consentTerms;
 
   const resetForm = () => {
     setEmail("");
@@ -32,7 +40,10 @@ export const GlobalAuthDialog = () => {
     setConfirmPassword("");
     setName("");
     setOtp("");
-    setAuthView("main");
+    setConsentDataCollection(false);
+    setConsentDataStorage(false);
+    setConsentTerms(false);
+    setAuthView("consent");
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -186,18 +197,92 @@ export const GlobalAuthDialog = () => {
             <Logo className="h-16 w-16" />
           </div>
           <DialogTitle className="text-2xl">
+            {authView === "consent" && "Terms & Consent"}
             {authView === "main" && "Welcome to ISECO"}
             {authView === "forgot-password" && "Reset Password"}
             {authView === "verify-otp" && "Verify Code"}
             {authView === "reset-password" && "Set New Password"}
           </DialogTitle>
           <DialogDescription>
+            {authView === "consent" && "Please review and accept the following to continue"}
             {authView === "main" && "Sign in to access all features or continue as guest"}
             {authView === "forgot-password" && "Enter your email to receive a recovery code"}
             {authView === "verify-otp" && `Enter the 6-digit code sent to ${email}`}
             {authView === "reset-password" && "Create a new password for your account"}
           </DialogDescription>
         </DialogHeader>
+
+        {authView === "consent" && (
+          <div className="space-y-4 mt-4">
+            <div className="bg-muted/50 p-4 rounded-lg border">
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <span className="font-medium">Data Protection & Privacy</span>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="consent-collection"
+                    checked={consentDataCollection}
+                    onCheckedChange={(checked) => setConsentDataCollection(checked as boolean)}
+                  />
+                  <Label htmlFor="consent-collection" className="text-sm leading-relaxed cursor-pointer">
+                    I consent to the collection of my personal data (name, email, and usage information) for account management and service provision. See our{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                      Privacy Policy
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </Label>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="consent-storage"
+                    checked={consentDataStorage}
+                    onCheckedChange={(checked) => setConsentDataStorage(checked as boolean)}
+                  />
+                  <Label htmlFor="consent-storage" className="text-sm leading-relaxed cursor-pointer">
+                    I consent to the secure storage and processing of my data in accordance with applicable data protection regulations as outlined in our{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                      Privacy Policy
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </Label>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="consent-terms"
+                    checked={consentTerms}
+                    onCheckedChange={(checked) => setConsentTerms(checked as boolean)}
+                  />
+                  <Label htmlFor="consent-terms" className="text-sm leading-relaxed cursor-pointer">
+                    I have read and agree to the{" "}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                      Terms and Conditions
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                    {" "}and AHSS rules and regulations.
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => setAuthView("main")}
+              className="w-full gap-2"
+              disabled={!allConsentsChecked}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Continue to Sign In
+            </Button>
+
+            <Button variant="outline" onClick={handleContinueAsGuest} className="w-full">
+              Continue as Guest
+            </Button>
+          </div>
+        )}
 
         {authView === "main" && (
           <>
@@ -319,8 +404,9 @@ export const GlobalAuthDialog = () => {
               </div>
             </div>
 
-            <Button variant="outline" onClick={handleContinueAsGuest} className="w-full">
-              Continue as Guest
+            <Button variant="ghost" onClick={() => setAuthView("consent")} className="w-full">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Consent
             </Button>
           </>
         )}

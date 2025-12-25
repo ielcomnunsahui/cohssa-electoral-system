@@ -956,21 +956,21 @@ export type Database = {
       }
       votes: {
         Row: {
-          aspirant_id: string | null
+          candidate_id: string | null
           created_at: string | null
           id: string
           position_id: string | null
           voter_id: string | null
         }
         Insert: {
-          aspirant_id?: string | null
+          candidate_id?: string | null
           created_at?: string | null
           id?: string
           position_id?: string | null
           voter_id?: string | null
         }
         Update: {
-          aspirant_id?: string | null
+          candidate_id?: string | null
           created_at?: string | null
           id?: string
           position_id?: string | null
@@ -978,17 +978,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "votes_aspirant_id_fkey"
-            columns: ["aspirant_id"]
+            foreignKeyName: "votes_candidate_id_fkey"
+            columns: ["candidate_id"]
             isOneToOne: false
-            referencedRelation: "approved_aspirants_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "votes_aspirant_id_fkey"
-            columns: ["aspirant_id"]
-            isOneToOne: false
-            referencedRelation: "aspirants"
+            referencedRelation: "candidates"
             referencedColumns: ["id"]
           },
           {
@@ -1003,6 +996,13 @@ export type Database = {
             columns: ["voter_id"]
             isOneToOne: false
             referencedRelation: "voters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "voters_login_lookup"
             referencedColumns: ["id"]
           },
         ]
@@ -1093,6 +1093,147 @@ export type Database = {
         }
         Relationships: []
       }
+      cohssa_alumni_public: {
+        Row: {
+          administration_number: number | null
+          created_at: string | null
+          current_workplace: string | null
+          department: string | null
+          display_order: number | null
+          graduation_year: number | null
+          id: string | null
+          name: string | null
+          photo_url: string | null
+          position: string | null
+        }
+        Insert: {
+          administration_number?: number | null
+          created_at?: string | null
+          current_workplace?: string | null
+          department?: string | null
+          display_order?: number | null
+          graduation_year?: number | null
+          id?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Update: {
+          administration_number?: number | null
+          created_at?: string | null
+          current_workplace?: string | null
+          department?: string | null
+          display_order?: number | null
+          graduation_year?: number | null
+          id?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Relationships: []
+      }
+      cohssa_executives_public: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          id: string | null
+          level: string | null
+          name: string | null
+          photo_url: string | null
+          position: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Relationships: []
+      }
+      cohssa_senate_public: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          id: string | null
+          level: string | null
+          name: string | null
+          photo_url: string | null
+          position: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Relationships: []
+      }
+      electoral_committee_public: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          display_order: number | null
+          id: string | null
+          is_staff_adviser: boolean | null
+          level: string | null
+          name: string | null
+          photo_url: string | null
+          position: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          is_staff_adviser?: boolean | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          display_order?: number | null
+          id?: string | null
+          is_staff_adviser?: boolean | null
+          level?: string | null
+          name?: string | null
+          photo_url?: string | null
+          position?: string | null
+        }
+        Relationships: []
+      }
       published_content_public: {
         Row: {
           author_name: string | null
@@ -1129,6 +1270,33 @@ export type Database = {
           pdf_url?: string | null
           published_at?: string | null
           title?: string | null
+        }
+        Relationships: []
+      }
+      voters_login_lookup: {
+        Row: {
+          email: string | null
+          has_biometric: boolean | null
+          id: string | null
+          matric_number: string | null
+          name: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          email?: string | null
+          has_biometric?: never
+          id?: string | null
+          matric_number?: string | null
+          name?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          email?: string | null
+          has_biometric?: never
+          id?: string | null
+          matric_number?: string | null
+          name?: string | null
+          verified?: boolean | null
         }
         Relationships: []
       }

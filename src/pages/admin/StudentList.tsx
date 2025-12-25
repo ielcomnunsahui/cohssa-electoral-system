@@ -15,14 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(142 76% 36%)', 'hsl(38 92% 50%)', 'hsl(var(--secondary))', 'hsl(var(--destructive))'];
 
-const DEPARTMENTS = [
-  "MLS - Medical Lab Science",
-  "NSC - Nursing Sciences",
-  "MED - Medicine and Surgery",
-  "ANA - Anatomy",
-  "PHS - Physiology",
-  "PUH - Community Medicine & Public Health"
-];
+import { DEPARTMENT_CODES as DEPARTMENTS } from "@/lib/constants";
 
 const LEVELS = ["100", "200", "300", "400", "500"];
 

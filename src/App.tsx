@@ -43,6 +43,8 @@ import ResourceManagement from "./pages/admin/ResourceManagement";
 import TextbookManagement from "./pages/admin/TextbookManagement";
 import EventsManagement from "./pages/admin/EventsManagement";
 import EditorialReview from "./pages/admin/EditorialReview";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -217,6 +219,8 @@ const App = () => (
               <Route path="/about/college" element={<AboutCollege />} />
               <Route path="/about/cohssa" element={<AboutCOHSSA />} />
               <Route path="/editorial" element={<Editorial />} />
+              <Route path="/terms" element={<TermsAndConditions />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

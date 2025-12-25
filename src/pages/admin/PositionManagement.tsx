@@ -17,17 +17,11 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 
-type Department = "MLS - Medical Lab Science" | "NSC - Nursing Sciences" | "MED - Medicine and Surgery" | "ANA - Anatomy" | "PHS - Physiology" | "PUH - Community Medicine & Public Health";
+import { DEPARTMENT_CODES, DepartmentCode } from "@/lib/constants";
+type Department = DepartmentCode;
 type Level = "100L" | "200L" | "300L" | "400L" | "500L";
 
-const DEPARTMENTS: Department[] = [
-  "MLS - Medical Lab Science",
-  "NSC - Nursing Sciences",
-  "MED - Medicine and Surgery",
-  "ANA - Anatomy",
-  "PHS - Physiology",
-  "PUH - Community Medicine & Public Health"
-];
+const DEPARTMENTS: Department[] = [...DEPARTMENT_CODES];
 
 const LEVELS: Level[] = ["100L", "200L", "300L", "400L", "500L"];
 
@@ -242,12 +236,12 @@ const PositionManagement = () => {
                   Add Position
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader className="flex-shrink-0">
                   <DialogTitle>{editingPosition ? "Edit Position" : "Add New Position"}</DialogTitle>
                   <DialogDescription>Configure position details and eligibility criteria</DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-1 pr-4">
+                <ScrollArea className="flex-1 overflow-y-auto pr-4 -mr-4">
                   <div className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">

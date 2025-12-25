@@ -5,16 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { FileText, ArrowLeft, Mail, KeyRound, Loader2, HelpCircle } from "lucide-react";
+import { FileText, ArrowLeft, Mail, KeyRound, Loader2, HelpCircle, Shield, ArrowRight, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/NavLink";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "@/components/SEO";
 import { showFriendlyError, showSuccessToast } from "@/lib/errorMessages";
+import { Footer } from "@/components/Footer";
 
-type View = 'login' | 'register' | 'forgot' | 'otp-verify' | 'new-password';
+type View = 'consent' | 'login' | 'register' | 'forgot' | 'otp-verify' | 'new-password';
 
 const AspirantLogin = () => {
   const navigate = useNavigate();
@@ -23,10 +25,25 @@ const AspirantLogin = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<View>("login");
+  const [view, setView] = useState<View>("consent");
   const [activeTab, setActiveTab] = useState("login");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [consentChecks, setConsentChecks] = useState({
+    dataCollection: false,
+    dataStorage: false,
+    termsConditions: false,
+  });
+
+  const allConsentsChecked = consentChecks.dataCollection && consentChecks.dataStorage && consentChecks.termsConditions;
+
+  const handleConsentSubmit = () => {
+    if (!allConsentsChecked) {
+      toast.error("Please accept all consent items to continue");
+      return;
+    }
+    setView('login');
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,11 +219,12 @@ const AspirantLogin = () => {
   };
 
   const resetState = () => {
-    setView('login');
+    setView('consent');
     setOtp("");
     setOtpSent(false);
     setNewPassword("");
     setConfirmPassword("");
+    setConsentChecks({ dataCollection: false, dataStorage: false, termsConditions: false });
   };
 
   return (
@@ -219,11 +237,11 @@ const AspirantLogin = () => {
       <div className="container mx-auto max-w-md py-8">
         <Button 
           variant="ghost" 
-          onClick={() => view === 'login' ? navigate("/") : resetState()}
+          onClick={() => view === 'consent' ? navigate("/") : (view === 'login' ? setView('consent') : resetState())}
           className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          {view === 'login' ? 'Back to Home' : 'Back to Login'}
+          {view === 'consent' ? 'Back to Home' : view === 'login' ? 'Back to Consent' : 'Back to Login'}
         </Button>
 
         <Card className="shadow-lg animate-fade-in">
@@ -232,12 +250,14 @@ const AspirantLogin = () => {
               <Logo className="h-16 w-16" />
             </div>
             <CardTitle className="text-2xl">
+              {view === 'consent' && "Terms & Consent"}
               {view === 'login' && "Aspirant Portal"}
               {view === 'forgot' && "Forgot Password"}
               {view === 'otp-verify' && "Verify Your Email"}
               {view === 'new-password' && "Set New Password"}
             </CardTitle>
             <CardDescription>
+              {view === 'consent' && "Please review and accept before proceeding"}
               {view === 'login' && "Login or register to submit your application"}
               {view === 'forgot' && "Enter your email to receive a verification code"}
               {view === 'otp-verify' && `Enter the 6-digit code sent to ${email}`}
@@ -245,6 +265,108 @@ const AspirantLogin = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Consent View */}
+            {view === 'consent' && (
+              <div className="space-y-6">
+                <Alert className="border-primary/30 bg-primary/5">
+                  <Shield className="h-4 w-4" />
+                  <AlertDescription>
+                    Your data privacy and security are important to us. Please read and accept the following terms.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="space-y-4">
+                  <div 
+                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${consentChecks.dataCollection ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/30'}`}
+                    onClick={() => setConsentChecks(prev => ({ ...prev, dataCollection: !prev.dataCollection }))}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox 
+                        id="aspirant-dataCollection" 
+                        checked={consentChecks.dataCollection}
+                        onCheckedChange={(checked) => setConsentChecks(prev => ({ ...prev, dataCollection: checked as boolean }))}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="aspirant-dataCollection" className="font-semibold cursor-pointer">
+                          Data Collection Consent
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          I consent to the collection of my personal information including my name, matric number, email, department, CGPA, and other application details for aspirant registration purposes. See our{" "}
+                          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                            Privacy Policy
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div 
+                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${consentChecks.dataStorage ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/30'}`}
+                    onClick={() => setConsentChecks(prev => ({ ...prev, dataStorage: !prev.dataStorage }))}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox 
+                        id="aspirant-dataStorage" 
+                        checked={consentChecks.dataStorage}
+                        onCheckedChange={(checked) => setConsentChecks(prev => ({ ...prev, dataStorage: checked as boolean }))}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="aspirant-dataStorage" className="font-semibold cursor-pointer">
+                          Data Storage & Publication Consent
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          I understand that my application data and photo may be publicly displayed for campaign purposes. My data will be securely stored and used for election-related purposes as outlined in our{" "}
+                          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                            Privacy Policy
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div 
+                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${consentChecks.termsConditions ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/30'}`}
+                    onClick={() => setConsentChecks(prev => ({ ...prev, termsConditions: !prev.termsConditions }))}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox 
+                        id="aspirant-termsConditions" 
+                        checked={consentChecks.termsConditions}
+                        onCheckedChange={(checked) => setConsentChecks(prev => ({ ...prev, termsConditions: checked as boolean }))}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="aspirant-termsConditions" className="font-semibold cursor-pointer">
+                          Terms & Conditions
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          I agree to the{" "}
+                          <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                            Terms and Conditions
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                          {" "}and COHSSA Electoral Committee's rules. I understand that providing false information may result in disqualification.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleConsentSubmit}
+                  disabled={!allConsentsChecked}
+                  className="w-full h-12 text-base gap-2"
+                >
+                  I Agree & Continue
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </div>
+            )}
+
             {/* Login/Register View */}
             {view === 'login' && (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -436,6 +558,9 @@ const AspirantLogin = () => {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Footer */}
+        <Footer showDualLogo={false} />
       </div>
     </div>
   );

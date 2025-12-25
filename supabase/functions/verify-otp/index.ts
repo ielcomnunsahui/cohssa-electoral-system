@@ -9,6 +9,7 @@ const corsHeaders = {
 interface VerifyOTPRequest {
   email: string;
   code: string;
+  type?: 'registration' | 'login'; // registration = voter may not exist yet, login = voter must exist
 }
 
 // Rate limiting configuration for failed attempts
@@ -114,7 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, code }: VerifyOTPRequest = await req.json();
+    const { email, code, type = 'login' }: VerifyOTPRequest = await req.json();
 
     if (!email || !code) {
       return new Response(
@@ -184,21 +185,63 @@ const handler = async (req: Request): Promise<Response> => {
     // Clear failed attempts on success
     await clearFailedAttempts(supabase, email);
 
-    // Get voter profile
+    console.log("OTP verified successfully for:", email.substring(0, 3) + "***", "type:", type);
+
+    // For registration, voter profile doesn't exist yet - just confirm OTP is valid
+    if (type === 'registration') {
+      return new Response(
+        JSON.stringify({ 
+          valid: true, 
+          message: "OTP verified successfully",
+          type: 'registration'
+        }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // For login, get voter profile with user_id
     const { data: voterProfile, error: profileError } = await supabase
       .from("voters")
-      .select("id, matric_number, name, email, verified, has_voted")
+      .select("id, matric_number, name, email, verified, has_voted, user_id")
       .eq("email", email.toLowerCase())
       .maybeSingle();
 
     if (profileError || !voterProfile) {
       return new Response(
-        JSON.stringify({ error: "Voter profile not found", valid: false }),
+        JSON.stringify({ error: "Voter profile not found. Please register first.", valid: false }),
         { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log("OTP verified successfully for:", email.substring(0, 3) + "***");
+    // Mark voter as verified if not already
+    if (!voterProfile.verified) {
+      await supabase
+        .from("voters")
+        .update({ verified: true })
+        .eq("id", voterProfile.id);
+    }
+
+    // Generate a magic link for the user to sign in
+    let magicLink = null;
+    if (voterProfile.user_id) {
+      try {
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+          type: 'magiclink',
+          email: email.toLowerCase(),
+        });
+
+        if (!linkError && linkData?.properties?.hashed_token) {
+          // Return the verification token that can be used client-side
+          magicLink = {
+            token_hash: linkData.properties.hashed_token,
+            type: 'magiclink'
+          };
+        }
+      } catch (linkError) {
+        console.error("Magic link generation error:", linkError);
+        // Continue without magic link - user can still be verified
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
@@ -208,9 +251,11 @@ const handler = async (req: Request): Promise<Response> => {
           id: voterProfile.id,
           matric: voterProfile.matric_number,
           name: voterProfile.name,
-          verified: voterProfile.verified,
-          has_voted: voterProfile.has_voted
-        }
+          verified: true,
+          has_voted: voterProfile.has_voted,
+          user_id: voterProfile.user_id
+        },
+        magicLink: magicLink
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );

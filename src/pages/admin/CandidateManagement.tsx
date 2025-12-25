@@ -1,12 +1,8 @@
-import { useEffect, useState, useRef } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Upload, Plus, Trash2, FileText, Users, Award, Camera, X, Pencil } from "lucide-react";
+import { Plus, Trash2, FileText, Users, Award, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -16,14 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import SEO from "@/components/SEO";
-
-const DEPARTMENTS = [
-  "Library and Information Science",
-  "Environmental Health",
-  "Health Information Management",
-  "Office Technology Management",
-  "Mass Communication"
-];
+import { CandidateForm } from "@/components/admin/CandidateForm";
 
 const CandidateManagement = () => {
   const [candidates, setCandidates] = useState<any[]>([]);
@@ -41,8 +30,7 @@ const CandidateManagement = () => {
   const [department, setDepartment] = useState("");
   const [manifesto, setManifesto] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [formTab, setFormTab] = useState("basic");
 
   useEffect(() => {
     loadCandidates();
@@ -70,22 +58,6 @@ const CandidateManagement = () => {
     if (!error && data) {
       setPositions(data);
     }
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Image must be less than 2MB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleAddCandidate = async () => {
@@ -201,6 +173,7 @@ const CandidateManagement = () => {
     setDepartment(candidate.department || "");
     setManifesto(candidate.manifesto || "");
     setPhotoPreview(candidate.photo_url || "");
+    setFormTab("basic");
     setIsEditDialogOpen(true);
   };
 
@@ -211,128 +184,8 @@ const CandidateManagement = () => {
     setDepartment("");
     setManifesto("");
     setPhotoPreview("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (editFileInputRef.current) editFileInputRef.current.value = "";
+    setFormTab("basic");
   };
-
-  const CandidateFormContent = ({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="space-y-6 py-6">
-      {/* Photo Upload Section */}
-      <div className="flex flex-col items-center space-y-4">
-        <div className="relative">
-          {photoPreview ? (
-            <div className="relative">
-              <img 
-                src={photoPreview} 
-                alt="Preview" 
-                className="w-32 h-32 rounded-full object-cover border-4 border-primary/20" 
-              />
-              <button
-                type="button"
-                onClick={() => setPhotoPreview("")}
-                className="absolute -top-2 -right-2 w-8 h-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="w-32 h-32 rounded-full bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-              <Camera className="h-10 w-10 text-muted-foreground/50" />
-            </div>
-          )}
-        </div>
-        <input
-          ref={isEdit ? editFileInputRef : fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handlePhotoUpload}
-          className="hidden"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => (isEdit ? editFileInputRef : fileInputRef).current?.click()}
-          className="gap-2"
-        >
-          <Upload className="h-4 w-4" />
-          {photoPreview ? "Change Photo" : "Upload Photo"}
-        </Button>
-        <p className="text-xs text-muted-foreground">Max 2MB, JPG/PNG format</p>
-      </div>
-
-      {/* Form Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Full Name *</Label>
-          <Input 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-            placeholder="Enter full name"
-            className="h-11"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Matric Number *</Label>
-          <Input 
-            value={matric} 
-            onChange={(e) => setMatric(e.target.value)} 
-            placeholder="e.g., 21/08NUS014"
-            className="h-11 font-mono"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Position *</Label>
-          <Select value={positionId} onValueChange={setPositionId}>
-            <SelectTrigger className="h-11">
-              <SelectValue placeholder="Select position" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover">
-              {positions.map((pos) => (
-                <SelectItem key={pos.id} value={pos.id}>
-                  {pos.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Department *</Label>
-          <Select value={department} onValueChange={setDepartment}>
-            <SelectTrigger className="h-11">
-              <SelectValue placeholder="Select department" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover">
-              {DEPARTMENTS.map(d => (
-                <SelectItem key={d} value={d}>{d}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Manifesto Section */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <FileText className="h-4 w-4 text-primary" />
-          Manifesto
-        </Label>
-        <Textarea 
-          value={manifesto} 
-          onChange={(e) => setManifesto(e.target.value)}
-          placeholder="Enter candidate's manifesto, goals, vision, and what they plan to achieve if elected..."
-          rows={8}
-          className="resize-none"
-        />
-        <p className="text-xs text-muted-foreground">
-          Write the candidate's campaign promises, objectives, and vision for their tenure.
-        </p>
-      </div>
-    </div>
-  );
 
   return (
     <AdminLayout>
@@ -362,18 +215,37 @@ const CandidateManagement = () => {
                   Add Candidate
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-                <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
+              <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30 flex-shrink-0">
                   <DialogTitle className="flex items-center gap-2 text-xl">
                     <Award className="h-5 w-5 text-primary" />
                     Add New Candidate
                   </DialogTitle>
                   <DialogDescription>Fill in the candidate details below. Fields marked with * are required.</DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-1 px-6">
-                  <CandidateFormContent isEdit={false} />
+                <ScrollArea className="flex-1 overflow-y-auto">
+                  <div className="px-6 pb-4">
+                    <CandidateForm
+                      name={name}
+                      setName={setName}
+                      matric={matric}
+                      setMatric={setMatric}
+                      positionId={positionId}
+                      setPositionId={setPositionId}
+                      department={department}
+                      setDepartment={setDepartment}
+                      manifesto={manifesto}
+                      setManifesto={setManifesto}
+                      photoPreview={photoPreview}
+                      setPhotoPreview={setPhotoPreview}
+                      formTab={formTab}
+                      setFormTab={setFormTab}
+                      positions={positions}
+                      isEdit={false}
+                    />
+                  </div>
                 </ScrollArea>
-                <DialogFooter className="px-6 py-4 border-t bg-muted/30">
+                <DialogFooter className="px-6 py-4 border-t bg-muted/30 flex-shrink-0">
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                   <Button onClick={handleAddCandidate} disabled={loading} className="gap-2">
                     {loading ? "Adding..." : (
@@ -494,8 +366,8 @@ const CandidateManagement = () => {
             setEditingCandidate(null); 
           } 
         }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30">
+          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b bg-muted/30 flex-shrink-0">
               <DialogTitle className="flex items-center gap-2 text-xl">
                 <Pencil className="h-5 w-5 text-primary" />
                 Edit Candidate
@@ -504,10 +376,29 @@ const CandidateManagement = () => {
                 Update the candidate details below. Fields marked with * are required.
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="flex-1 px-6">
-              <CandidateFormContent isEdit={true} />
+            <ScrollArea className="flex-1 overflow-y-auto">
+              <div className="px-6 pb-4">
+                <CandidateForm
+                  name={name}
+                  setName={setName}
+                  matric={matric}
+                  setMatric={setMatric}
+                  positionId={positionId}
+                  setPositionId={setPositionId}
+                  department={department}
+                  setDepartment={setDepartment}
+                  manifesto={manifesto}
+                  setManifesto={setManifesto}
+                  photoPreview={photoPreview}
+                  setPhotoPreview={setPhotoPreview}
+                  formTab={formTab}
+                  setFormTab={setFormTab}
+                  positions={positions}
+                  isEdit={true}
+                />
+              </div>
             </ScrollArea>
-            <DialogFooter className="px-6 py-4 border-t bg-muted/30">
+            <DialogFooter className="px-6 py-4 border-t bg-muted/30 flex-shrink-0">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleEditCandidate} disabled={loading} className="gap-2">
                 {loading ? "Saving..." : (
