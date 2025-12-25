@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, AlertCircle, Vote, LogOut } from "lucide-react";
+import { CheckCircle, AlertCircle, Vote, LogOut, ArrowLeft, ClipboardList, MinusCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/NavLink";
@@ -17,6 +17,7 @@ const VoterDashboard = () => {
   const [currentPositionIndex, setCurrentPositionIndex] = useState(0);
   const [selectedCandidates, setSelectedCandidates] = useState<{[key: string]: string}>({});
   const [votingStarted, setVotingStarted] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -207,6 +208,27 @@ const VoterDashboard = () => {
   const isLastPosition = currentPositionIndex === positions.length - 1;
   const hasAtLeastOneSelection = Object.keys(selectedCandidates).length > 0;
 
+  // Helper to get candidate name by ID
+  const getCandidateName = (positionId: string, candidateId: string) => {
+    const position = positions.find(p => p.id === positionId);
+    const candidate = position?.candidates?.find((c: any) => c.id === candidateId);
+    return candidate?.name || "Unknown";
+  };
+
+  const getCandidatePhoto = (positionId: string, candidateId: string) => {
+    const position = positions.find(p => p.id === positionId);
+    const candidate = position?.candidates?.find((c: any) => c.id === candidateId);
+    return candidate?.photo_url || "/placeholder.svg";
+  };
+
+  const handleProceedToReview = () => {
+    setShowReview(true);
+  };
+
+  const handleBackToVoting = () => {
+    setShowReview(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-medical-50 to-medical-100">
       <header className="bg-white border-b shadow-sm">
@@ -283,7 +305,99 @@ const VoterDashboard = () => {
               )}
             </CardContent>
           </Card>
+        ) : showReview ? (
+          // Review Summary Screen
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <ClipboardList className="h-6 w-6 text-medical-600" />
+                <div>
+                  <CardTitle>Review Your Votes</CardTitle>
+                  <CardDescription>Please confirm your selections before submitting</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert className="border-amber-500/30 bg-amber-500/5">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-700">
+                  Once submitted, your vote cannot be changed. Please review carefully.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                {positions.map((position) => {
+                  const selectedCandidateId = selectedCandidates[position.id];
+                  const hasSelection = !!selectedCandidateId;
+
+                  return (
+                    <div 
+                      key={position.id} 
+                      className={`p-4 rounded-lg border ${hasSelection ? 'bg-green-50 border-green-200' : 'bg-muted/50 border-muted'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground font-medium">
+                            {position.position_name || position.title}
+                          </p>
+                          {hasSelection ? (
+                            <div className="flex items-center gap-3 mt-2">
+                              <img
+                                src={getCandidatePhoto(position.id, selectedCandidateId)}
+                                alt=""
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                              <p className="font-semibold text-green-700">
+                                {getCandidateName(position.id, selectedCandidateId)}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 mt-2">
+                              <MinusCircle className="h-5 w-5 text-muted-foreground" />
+                              <p className="text-muted-foreground italic">Abstained</p>
+                            </div>
+                          )}
+                        </div>
+                        {hasSelection ? (
+                          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                        ) : (
+                          <Badge variant="secondary">Skipped</Badge>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="p-4 bg-muted/30 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">
+                  You voted for <span className="font-semibold text-foreground">{Object.keys(selectedCandidates).length}</span> out of <span className="font-semibold text-foreground">{positions.length}</span> positions
+                </p>
+              </div>
+
+              <div className="flex justify-between pt-4 border-t gap-4">
+                <Button
+                  variant="outline"
+                  onClick={handleBackToVoting}
+                  className="gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Go Back & Edit
+                </Button>
+
+                <Button
+                  onClick={handleSubmitVote}
+                  disabled={!hasAtLeastOneSelection || submitting}
+                  className="bg-success hover:bg-success/90 gap-2"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {submitting ? "Submitting..." : "Confirm & Submit"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
+          // Voting Screen
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -333,6 +447,12 @@ const VoterDashboard = () => {
                 ))}
               </div>
 
+              {!selectedCandidates[currentPosition?.id] && (
+                <p className="text-center text-sm text-muted-foreground italic">
+                  You can skip this position if you don't want to vote for any candidate
+                </p>
+              )}
+
               <div className="flex justify-between pt-4 border-t">
                 <Button
                   variant="outline"
@@ -344,11 +464,12 @@ const VoterDashboard = () => {
 
                 {isLastPosition ? (
                   <Button
-                    onClick={handleSubmitVote}
-                    disabled={!hasAtLeastOneSelection || submitting}
-                    className="bg-success hover:bg-success/90"
+                    onClick={handleProceedToReview}
+                    disabled={!hasAtLeastOneSelection}
+                    className="gap-2"
                   >
-                    {submitting ? "Submitting..." : "Submit Vote"}
+                    <ClipboardList className="h-4 w-4" />
+                    Review Votes
                   </Button>
                 ) : (
                   <Button onClick={handleNext}>
