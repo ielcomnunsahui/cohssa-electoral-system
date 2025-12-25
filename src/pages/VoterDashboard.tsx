@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import confetti from "canvas-confetti";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -186,10 +187,34 @@ const VoterDashboard = () => {
 
       if (profileError) throw profileError;
 
+      // Trigger confetti celebration
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0']
+      });
+
+      // Second burst for more impact
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        });
+        confetti({
+          particleCount: 100,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        });
+      }, 250);
+
       toast.success("Your vote has been recorded successfully!");
       setTimeout(() => {
         navigate("/");
-      }, 2000);
+      }, 3000);
     } catch (error: any) {
       console.error("Error submitting vote:", error);
       toast.error(error.message || "Failed to submit vote");

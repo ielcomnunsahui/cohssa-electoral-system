@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Mail, AlertCircle, Fingerprint, CheckCircle, User, IdCard, Shield, Loader2, Check, Smartphone, HelpCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, ArrowRight, Mail, AlertCircle, Fingerprint, CheckCircle, User, IdCard, Shield, Loader2, Check, Smartphone, HelpCircle, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { DualLogo } from "@/components/NavLink";
@@ -27,9 +28,10 @@ const registrationSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
 
-type Step = 'matric' | 'email' | 'verify_choice' | 'biometric' | 'otp' | 'success';
+type Step = 'consent' | 'matric' | 'email' | 'verify_choice' | 'biometric' | 'otp' | 'success';
 
 const steps = [
+  { id: 'consent', label: 'Consent', icon: FileText },
   { id: 'matric', label: 'Matric', icon: IdCard },
   { id: 'email', label: 'Email', icon: Mail },
   { id: 'verify_choice', label: 'Verify', icon: Shield },
@@ -38,7 +40,12 @@ const steps = [
 
 const VoterRegister = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState<Step>('matric');
+  const [currentStep, setCurrentStep] = useState<Step>('consent');
+  const [consentChecks, setConsentChecks] = useState({
+    dataCollection: false,
+    dataStorage: false,
+    termsConditions: false,
+  });
   const [matric, setMatric] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,9 +62,20 @@ const VoterRegister = () => {
   }, [checkSupport]);
 
   const getStepIndex = (step: Step) => {
-    if (step === 'biometric' || step === 'otp') return 2;
+    if (step === 'biometric' || step === 'otp') return 3;
+    if (step === 'consent') return 0;
     const idx = steps.findIndex(s => s.id === step);
     return idx === -1 ? steps.length : idx;
+  };
+
+  const allConsentsChecked = consentChecks.dataCollection && consentChecks.dataStorage && consentChecks.termsConditions;
+
+  const handleConsentSubmit = () => {
+    if (!allConsentsChecked) {
+      toast.error("Please accept all consent items to continue");
+      return;
+    }
+    setCurrentStep('matric');
   };
 
   const progress = ((getStepIndex(currentStep) + 1) / steps.length) * 100;
@@ -377,7 +395,7 @@ const VoterRegister = () => {
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => {
               const Icon = step.icon;
-              const isActive = step.id === currentStep || (currentStep === 'biometric' && step.id === 'verify_choice') || (currentStep === 'otp' && step.id === 'verify_choice');
+              const isActive = step.id === currentStep || (currentStep === 'biometric' && step.id === 'verify_choice') || (currentStep === 'otp' && step.id === 'verify_choice') || (currentStep === 'consent' && step.id === 'consent');
               const isCompleted = getStepIndex(currentStep) > index || currentStep === 'success';
               
               return (
@@ -399,6 +417,106 @@ const VoterRegister = () => {
           </div>
           <Progress value={progress} className="h-2" />
         </div>
+
+        {/* Step: Consent */}
+        {currentStep === 'consent' && (
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <FileText className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Terms & Consent</CardTitle>
+              <CardDescription>Please review and accept before proceeding</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert className="border-primary/30 bg-primary/5">
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  Your data privacy and security are important to us. Please read and accept the following terms.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-4">
+                <div 
+                  className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${consentChecks.dataCollection ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/30'}`}
+                  onClick={() => setConsentChecks(prev => ({ ...prev, dataCollection: !prev.dataCollection }))}
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox 
+                      id="dataCollection" 
+                      checked={consentChecks.dataCollection}
+                      onCheckedChange={(checked) => setConsentChecks(prev => ({ ...prev, dataCollection: checked as boolean }))}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="dataCollection" className="font-semibold cursor-pointer">
+                        Data Collection Consent
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        I consent to the collection of my personal information including my name, matric number, email address, department, and level for voter registration purposes.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${consentChecks.dataStorage ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/30'}`}
+                  onClick={() => setConsentChecks(prev => ({ ...prev, dataStorage: !prev.dataStorage }))}
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox 
+                      id="dataStorage" 
+                      checked={consentChecks.dataStorage}
+                      onCheckedChange={(checked) => setConsentChecks(prev => ({ ...prev, dataStorage: checked as boolean }))}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="dataStorage" className="font-semibold cursor-pointer">
+                        Data Storage & Use Consent
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        I understand that my data will be securely stored and used solely for the purpose of verifying my eligibility to vote in COHSSA elections and for election-related communications.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${consentChecks.termsConditions ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/30'}`}
+                  onClick={() => setConsentChecks(prev => ({ ...prev, termsConditions: !prev.termsConditions }))}
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox 
+                      id="termsConditions" 
+                      checked={consentChecks.termsConditions}
+                      onCheckedChange={(checked) => setConsentChecks(prev => ({ ...prev, termsConditions: checked as boolean }))}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="termsConditions" className="font-semibold cursor-pointer">
+                        Terms & Conditions
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        I agree to abide by the COHSSA Electoral Committee's rules and regulations. I understand that providing false information or attempting to vote fraudulently may result in disqualification and disciplinary action.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                onClick={handleConsentSubmit}
+                disabled={!allConsentsChecked}
+                className="w-full h-12 text-base gap-2"
+              >
+                I Agree & Continue
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Step: Matric Number */}
         {currentStep === 'matric' && (
