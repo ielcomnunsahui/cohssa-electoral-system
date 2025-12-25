@@ -70,6 +70,7 @@ const LiveControl = () => {
 
       if (candError) throw candError;
 
+      // Query votes with candidate_id (renamed from aspirant_id)
       const { data: votes, error: voteError } = await supabase
         .from('votes')
         .select('candidate_id, position_id');
