@@ -224,7 +224,7 @@ Approved candidates for voting.
 
 #### `votes`
 Cast votes (anonymous).
-- voter_id, position_id, aspirant_id
+- voter_id, position_id, candidate_id
 - created_at
 
 #### `election_timeline`
