@@ -197,6 +197,14 @@ const VoterRegister = () => {
   const handleBiometricSetup = async () => {
     if (!studentInfo) return;
 
+    // Check if we're in an iframe (preview mode) - WebAuthn won't work there
+    const isInIframe = window.self !== window.top;
+    if (isInIframe) {
+      toast.info("Biometric is not available in preview mode. Using email verification instead.");
+      await sendOTP();
+      return;
+    }
+
     const credential = await registerCredential(studentInfo.matric, studentInfo.name);
     
     if (credential) {
@@ -205,7 +213,7 @@ const VoterRegister = () => {
       // Now complete registration
       await completeRegistration(credential);
     } else {
-      toast.error("Biometric setup failed. Please try OTP verification.");
+      toast.info("Biometric not available on this device. Using email verification instead.");
       await sendOTP();
     }
   };
