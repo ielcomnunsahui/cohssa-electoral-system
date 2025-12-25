@@ -60,7 +60,7 @@ const Results = () => {
 
       const { data: votes } = await supabase
         .from('votes')
-        .select('aspirant_id, position_id');
+        .select('candidate_id, position_id');
 
       const positionResults: PositionResult[] = (positions || []).map(position => {
         const positionCandidates = (candidates || []).filter(c => c.position_id === position.id);
@@ -68,7 +68,7 @@ const Results = () => {
         const totalVotes = positionVotes.length;
 
         const candidatesWithVotes = positionCandidates.map(candidate => {
-          const candidateVotes = positionVotes.filter(v => v.aspirant_id === candidate.id).length;
+          const candidateVotes = positionVotes.filter(v => v.candidate_id === candidate.id).length;
           return {
             id: candidate.id,
             name: candidate.name,

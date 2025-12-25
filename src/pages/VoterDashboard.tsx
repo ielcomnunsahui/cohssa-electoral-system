@@ -168,7 +168,7 @@ const VoterDashboard = () => {
     try {
       const votes = Object.entries(selectedCandidates).map(([positionId, candidateId]) => ({
         position_id: positionId,
-        aspirant_id: candidateId,
+        candidate_id: candidateId,
         voter_id: voterProfile.id
       }));
 

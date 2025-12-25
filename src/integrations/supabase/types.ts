@@ -956,21 +956,21 @@ export type Database = {
       }
       votes: {
         Row: {
-          aspirant_id: string | null
+          candidate_id: string | null
           created_at: string | null
           id: string
           position_id: string | null
           voter_id: string | null
         }
         Insert: {
-          aspirant_id?: string | null
+          candidate_id?: string | null
           created_at?: string | null
           id?: string
           position_id?: string | null
           voter_id?: string | null
         }
         Update: {
-          aspirant_id?: string | null
+          candidate_id?: string | null
           created_at?: string | null
           id?: string
           position_id?: string | null
@@ -978,17 +978,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "votes_aspirant_id_fkey"
-            columns: ["aspirant_id"]
+            foreignKeyName: "votes_candidate_id_fkey"
+            columns: ["candidate_id"]
             isOneToOne: false
-            referencedRelation: "approved_aspirants_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "votes_aspirant_id_fkey"
-            columns: ["aspirant_id"]
-            isOneToOne: false
-            referencedRelation: "aspirants"
+            referencedRelation: "candidates"
             referencedColumns: ["id"]
           },
           {

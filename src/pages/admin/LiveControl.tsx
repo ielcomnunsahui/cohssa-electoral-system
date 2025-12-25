@@ -72,7 +72,7 @@ const LiveControl = () => {
 
       const { data: votes, error: voteError } = await supabase
         .from('votes')
-        .select('aspirant_id, position_id');
+        .select('candidate_id, position_id');
 
       if (voteError) throw voteError;
 
@@ -82,7 +82,7 @@ const LiveControl = () => {
         const totalVotesForPosition = positionVotes.length;
 
         const candidateResults = positionCandidates.map(candidate => {
-          const candidateVotes = positionVotes.filter(v => v.aspirant_id === candidate.id).length;
+          const candidateVotes = positionVotes.filter(v => v.candidate_id === candidate.id).length;
           return {
             id: candidate.id,
             name: candidate.name,
