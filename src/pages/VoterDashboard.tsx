@@ -133,12 +133,7 @@ const VoterDashboard = () => {
   };
 
   const handleNext = () => {
-    const position = positions[currentPositionIndex];
-    if (!selectedCandidates[position.id]) {
-      toast.error("Please select a candidate before proceeding");
-      return;
-    }
-
+    // Allow proceeding without selecting a candidate for a position
     if (currentPositionIndex < positions.length - 1) {
       setCurrentPositionIndex(currentPositionIndex + 1);
     }
@@ -210,7 +205,7 @@ const VoterDashboard = () => {
 
   const currentPosition = positions[currentPositionIndex];
   const isLastPosition = currentPositionIndex === positions.length - 1;
-  const allPositionsSelected = positions.every(pos => selectedCandidates[pos.id]);
+  const hasAtLeastOneSelection = Object.keys(selectedCandidates).length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-medical-50 to-medical-100">
@@ -350,7 +345,7 @@ const VoterDashboard = () => {
                 {isLastPosition ? (
                   <Button
                     onClick={handleSubmitVote}
-                    disabled={!allPositionsSelected || submitting}
+                    disabled={!hasAtLeastOneSelection || submitting}
                     className="bg-success hover:bg-success/90"
                   >
                     {submitting ? "Submitting..." : "Submit Vote"}
