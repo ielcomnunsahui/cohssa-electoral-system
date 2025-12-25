@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Pause, Play, Download, FileText, RefreshCw, Trophy, Users, Vote, BarChart3, Loader2, AlertTriangle, Zap, Radio, Wifi, WifiOff } from "lucide-react";
+import { Pause, Play, Download, FileText, RefreshCw, Trophy, Users, Vote, BarChart3, Loader2, AlertTriangle, Zap, Radio, Wifi, WifiOff, Maximize, Minimize, Grid3X3 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { useAdminTour, liveControlTourSteps } from "@/hooks/useAdminTour";
@@ -23,6 +23,8 @@ interface PositionResult {
   }[];
   total_votes: number;
 }
+
+type GridColumns = "auto" | "2" | "3" | "4";
 
 const LiveControl = () => {
   const { startTour } = useAdminTour({
@@ -42,7 +44,53 @@ const LiveControl = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [updateCount, setUpdateCount] = useState(0);
   const [lastVoteTime, setLastVoteTime] = useState<Date | null>(null);
+  const [gridColumns, setGridColumns] = useState<GridColumns>("auto");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { logAction } = useAuditLog();
+
+  // Fullscreen toggle handler
+  const toggleFullscreen = useCallback(async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+      } catch (err) {
+        toast.error("Failed to enter fullscreen mode");
+      }
+    } else {
+      try {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      } catch (err) {
+        toast.error("Failed to exit fullscreen mode");
+      }
+    }
+  }, []);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  // Get grid template based on selection
+  const getGridTemplate = useCallback(() => {
+    switch (gridColumns) {
+      case "2":
+        return "repeat(2, minmax(200px, 1fr))";
+      case "3":
+        return "repeat(3, minmax(200px, 1fr))";
+      case "4":
+        return "repeat(4, minmax(200px, 1fr))";
+      case "auto":
+      default:
+        return `repeat(${Math.min(results.length, 4)}, minmax(200px, 1fr))`;
+    }
+  }, [gridColumns, results.length]);
 
   const loadResults = useCallback(async () => {
     try {
@@ -289,10 +337,15 @@ const LiveControl = () => {
               <p className="text-muted-foreground">Monitor voting progress and manage results</p>
             </div>
           </div>
-          <Button onClick={handleRefresh} variant="outline" className="gap-2" disabled={refreshing}>
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={toggleFullscreen} variant="outline" size="icon" title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </Button>
+            <Button onClick={handleRefresh} variant="outline" className="gap-2" disabled={refreshing}>
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Connection Status */}
@@ -419,8 +472,24 @@ const LiveControl = () => {
         </Card>
 
         {/* Results by Position - Compact Tabular Format for Projection */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold animate-fade-in">Live Results by Position</h2>
+        <div className="space-y-4" ref={containerRef}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold animate-fade-in">Live Results by Position</h2>
+            <div className="flex items-center gap-2">
+              <Grid3X3 className="h-4 w-4 text-muted-foreground" />
+              <Select value={gridColumns} onValueChange={(v) => setGridColumns(v as GridColumns)}>
+                <SelectTrigger className="w-[120px] h-8">
+                  <SelectValue placeholder="Columns" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto</SelectItem>
+                  <SelectItem value="2">2 Columns</SelectItem>
+                  <SelectItem value="3">3 Columns</SelectItem>
+                  <SelectItem value="4">4 Columns</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           
           {results.length === 0 ? (
             <Card>
@@ -431,7 +500,7 @@ const LiveControl = () => {
             </Card>
           ) : (
             <div className="overflow-x-auto">
-              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(results.length, 4)}, minmax(200px, 1fr))` }}>
+              <div className="grid gap-2" style={{ gridTemplateColumns: getGridTemplate() }}>
                 {results.map((position, index) => (
                   <Card 
                     key={position.position_id} 
