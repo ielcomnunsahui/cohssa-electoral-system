@@ -8,7 +8,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Mail, Lock, User, LogIn, KeyRound, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Loader2, Mail, Lock, User, LogIn, KeyRound, ArrowLeft, ShieldCheck, ExternalLink } from "lucide-react";
 import { Logo } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -228,7 +228,11 @@ export const GlobalAuthDialog = () => {
                     onCheckedChange={(checked) => setConsentDataCollection(checked as boolean)}
                   />
                   <Label htmlFor="consent-collection" className="text-sm leading-relaxed cursor-pointer">
-                    I consent to the collection of my personal data (name, email, and usage information) for account management and service provision.
+                    I consent to the collection of my personal data (name, email, and usage information) for account management and service provision. See our{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                      Privacy Policy
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   </Label>
                 </div>
 
@@ -239,7 +243,11 @@ export const GlobalAuthDialog = () => {
                     onCheckedChange={(checked) => setConsentDataStorage(checked as boolean)}
                   />
                   <Label htmlFor="consent-storage" className="text-sm leading-relaxed cursor-pointer">
-                    I consent to the secure storage and processing of my data in accordance with applicable data protection regulations.
+                    I consent to the secure storage and processing of my data in accordance with applicable data protection regulations as outlined in our{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                      Privacy Policy
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   </Label>
                 </div>
 
@@ -250,7 +258,12 @@ export const GlobalAuthDialog = () => {
                     onCheckedChange={(checked) => setConsentTerms(checked as boolean)}
                   />
                   <Label htmlFor="consent-terms" className="text-sm leading-relaxed cursor-pointer">
-                    I have read and agree to the Terms and Conditions and AHSS rules and regulations.
+                    I have read and agree to the{" "}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                      Terms and Conditions
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                    {" "}and AHSS rules and regulations.
                   </Label>
                 </div>
               </div>
