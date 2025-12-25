@@ -7,13 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { FileText, ArrowLeft, Mail, KeyRound, Loader2, HelpCircle, Shield, ArrowRight } from "lucide-react";
+import { FileText, ArrowLeft, Mail, KeyRound, Loader2, HelpCircle, Shield, ArrowRight, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/NavLink";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SEO from "@/components/SEO";
 import { showFriendlyError, showSuccessToast } from "@/lib/errorMessages";
+import { Footer } from "@/components/Footer";
 
 type View = 'consent' | 'login' | 'register' | 'forgot' | 'otp-verify' | 'new-password';
 
@@ -291,7 +292,11 @@ const AspirantLogin = () => {
                           Data Collection Consent
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">
-                          I consent to the collection of my personal information including my name, matric number, email, department, CGPA, and other application details for aspirant registration purposes.
+                          I consent to the collection of my personal information including my name, matric number, email, department, CGPA, and other application details for aspirant registration purposes. See our{" "}
+                          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                            Privacy Policy
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
                         </p>
                       </div>
                     </div>
@@ -313,7 +318,11 @@ const AspirantLogin = () => {
                           Data Storage & Publication Consent
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">
-                          I understand that my application data and photo may be publicly displayed for campaign purposes. My data will be securely stored and used for election-related purposes.
+                          I understand that my application data and photo may be publicly displayed for campaign purposes. My data will be securely stored and used for election-related purposes as outlined in our{" "}
+                          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                            Privacy Policy
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
                         </p>
                       </div>
                     </div>
@@ -335,7 +344,12 @@ const AspirantLogin = () => {
                           Terms & Conditions
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">
-                          I agree to abide by the COHSSA Electoral Committee's rules and regulations. I understand that providing false information or violating campaign rules may result in disqualification.
+                          I agree to the{" "}
+                          <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                            Terms and Conditions
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                          {" "}and COHSSA Electoral Committee's rules. I understand that providing false information may result in disqualification.
                         </p>
                       </div>
                     </div>
@@ -544,6 +558,9 @@ const AspirantLogin = () => {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Footer */}
+        <Footer showDualLogo={false} />
       </div>
     </div>
   );
