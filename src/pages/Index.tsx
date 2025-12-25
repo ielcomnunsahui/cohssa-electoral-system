@@ -9,7 +9,7 @@ import {
   Calendar, Star, Zap, ArrowRight, Home, UserPlus, Eye, Award, Newspaper, LogIn, User
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { DualLogo, Logo, COHSSALogoImg } from "@/components/NavLink";
 import { driver } from "driver.js";
 import { supabase } from "@/integrations/supabase/client";
@@ -868,11 +868,22 @@ const Index = () => {
               <DualLogo logoSize="h-8 w-8" />
             </div>
             <div className="text-center text-sm text-muted-foreground">
-              <p>© 2025 Independent Students Electoral Committee</p>
+              <p>© {new Date().getFullYear()} Independent Students Electoral Committee</p>
               <p className="mt-1 flex items-center justify-center gap-1">
                 <GraduationCap className="h-3 w-3" />
                 Al-Hikmah University, Ilorin, Nigeria
               </p>
+              <div className="mt-2 flex items-center justify-center gap-3">
+                <Link to="/terms" className="hover:text-primary transition-colors inline-flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Terms
+                </Link>
+                <span className="text-muted-foreground/30">•</span>
+                <Link to="/privacy" className="hover:text-primary transition-colors inline-flex items-center gap-1">
+                  <Shield className="h-3 w-3" />
+                  Privacy
+                </Link>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => navigate("/support")} className="text-xs">Support</Button>

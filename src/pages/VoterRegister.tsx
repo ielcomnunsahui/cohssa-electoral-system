@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, ArrowRight, Mail, AlertCircle, Fingerprint, CheckCircle, User, IdCard, Shield, Loader2, Check, Smartphone, HelpCircle, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail, AlertCircle, Fingerprint, CheckCircle, User, IdCard, Shield, Loader2, Check, Smartphone, HelpCircle, FileText, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { DualLogo } from "@/components/NavLink";
@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { SEO } from "@/components/SEO";
 import { showFriendlyError, showSuccessToast, showInfoToast } from "@/lib/errorMessages";
 import { toast } from "sonner";
+import { Footer } from "@/components/Footer";
 
 // Strict matric validation regex: XX/XXaaa000 (e.g., 21/08nus014)
 const MATRIC_REGEX = /^\d{2}\/\d{2}[A-Za-z]{3}\d{3}$/;
@@ -455,7 +456,11 @@ const VoterRegister = () => {
                         Data Collection Consent
                       </Label>
                       <p className="text-sm text-muted-foreground mt-1">
-                        I consent to the collection of my personal information including my name, matric number, email address, department, and level for voter registration purposes.
+                        I consent to the collection of my personal information including my name, matric number, email address, department, and level for voter registration purposes. See our{" "}
+                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                          Privacy Policy
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
                       </p>
                     </div>
                   </div>
@@ -477,7 +482,11 @@ const VoterRegister = () => {
                         Data Storage & Use Consent
                       </Label>
                       <p className="text-sm text-muted-foreground mt-1">
-                        I understand that my data will be securely stored and used solely for the purpose of verifying my eligibility to vote in COHSSA elections and for election-related communications.
+                        I understand that my data will be securely stored and used solely for the purpose of verifying my eligibility to vote in COHSSA elections, as outlined in our{" "}
+                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                          Privacy Policy
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
                       </p>
                     </div>
                   </div>
@@ -499,7 +508,12 @@ const VoterRegister = () => {
                         Terms & Conditions
                       </Label>
                       <p className="text-sm text-muted-foreground mt-1">
-                        I agree to abide by the COHSSA Electoral Committee's rules and regulations. I understand that providing false information or attempting to vote fraudulently may result in disqualification and disciplinary action.
+                        I agree to the{" "}
+                        <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                          Terms and Conditions
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                        {" "}and COHSSA Electoral Committee's rules and regulations. I understand that providing false information may result in disqualification.
                       </p>
                     </div>
                   </div>
@@ -883,14 +897,7 @@ const VoterRegister = () => {
         )}
 
         {/* Footer */}
-        <div className="mt-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <DualLogo logoSize="h-6 w-6" />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Independent Students Electoral Committee • COHSSA
-          </p>
-        </div>
+        <Footer />
       </div>
     </div>
   );
