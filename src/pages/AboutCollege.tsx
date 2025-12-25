@@ -198,6 +198,10 @@ const AboutCollege = () => {
                     <h5 className="font-semibold text-foreground">Department of Human Physiology</h5>
                     <p className="text-sm text-muted-foreground">• B.Sc. Physiology</p>
                   </div>
+                  <div>
+                    <h5 className="font-semibold text-foreground">Department of Medical Biochemistry</h5>
+                    <p className="text-sm text-muted-foreground">• B.Sc. Medical Biochemistry</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
