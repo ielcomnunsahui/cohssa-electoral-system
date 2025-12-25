@@ -338,7 +338,7 @@ const LiveControl = () => {
               <p className={`${presentationMode ? 'text-gray-400 text-lg' : 'text-muted-foreground'}`}>Monitor voting progress and manage results</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" data-tour="display-controls">
             <Button 
               onClick={() => setPresentationMode(!presentationMode)} 
               variant={presentationMode ? "default" : "outline"} 
@@ -485,7 +485,7 @@ const LiveControl = () => {
         <div className="space-y-4" ref={containerRef}>
           <div className="flex items-center justify-between">
             <h2 className={`font-semibold animate-fade-in ${presentationMode ? 'text-2xl text-white' : 'text-xl'}`}>Live Results by Position</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" data-tour="grid-columns">
               <Grid3X3 className={`h-4 w-4 ${presentationMode ? 'text-gray-400' : 'text-muted-foreground'}`} />
               <Select value={gridColumns} onValueChange={(v) => setGridColumns(v as GridColumns)}>
                 <SelectTrigger className={`w-[120px] h-8 ${presentationMode ? 'bg-gray-800 border-gray-700 text-white' : ''}`}>
