@@ -111,12 +111,13 @@ For detailed documentation, see:
 ## 🏛️ Departments
 
 The platform serves students from the following departments:
-- **MLS** - Medical Laboratory Science
 - **NSC** - Nursing Sciences
-- **MED** - Medicine and Surgery
-- **ANA** - Anatomy
-- **PHS** - Physiology
+- **MLS** - Medical Laboratory Sciences
 - **PUH** - Community Medicine and Public Health
+- **MED** - Medicine and Surgery
+- **ANA** - Human Anatomy
+- **PHS** - Human Physiology
+- **BCH** - Medical Biochemistry
 
 ## 📄 License
 

@@ -77,7 +77,7 @@ This document outlines the complete user flows for all user types in the ISECO E
 #### Step 1: Personal Information
 - Full name
 - Matric number (Format: XX/XXaaa000)
-- Department (MLS, NSC, MED, ANA, PHS, PUH)
+- Department (NSC, MLS, PUH, MED, ANA, PHS, BCH)
 - Level (100L - 500L)
 - Date of birth
 - Gender
