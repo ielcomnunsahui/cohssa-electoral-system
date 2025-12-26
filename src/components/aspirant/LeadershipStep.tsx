@@ -6,7 +6,7 @@ interface LeadershipStepProps {
   onUpdate: (data: any) => void;
 }
 
-const LeadershipStep = ({ data, onUpdate }: LeadershipStepProps) => {
+const LeadershipStep = ({ data = {}, onUpdate }: LeadershipStepProps) => {
   const handleChange = (field: string, value: any) => {
     onUpdate({ ...data, [field]: value });
   };

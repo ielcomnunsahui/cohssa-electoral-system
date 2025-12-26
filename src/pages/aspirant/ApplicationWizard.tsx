@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -40,7 +40,9 @@ const steps = [
 
 const ApplicationWizard = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [searchParams] = useSearchParams();
+  const initialStep = parseInt(searchParams.get('step') || '1', 10);
+  const [currentStep, setCurrentStep] = useState(Math.min(Math.max(initialStep, 1), TOTAL_STEPS));
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -81,6 +83,8 @@ const ApplicationWizard = () => {
         .from('aspirants')
         .select('*')
         .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (data) {
@@ -139,6 +143,26 @@ const ApplicationWizard = () => {
         return { isValid: true, errors: [] };
     }
   };
+
+  // Calculate validation status for each step (for icons)
+  const stepValidationStatus = useMemo(() => {
+    const { step_data } = formData;
+    return {
+      1: validatePersonalInfo(step_data?.personal || {}).isValid,
+      2: validatePositionStep(step_data?.position || {}, step_data?.personal || {}).isValid,
+      3: validateAcademicStep(step_data?.academic || {}, step_data?.position || {}).isValid,
+      4: validateLeadershipStep(step_data?.leadership || {}).isValid,
+      5: validateRefereeStep(step_data?.referee || {}).isValid,
+      6: validatePaymentStep(step_data?.payment || {}).isValid,
+      7: true, // Review step is always valid
+    };
+  }, [formData]);
+
+  // Calculate overall progress percentage based on validation
+  const progressPercentage = useMemo(() => {
+    const validSteps = Object.values(stepValidationStatus).filter(Boolean).length;
+    return Math.round((validSteps / TOTAL_STEPS) * 100);
+  }, [stepValidationStatus]);
 
   const handleNext = async () => {
     const validation = validateCurrentStep();
@@ -240,16 +264,16 @@ const ApplicationWizard = () => {
       case 1:
         return <PersonalInfoStep data={formData.step_data.personal} onUpdate={(data) => updateStepData('personal', data)} />;
       case 2:
-        return <PositionStep 
-          data={formData.step_data.position} 
-          onUpdate={(data) => updateStepData('position', data)}
-          personalData={{
-            department: formData.step_data.personal.department,
-            level: formData.step_data.personal.level,
-            gender: formData.step_data.personal.gender,
-            cgpa: formData.step_data.academic.cgpa
-          }}
-        />;
+      return <PositionStep 
+        data={formData.step_data?.position} 
+        onUpdate={(data) => updateStepData('position', data)}
+        personalData={{
+          department: formData.step_data?.personal?.department,
+          level: formData.step_data?.personal?.level,
+          gender: formData.step_data?.personal?.gender,
+          cgpa: formData.step_data?.academic?.cgpa
+        }}
+      />;
       case 3:
         return <AcademicStep data={formData.step_data.academic} onUpdate={(data) => updateStepData('academic', data)} positionData={formData.step_data.position} />;
       case 4:
@@ -310,27 +334,61 @@ const ApplicationWizard = () => {
       </header>
 
       <main className="container relative mx-auto px-4 py-6 max-w-4xl">
+        {/* Overall Progress Percentage */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl border border-primary/20">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium text-sm">Overall Progress</span>
+            <span className="font-bold text-lg text-primary">{progressPercentage}%</span>
+          </div>
+          <Progress value={progressPercentage} className="h-3" />
+          <p className="text-xs text-muted-foreground mt-2">
+            {Object.values(stepValidationStatus).filter(Boolean).length} of {TOTAL_STEPS} steps completed
+          </p>
+        </div>
         {/* Step Indicators - Desktop */}
         <div className="hidden lg:flex items-center justify-between mb-8 px-4">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.id;
             const isCompleted = currentStep > step.id;
+            const isValidated = stepValidationStatus[step.id as keyof typeof stepValidationStatus];
+            const canNavigate = isCompleted || (step.id < currentStep);
             
             return (
               <div key={step.id} className="flex items-center">
-                <div className="flex flex-col items-center group">
+                <div 
+                  className={`flex flex-col items-center group relative ${canNavigate ? 'cursor-pointer' : ''}`}
+                  onClick={() => {
+                    if (isCompleted) {
+                      setCurrentStep(step.id);
+                      setValidationErrors([]);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                >
                   <div 
                     className={`
                       w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300
                       ${isActive ? 'bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30' : ''}
-                      ${isCompleted ? 'bg-green-500 text-white' : ''}
+                      ${isCompleted ? 'bg-green-500 text-white hover:bg-green-600 hover:scale-105' : ''}
                       ${!isActive && !isCompleted ? 'bg-muted text-muted-foreground' : ''}
                     `}
                   >
                     {isCompleted ? <CheckCircle className="h-6 w-6" /> : <Icon className="h-5 w-5" />}
                   </div>
-                  <span className={`text-xs mt-2 font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {/* Validation status icon */}
+                  {!isCompleted && !isActive && step.id !== 7 && (
+                    <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ${
+                      isValidated ? 'bg-green-500 text-white' : 'bg-amber-500 text-white'
+                    }`}>
+                      {isValidated ? (
+                        <CheckCircle className="h-3 w-3" />
+                      ) : (
+                        <AlertCircle className="h-3 w-3" />
+                      )}
+                    </div>
+                  )}
+                  <span className={`text-xs mt-2 font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'} ${isCompleted ? 'group-hover:text-green-600' : ''}`}>
                     {step.title}
                   </span>
                 </div>
@@ -350,14 +408,25 @@ const ApplicationWizard = () => {
           </div>
           <Progress value={progress} className="h-2" />
           <div className="flex justify-between mt-2">
-            {steps.map((step) => (
-              <div 
-                key={step.id}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  currentStep >= step.id ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-            ))}
+            {steps.map((step) => {
+              const isCompleted = currentStep > step.id;
+              return (
+                <div 
+                  key={step.id}
+                  onClick={() => {
+                    if (isCompleted) {
+                      setCurrentStep(step.id);
+                      setValidationErrors([]);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    currentStep === step.id ? 'bg-primary scale-125' : 
+                    isCompleted ? 'bg-green-500 cursor-pointer hover:scale-110' : 'bg-muted'
+                  }`}
+                />
+              );
+            })}
           </div>
         </div>
 

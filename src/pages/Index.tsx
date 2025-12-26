@@ -178,6 +178,16 @@ const Index = () => {
 
   const features = [
     {
+      icon: User,
+      title: "Aspirant Dashboard",
+      description: "Check your application status and progress",
+      action: () => navigate("/aspirant/dashboard"),
+      visible: !!user,
+      gradient: "from-primary/20 to-secondary/20",
+      iconColor: "text-primary",
+      bgColor: "bg-primary/10",
+    },
+    {
       icon: FileText,
       title: "Apply as Candidate",
       description: "Submit your application for student union positions",
@@ -235,6 +245,7 @@ const Index = () => {
 
   const menuItems = [
     { label: "Home", icon: Home, action: () => { setIsMenuOpen(false); window.scrollTo(0, 0); }, alwaysShow: true },
+    { label: "Aspirant Dashboard", icon: User, action: () => { setIsMenuOpen(false); navigate("/aspirant/dashboard"); }, showWhen: () => !!user },
     { label: "Apply as Candidate", icon: FileText, action: () => { setIsMenuOpen(false); navigate("/aspirant/login"); }, showWhen: () => isStageActive("aspirant") || isStageActive("application") },
     { label: "Register as Voter", icon: UserPlus, action: () => { setIsMenuOpen(false); navigate("/voter/register"); }, showWhen: () => isStageActive("voter") || isStageActive("registration") },
     { label: "Vote Now", icon: Vote, action: () => { setIsMenuOpen(false); navigate("/voter/login"); }, showWhen: () => isStageActive("voting") },
@@ -270,15 +281,20 @@ const Index = () => {
       showProgress: true,
       showButtons: ["next", "previous", "close"],
       animate: true,
-      overlayColor: 'rgba(0, 0, 0, 0.7)',
-      stagePadding: 4,
+      overlayColor: 'rgba(0, 0, 0, 0.75)',
+      stagePadding: 8,
+      stageRadius: 12,
       popoverClass: 'driver-popover-theme',
+      progressText: '{{current}} of {{total}}',
+      nextBtnText: 'Next →',
+      prevBtnText: '← Back',
+      doneBtnText: 'Finish Tour',
       steps: [
         { 
           element: "#hero-section", 
           popover: { 
-            title: "🎓 Welcome to COHSSA ELECTORAL SYSTEM", 
-            description: "The official Independent Students Electoral Committee platform for the College of Health Sciences Students Association (COHSSA) at Al-Hikmah University.", 
+            title: "🎓 Welcome to ISECO!", 
+            description: "The Independent Students Electoral Committee manages transparent and democratic elections for COHSSA at Al-Hikmah University. Let's show you around!", 
             side: "bottom", 
             align: "center" 
           } 
@@ -286,8 +302,8 @@ const Index = () => {
         { 
           element: "#dual-logos", 
           popover: { 
-            title: "🏛️ Our Identity", 
-            description: "ISECO manages elections for COHSSA - ensuring transparent, fair, and democratic student governance.", 
+            title: "🏛️ ISECO & COHSSA", 
+            description: "Two organizations, one mission: ISECO (electoral committee) ensures fair elections, while COHSSA represents all Health Sciences students.", 
             side: "bottom", 
             align: "center" 
           } 
@@ -295,17 +311,17 @@ const Index = () => {
         { 
           element: "#countdown-section", 
           popover: { 
-            title: "⏱️ Election Timeline", 
-            description: "This countdown shows the current or upcoming election stage. Stay updated on important deadlines for registration, applications, and voting!", 
-            side: "bottom", 
+            title: "⏱️ Live Election Countdown", 
+            description: "Track all election stages in real-time! See when voter registration opens, application deadlines, voting periods, and result announcements.", 
+            side: "top", 
             align: "center" 
           } 
         },
         { 
           element: "#action-cards", 
           popover: { 
-            title: "🚀 Quick Actions", 
-            description: "These cards appear based on active election stages - register as a voter, apply to be a candidate, cast your vote, or view results.", 
+            title: "🚀 Your Election Actions", 
+            description: "Action cards appear dynamically based on what's currently open: Apply as a candidate, register to vote, cast your ballot, or view live results!", 
             side: "top", 
             align: "center" 
           } 
@@ -313,8 +329,8 @@ const Index = () => {
         { 
           element: "#info-section", 
           popover: { 
-            title: "📚 Learn More", 
-            description: "Access important information: view candidates, meet the electoral committee, read rules, access the student portal, or check the latest news.", 
+            title: "📚 Resources & Information", 
+            description: "View candidate profiles, meet the electoral committee, read election rules, access the student portal for resources, and check news updates.", 
             side: "top", 
             align: "center" 
           } 
@@ -322,8 +338,8 @@ const Index = () => {
         { 
           element: "#about-section", 
           popover: { 
-            title: "ℹ️ About Us", 
-            description: "Learn about COHSSA, the College of Health Sciences, and get support when you need it.", 
+            title: "ℹ️ About & Support", 
+            description: "Learn about COHSSA, explore the College of Health Sciences, and get help whenever you need it from our support team.", 
             side: "top", 
             align: "center" 
           } 
@@ -331,16 +347,16 @@ const Index = () => {
         { 
           element: "#admin-link", 
           popover: { 
-            title: "🔐 Admin Access", 
-            description: "Electoral committee members can access the admin panel to manage elections, review applications, and monitor voting.", 
+            title: "🔐 Demo & Admin", 
+            description: "Try our interactive demo to experience the full voting process, or access the admin panel if you're an electoral committee member.", 
             side: "top", 
             align: "center" 
           } 
         },
         { 
           popover: { 
-            title: "✅ You're Ready!", 
-            description: "You now know your way around ISECO. Participate actively in shaping your student government. Good luck!" 
+            title: "✅ You're All Set!", 
+            description: "You now know how to navigate ISECO. Your voice matters - participate in shaping student governance! Click 'Finish Tour' to get started." 
           } 
         },
       ],
@@ -348,7 +364,7 @@ const Index = () => {
         localStorage.setItem('iseco_tour_completed', 'true');
         setHasSeenTour(true);
         if (driverObj.hasNextStep()) {
-          const confirmed = confirm("Exit the tour?");
+          const confirmed = confirm("Are you sure you want to exit the tour?");
           if (!confirmed) return;
         }
         driverObj.destroy();

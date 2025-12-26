@@ -12,7 +12,7 @@ interface PaymentStepProps {
   onUpdate: (data: any) => void;
 }
 
-const PaymentStep = ({ data, onUpdate }: PaymentStepProps) => {
+const PaymentStep = ({ data = {}, onUpdate }: PaymentStepProps) => {
   const [filePreview, setFilePreview] = useState<string>(data.payment_proof_url || "");
   const [uploading, setUploading] = useState(false);
   const [paymentInstructions, setPaymentInstructions] = useState<any>(null);
