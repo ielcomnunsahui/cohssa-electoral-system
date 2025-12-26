@@ -337,7 +337,7 @@ export function AdminLayout({ children, onStartTour }: AdminLayoutProps) {
                   <span className="text-sm font-semibold text-primary">A</span>
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-sm font-medium">Admin</p>
+                  <p className="text-sm font-medium">COHSSA Admin</p>
                   <p className="text-xs text-muted-foreground">Electoral Committee</p>
                 </div>
               </div>
