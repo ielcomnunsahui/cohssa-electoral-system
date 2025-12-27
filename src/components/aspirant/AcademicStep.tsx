@@ -9,7 +9,7 @@ interface AcademicStepProps {
   positionData: any;
 }
 
-const AcademicStep = ({ data, onUpdate, positionData }: AcademicStepProps) => {
+const AcademicStep = ({ data = {}, onUpdate, positionData }: AcademicStepProps) => {
   const handleChange = (field: string, value: any) => {
     onUpdate({ ...data, [field]: value });
   };

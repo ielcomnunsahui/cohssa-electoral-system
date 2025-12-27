@@ -131,15 +131,10 @@ export const validateLeadershipStep = (data: any): ValidationResult => {
 };
 
 export const validateRefereeStep = (data: any): ValidationResult => {
-  const errors: string[] = [];
-
-  if (!data.referee_declaration_accepted) {
-    errors.push("Please accept the referee declaration");
-  }
-
+  // No validation required for referee step - optional
   return {
-    isValid: errors.length === 0,
-    errors
+    isValid: true,
+    errors: []
   };
 };
 

@@ -17,7 +17,7 @@ interface PositionStepProps {
   };
 }
 
-const PositionStep = ({ data, onUpdate, personalData }: PositionStepProps) => {
+const PositionStep = ({ data = {}, onUpdate, personalData }: PositionStepProps) => {
   const [positions, setPositions] = useState<any[]>([]);
   const [selectedPosition, setSelectedPosition] = useState<any>(null);
   const [eligibilityErrors, setEligibilityErrors] = useState<string[]>([]);
@@ -26,11 +26,28 @@ const PositionStep = ({ data, onUpdate, personalData }: PositionStepProps) => {
     loadPositions();
   }, []);
 
+  // Re-validate selected position when positions load or personalData changes
+  useEffect(() => {
+    if (positions.length > 0 && data.position_id) {
+      const position = positions.find(p => p.id === data.position_id);
+      if (position) {
+        setSelectedPosition(position);
+        const errors = checkEligibility(position);
+        setEligibilityErrors(errors);
+        // Update position_details with fresh data from database
+        if (JSON.stringify(position) !== JSON.stringify(data.position_details)) {
+          onUpdate({ ...data, position_details: position });
+        }
+      }
+    }
+  }, [positions, data.position_id, personalData]);
+
   const loadPositions = async () => {
     const { data: positionsData, error } = await supabase
       .from('positions')
       .select('*')
       .eq('is_active', true)
+      .order('display_order', { ascending: true })
       .order('title');
 
     if (error) {
@@ -55,12 +72,14 @@ const PositionStep = ({ data, onUpdate, personalData }: PositionStepProps) => {
     }
 
     // Check department eligibility
-    if (personalData.department && !position.eligible_departments.includes(personalData.department)) {
+    const eligibleDepartments: string[] = position.eligible_departments || [];
+    if (personalData.department && eligibleDepartments.length > 0 && !eligibleDepartments.includes(personalData.department)) {
       errors.push(`Your department (${personalData.department}) is not eligible for this position`);
     }
 
     // Check level eligibility
-    if (personalData.level && !position.eligible_levels.includes(personalData.level)) {
+    const eligibleLevels: string[] = position.eligible_levels || [];
+    if (personalData.level && eligibleLevels.length > 0 && !eligibleLevels.includes(personalData.level)) {
       errors.push(`Your level (${personalData.level}) is not eligible for this position`);
     }
 

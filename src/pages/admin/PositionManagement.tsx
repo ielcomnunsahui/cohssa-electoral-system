@@ -17,11 +17,10 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import { DEPARTMENT_CODES, DepartmentCode } from "@/lib/constants";
-type Department = DepartmentCode;
+import { DEPARTMENTS, Department } from "@/lib/constants";
 type Level = "100L" | "200L" | "300L" | "400L" | "500L";
 
-const DEPARTMENTS: Department[] = [...DEPARTMENT_CODES];
+const DEPT_LIST: readonly Department[] = DEPARTMENTS;
 
 const LEVELS: Level[] = ["100L", "200L", "300L", "400L", "500L"];
 
@@ -305,9 +304,23 @@ const PositionManagement = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Eligible Departments</Label>
+                      <div className="flex items-center justify-between">
+                        <Label>Eligible Departments</Label>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            checked={form.eligible_departments.length === DEPT_LIST.length}
+                            onCheckedChange={(checked) => {
+                              setForm(prev => ({
+                                ...prev,
+                                eligible_departments: checked ? [...DEPT_LIST] : []
+                              }));
+                            }}
+                          />
+                          <span className="text-sm font-medium">Select All</span>
+                        </div>
+                      </div>
                       <div className="grid grid-cols-2 gap-2">
-                        {DEPARTMENTS.map(dept => (
+                        {DEPT_LIST.map(dept => (
                           <div key={dept} className="flex items-center space-x-2">
                             <Checkbox 
                               checked={form.eligible_departments.includes(dept)}
@@ -320,7 +333,21 @@ const PositionManagement = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Eligible Levels</Label>
+                      <div className="flex items-center justify-between">
+                        <Label>Eligible Levels</Label>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={form.eligible_levels.length === LEVELS.length}
+                            onCheckedChange={(checked) => {
+                              setForm((prev) => ({
+                                ...prev,
+                                eligible_levels: checked ? [...LEVELS] : [],
+                              }));
+                            }}
+                          />
+                          <span className="text-sm font-medium">Select All</span>
+                        </div>
+                      </div>
                       <div className="flex gap-4 flex-wrap">
                         {LEVELS.map(level => (
                           <div key={level} className="flex items-center space-x-2">

@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
   ArrowLeft, Newspaper, FileText, BookOpen, Feather, PenTool, Send,
-  Loader2, Calendar, User, Plus, Eye, Upload, Image as ImageIcon
+  Loader2, Calendar, User, Plus, Eye, Upload, Image as ImageIcon,
+  Share2, Copy, MessageCircle // Added icons
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo, DualLogo } from "@/components/NavLink";
@@ -50,6 +51,17 @@ const Editorial = () => {
     author_department: "",
     image_url: ""
   });
+
+    // Deep linking logic: Open content if ID is in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const contentId = params.get('id');
+    if (contentId && content.length > 0) {
+      const item = content.find(c => c.id === contentId);
+      if (item) setSelectedContent(item);
+    }
+  }, [content]);
+
 
   useEffect(() => {
     fetchContent();
@@ -113,6 +125,26 @@ const Editorial = () => {
       setUploading(false);
     }
   };
+
+    const handleShare = async (item: any) => {
+    const shareUrl = `https://cohssahui.org/editorial?id=${item.id}`;
+    const shareText = `📝 Read "${item.title}" by ${item.author_name} on COHSSA Editorial.`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: item.title, text: shareText, url: shareUrl });
+      } catch (err) { console.log("Share failed", err); }
+    } else {
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      toast.success("Link copied to clipboard!");
+    }
+  };
+
+  const shareToWhatsApp = (item: any) => {
+    const text = encodeURIComponent(`*${item.title}*\nBy ${item.author_name}\n\nRead more on COHSSA Editorial:\nhttps://cohssahui.org/editorial?id=${item.id}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
 
   const handleSubmit = async () => {
     if (!user) {
@@ -421,42 +453,46 @@ const Editorial = () => {
         </Tabs>
 
         {/* Content Detail Dialog */}
-        <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
+        <Dialog open={!!selectedContent} onOpenChange={() => {
+          setSelectedContent(null);
+          window.history.pushState({}, '', '/editorial'); // Clean URL on close
+        }}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             {selectedContent && (
               <>
                 <DialogHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="secondary">
-                      {CONTENT_TYPES.find(t => t.value === selectedContent.content_type)?.label}
-                    </Badge>
+                  <div className="flex justify-between items-start">
+                    <Badge variant="outline">{selectedContent.content_type}</Badge>
+                    <Button variant="ghost" size="sm" onClick={() => handleShare(selectedContent)}>
+                      <Share2 className="h-4 w-4 mr-2" /> Share
+                    </Button>
                   </div>
-                  <DialogTitle className="text-2xl">{selectedContent.title}</DialogTitle>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <User className="h-4 w-4" />
-                      {selectedContent.author_name}
-                    </span>
-                    {selectedContent.department && (
-                      <span>• {selectedContent.department}</span>
-                    )}
-                    {selectedContent.published_at && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {new Date(selectedContent.published_at).toLocaleDateString()}
-                      </span>
-                    )}
+                  <DialogTitle className="text-3xl mt-2">{selectedContent.title}</DialogTitle>
+                  <div className="flex gap-4 text-sm text-muted-foreground py-2">
+                    <span className="flex items-center"><User className="h-4 w-4 mr-1" /> {selectedContent.author_name}</span>
+                    <span className="flex items-center"><Calendar className="h-4 w-4 mr-1" /> {new Date(selectedContent.published_at).toLocaleDateString()}</span>
                   </div>
                 </DialogHeader>
-                {selectedContent.image_url && (
-                  <img 
-                    src={selectedContent.image_url} 
-                    alt={selectedContent.title} 
-                    className="w-full rounded-lg"
-                  />
-                )}
-                <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">
+                
+                {selectedContent.image_url && <img src={selectedContent.image_url} alt="content image" className="w-full rounded-lg mb-6" />}
+                
+                <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed">
                   {selectedContent.content}
+                </div>
+
+                <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-center sm:text-left">
+                    <p className="font-bold">Share this work</p>
+                    <p className="text-xs text-muted-foreground">Support our student authors.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => handleShare(selectedContent)}>
+                      <Copy className="h-4 w-4 mr-2" /> Copy Link
+                    </Button>
+                    <Button className="bg-[#25D366] hover:bg-[#1da851]" onClick={() => shareToWhatsApp(selectedContent)}>
+                      <MessageCircle className="h-4 w-4 mr-2" /> WhatsApp
+                    </Button>
+                  </div>
                 </div>
               </>
             )}

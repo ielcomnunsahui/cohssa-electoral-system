@@ -4,9 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CountdownTimer } from "@/components/HomePage/CountdownTimer";
 import { 
-  Vote, Users, BarChart3, FileText, Shield, BookOpen, Menu, BookOpenCheck, 
+  Vote, School, Zap, Users, BarChart3, FileText, Shield, BookOpen, Menu, BookOpenCheck, 
   Loader2, Sparkles, ChevronRight, HelpCircle, LogOut, GraduationCap, 
-  Calendar, Star, Zap, ArrowRight, Home, UserPlus, Eye, Award, Newspaper, LogIn, User
+  Calendar, ArrowRight, Home, UserPlus, Eye, Award, Newspaper, LogIn, User,
+  ExternalLink, Library, ChevronDown
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useNavigate, Link } from "react-router-dom";
@@ -17,16 +18,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import heroStudents from "@/assets/hero-students-group.jpg";
 import "driver.js/dist/driver.css";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 interface TimelineStage {
   id: string;
   title?: string | null;
   description?: string | null;
   stage_name: string | null;
-  // Newer timeline fields used across admin/public
   start_date: string | null;
   end_date: string | null;
-  // Legacy fields (may be null)
   start_time?: string | null;
   end_time?: string | null;
   is_active: boolean;
@@ -42,6 +49,30 @@ const Index = () => {
   const [activeStage, setActiveStage] = useState<TimelineStage | null>(null);
   const [nextStage, setNextStage] = useState<TimelineStage | null>(null);
   const [hasSeenTour, setHasSeenTour] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if user has admin role
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+        
+        setIsAdmin(!!data && !error);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+    checkAdminRole();
+  }, [user]);
 
   const getStageStart = (stage: TimelineStage): Date | null => {
     const raw = stage.start_date ?? stage.start_time ?? null;
@@ -54,7 +85,6 @@ const Index = () => {
   };
 
   useEffect(() => {
-    // Check if user has seen the tour
     const tourSeen = localStorage.getItem('iseco_tour_completed');
     setHasSeenTour(!!tourSeen);
   }, []);
@@ -62,7 +92,6 @@ const Index = () => {
   useEffect(() => {
     fetchTimeline();
 
-    // Subscribe to real-time updates for election_timeline table
     const channel = supabase
       .channel('election-timeline-changes')
       .on(
@@ -72,10 +101,7 @@ const Index = () => {
           schema: 'public',
           table: 'election_timeline'
         },
-        (payload) => {
-          console.log('Timeline updated:', payload);
-          fetchTimeline();
-        }
+        () => fetchTimeline()
       )
       .subscribe();
 
@@ -84,12 +110,9 @@ const Index = () => {
     };
   }, []);
 
-  // Auto-start tour for first-time visitors
   useEffect(() => {
     if (!loading && !hasSeenTour) {
-      const timer = setTimeout(() => {
-        startTour();
-      }, 1500);
+      const timer = setTimeout(() => startTour(), 1500);
       return () => clearTimeout(timer);
     }
   }, [loading, hasSeenTour]);
@@ -154,104 +177,69 @@ const Index = () => {
     if (activeStage) {
       const end = getStageEnd(activeStage);
       if (end) {
-        return {
-          date: end,
-          title: `${activeStage.stage_name || 'Stage'} Ends In`
-        };
+        return { date: end, title: `${activeStage.stage_name || 'Stage'} Ends In` };
       }
     }
-
     if (nextStage) {
       const start = getStageStart(nextStage);
       if (start) {
-        return {
-          date: start,
-          title: `${nextStage.stage_name || 'Stage'} Begins In`
-        };
+        return { date: start, title: `${nextStage.stage_name || 'Stage'} Begins In` };
       }
     }
-
     return null;
   };
 
   const countdownData = getCountdownTarget();
 
-  const features = [
+  const actionCards = [
+    {
+      icon: User,
+      title: "Aspirant Dashboard",
+      description: "Check your application status",
+      action: () => navigate("/aspirant/dashboard"),
+      visible: !!user,
+      color: "bg-primary/10 text-primary",
+    },
     {
       icon: FileText,
       title: "Apply as Candidate",
-      description: "Submit your application for student union positions",
+      description: "Submit your candidacy application",
       action: () => navigate("/aspirant/login"),
       visible: isStageActive("aspirant") || isStageActive("application"),
-      gradient: "from-blue-500/20 to-cyan-500/20",
-      iconColor: "text-blue-500",
-      bgColor: "bg-blue-500/10"
+      color: "bg-blue-500/10 text-blue-600",
     },
     {
       icon: UserPlus,
       title: "Register as Voter",
-      description: "Register to participate in the election",
+      description: "Register to participate",
       action: () => navigate("/voter/register"),
       visible: isStageActive("voter") || isStageActive("registration"),
-      gradient: "from-green-500/20 to-emerald-500/20",
-      iconColor: "text-green-500",
-      bgColor: "bg-green-500/10"
+      color: "bg-green-500/10 text-green-600",
     },
     {
       icon: Vote,
-      title: "Vote for Your Candidate",
-      description: "Cast your vote for preferred candidates",
+      title: "Cast Your Vote",
+      description: "Vote for your candidates",
       action: () => navigate("/voter/login"),
       visible: isStageActive("voting"),
-      gradient: "from-purple-500/20 to-pink-500/20",
-      iconColor: "text-purple-500",
-      bgColor: "bg-purple-500/10"
+      color: "bg-purple-500/10 text-purple-600",
     },
     {
       icon: BarChart3,
-      title: "View Live Results",
-      description: "Monitor election progress in real-time",
+      title: "View Results",
+      description: "See live election results",
       action: () => navigate("/results"),
       visible: isStageActive("results"),
-      gradient: "from-orange-500/20 to-red-500/20",
-      iconColor: "text-orange-500",
-      bgColor: "bg-orange-500/10"
+      color: "bg-orange-500/10 text-orange-600",
     }
   ];
 
-  const informationLinks = [
-    { icon: Users, title: "Meet the Candidates", description: "View candidate profiles & manifestos", action: () => navigate("/candidates"), color: "bg-blue-500/10 text-blue-600 dark:text-blue-400", hoverBg: "hover:bg-blue-500/20" },
-    { icon: Shield, title: "Electoral Committee", description: "Meet the organizing team", action: () => navigate("/committee"), color: "bg-purple-500/10 text-purple-600 dark:text-purple-400", hoverBg: "hover:bg-purple-500/20" },
-    { icon: BookOpen, title: "Rules & Constitution", description: "Read election guidelines", action: () => navigate("/rules"), color: "bg-amber-500/10 text-amber-600 dark:text-amber-400", hoverBg: "hover:bg-amber-500/20" },
-    { icon: GraduationCap, title: "Student Portal", description: "Academic resources & mock tests", action: () => navigate("/portal"), color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400", hoverBg: "hover:bg-cyan-500/20" },
-    { icon: Newspaper, title: "Editorial", description: "News, articles & updates", action: () => navigate("/editorial"), color: "bg-rose-500/10 text-rose-600 dark:text-rose-400", hoverBg: "hover:bg-rose-500/20" },
+  const quickLinks = [
+    { icon: Users, title: "Candidates", action: () => navigate("/candidates") },
+    { icon: Shield, title: "Committee", action: () => navigate("/committee") },
+    { icon: BookOpen, title: "Rules", action: () => navigate("/rules") },
+    { icon: Newspaper, title: "Editorial", action: () => navigate("/editorial") },
   ];
-
-  const aboutLinks = [
-    { icon: Award, title: "About COHSSA", description: "Learn about our association", action: () => navigate("/about/cohssa"), color: "bg-primary/10 text-primary" },
-    { icon: GraduationCap, title: "About the College", description: "College of Health Sciences", action: () => navigate("/about/college"), color: "bg-accent/10 text-accent" },
-    { icon: HelpCircle, title: "Support & Help", description: "Get assistance anytime", action: () => navigate("/support"), color: "bg-green-500/10 text-green-600" },
-  ];
-
-  const menuItems = [
-    { label: "Home", icon: Home, action: () => { setIsMenuOpen(false); window.scrollTo(0, 0); }, alwaysShow: true },
-    { label: "Apply as Candidate", icon: FileText, action: () => { setIsMenuOpen(false); navigate("/aspirant/login"); }, showWhen: () => isStageActive("aspirant") || isStageActive("application") },
-    { label: "Register as Voter", icon: UserPlus, action: () => { setIsMenuOpen(false); navigate("/voter/register"); }, showWhen: () => isStageActive("voter") || isStageActive("registration") },
-    { label: "Vote Now", icon: Vote, action: () => { setIsMenuOpen(false); navigate("/voter/login"); }, showWhen: () => isStageActive("voting") },
-    { label: "View Results", icon: BarChart3, action: () => { setIsMenuOpen(false); navigate("/results"); }, showWhen: () => isStageActive("results") },
-    { label: "View Candidates", icon: Users, action: () => { setIsMenuOpen(false); navigate("/candidates"); }, alwaysShow: true },
-    { label: "Electoral Committee", icon: Shield, action: () => { setIsMenuOpen(false); navigate("/committee"); }, alwaysShow: true },
-    { label: "About the College", icon: GraduationCap, action: () => { setIsMenuOpen(false); navigate("/about/college"); }, alwaysShow: true },
-    { label: "About COHSSA", icon: Award, action: () => { setIsMenuOpen(false); navigate("/about/cohssa"); }, alwaysShow: true },
-    { label: "Editorial", icon: Newspaper, action: () => { setIsMenuOpen(false); navigate("/editorial"); }, alwaysShow: true },
-    { label: "Rules & Constitution", icon: BookOpen, action: () => { setIsMenuOpen(false); navigate("/rules"); }, alwaysShow: true },
-    { label: "Student Portal", icon: GraduationCap, action: () => { setIsMenuOpen(false); navigate("/portal"); }, alwaysShow: true },
-    { label: "Support & Help", icon: HelpCircle, action: () => { setIsMenuOpen(false); navigate("/support"); }, alwaysShow: true },
-    { label: "Try Demo", icon: Eye, action: () => { setIsMenuOpen(false); navigate("/demo"); }, alwaysShow: true },
-    { label: "Admin Access", icon: Shield, action: () => { setIsMenuOpen(false); navigate("/admin/login"); }, alwaysShow: true },
-  ];
-
-  const visibleMenuItems = menuItems.filter(item => item.alwaysShow || (item.showWhen && item.showWhen()));
 
   const handleSignOut = async () => {
     setIsMenuOpen(false);
@@ -270,24 +258,29 @@ const Index = () => {
       showProgress: true,
       showButtons: ["next", "previous", "close"],
       animate: true,
-      overlayColor: 'rgba(0, 0, 0, 0.7)',
-      stagePadding: 4,
+      overlayColor: 'rgba(0, 0, 0, 0.75)',
+      stagePadding: 8,
+      stageRadius: 12,
       popoverClass: 'driver-popover-theme',
+      progressText: '{{current}} of {{total}}',
+      nextBtnText: 'Next →',
+      prevBtnText: '← Back',
+      doneBtnText: 'Finish Tour',
       steps: [
         { 
           element: "#hero-section", 
           popover: { 
-            title: "🎓 Welcome to COHSSA ELECTORAL SYSTEM", 
-            description: "The official Independent Students Electoral Committee platform for the College of Health Sciences Students Association (COHSSA) at Al-Hikmah University.", 
+            title: "🎓 Welcome to COHSSA Electoral System!", 
+            description: "This is the official election platform for the College of Health Sciences Students Association at Al-Hikmah University.", 
             side: "bottom", 
             align: "center" 
           } 
         },
         { 
-          element: "#dual-logos", 
+          element: "#nav-actions", 
           popover: { 
-            title: "🏛️ Our Identity", 
-            description: "ISECO manages elections for COHSSA - ensuring transparent, fair, and democratic student governance.", 
+            title: "🚀 Quick Navigation", 
+            description: "Access election actions, portals, and information from these grouped menus. Everything is organized for easy access.", 
             side: "bottom", 
             align: "center" 
           } 
@@ -296,43 +289,25 @@ const Index = () => {
           element: "#countdown-section", 
           popover: { 
             title: "⏱️ Election Timeline", 
-            description: "This countdown shows the current or upcoming election stage. Stay updated on important deadlines for registration, applications, and voting!", 
-            side: "bottom", 
+            description: "Track election stages in real-time. See when voter registration opens, application deadlines, and voting periods.", 
+            side: "top", 
             align: "center" 
           } 
         },
         { 
           element: "#action-cards", 
           popover: { 
-            title: "🚀 Quick Actions", 
-            description: "These cards appear based on active election stages - register as a voter, apply to be a candidate, cast your vote, or view results.", 
+            title: "🗳️ Take Action", 
+            description: "These cards appear based on what's currently open: apply as candidate, register to vote, cast your ballot, or view results!", 
             side: "top", 
             align: "center" 
           } 
         },
         { 
-          element: "#info-section", 
+          element: "#quick-links", 
           popover: { 
-            title: "📚 Learn More", 
-            description: "Access important information: view candidates, meet the electoral committee, read rules, access the student portal, or check the latest news.", 
-            side: "top", 
-            align: "center" 
-          } 
-        },
-        { 
-          element: "#about-section", 
-          popover: { 
-            title: "ℹ️ About Us", 
-            description: "Learn about COHSSA, the College of Health Sciences, and get support when you need it.", 
-            side: "top", 
-            align: "center" 
-          } 
-        },
-        { 
-          element: "#admin-link", 
-          popover: { 
-            title: "🔐 Admin Access", 
-            description: "Electoral committee members can access the admin panel to manage elections, review applications, and monitor voting.", 
+            title: "📚 Quick Links", 
+            description: "View candidates, meet the electoral committee, read rules, and access news updates.", 
             side: "top", 
             align: "center" 
           } 
@@ -340,7 +315,7 @@ const Index = () => {
         { 
           popover: { 
             title: "✅ You're Ready!", 
-            description: "You now know your way around ISECO. Participate actively in shaping your student government. Good luck!" 
+            description: "You now know how to navigate the COHSSA Electoral System. Your voice matters - participate in shaping student governance!" 
           } 
         },
       ],
@@ -348,7 +323,7 @@ const Index = () => {
         localStorage.setItem('iseco_tour_completed', 'true');
         setHasSeenTour(true);
         if (driverObj.hasNextStep()) {
-          const confirmed = confirm("Exit the tour?");
+          const confirmed = confirm("Are you sure you want to exit the tour?");
           if (!confirmed) return;
         }
         driverObj.destroy();
@@ -357,134 +332,253 @@ const Index = () => {
     driverObj.drive();
   };
 
-  const visibleFeatures = features.filter(f => f.visible);
-
+  const visibleActions = actionCards.filter(f => f.visible);
   const stats = [
-    { icon: GraduationCap, label: "Active Students", value: "1,350+", color: "text-blue-500" },
-    { icon: Vote, label: "Faculties", value: "2", color: "text-green-500" },
-    { icon: Star, label: "Departments", value: "7", color: "text-amber-500" },
+    { icon: Users, label: "Active Students", value: "1,350+", color: "text-blue-500" },
+    { icon: School, label: "Faculties", value: "2", color: "text-green-500" },
+    { icon: GraduationCap, label: "Departments", value: "7", color: "text-amber-500" },
     { icon: Zap, label: "Instant Results", value: "24/7", color: "text-purple-500" },
   ];
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div 
-            id="dual-logos"
-            className="flex items-center gap-3 group cursor-pointer" 
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          >
-            <DualLogo logoSize="h-9 w-9" showLabels={true} />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {user ? (
-              <>
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-full border border-primary/20">
-                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <User className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground max-w-[120px] truncate">
-                    {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}
-                  </span>
-                </div>
+    <div className="min-h-screen bg-background">
+      {/* Header - Simplified Navbar */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/50">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex justify-between items-center">
+            {/* Logo */}
+            <div 
+              id="dual-logos"
+              className="flex items-center gap-2 cursor-pointer" 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              <DualLogo logoSize="h-8 w-8" showLabels={false} />
+              <span className="font-bold text-lg hidden sm:block">COHSSA</span>
+            </div>
+            
+            {/* Desktop Nav - Grouped */}
+            <nav id="nav-actions" className="hidden md:flex items-center gap-2">
+              {/* Election Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-1">
+                    Election <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate("/candidates")}>
+                    <Users className="h-4 w-4 mr-2" /> Candidates
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/committee")}>
+                    <Shield className="h-4 w-4 mr-2" /> Committee
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/results")}>
+                    <BarChart3 className="h-4 w-4 mr-2" /> Results
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/rules")}>
+                    <BookOpen className="h-4 w-4 mr-2" /> Rules
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Portals Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-1">
+                    Portals <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  {user && (
+                    <>
+                      <DropdownMenuLabel className="text-xs text-muted-foreground">My Account</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => navigate("/aspirant/dashboard")}>
+                        <User className="h-4 w-4 mr-2" /> Aspirant Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">COHSSA</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => navigate("/cohssa-portal")}>
+                    <GraduationCap className="h-4 w-4 mr-2" /> COHSSA Portal
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/editorial")}>
+                    <Newspaper className="h-4 w-4 mr-2" /> Editorial
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">University</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => navigate("/portal")}>
+                    <ExternalLink className="h-4 w-4 mr-2" /> Student Portal
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* About Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-1">
+                    About <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate("/about/cohssa")}>
+                    <Award className="h-4 w-4 mr-2" /> About COHSSA
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/about/college")}>
+                    <GraduationCap className="h-4 w-4 mr-2" /> The College
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/support")}>
+                    <HelpCircle className="h-4 w-4 mr-2" /> Support
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button variant="ghost" size="sm" onClick={() => navigate("/demo")}>
+                <Eye className="h-4 w-4 mr-1" /> Demo
+              </Button>
+
+              {isAdmin && (
+                <Button variant="outline" size="sm" onClick={() => navigate("/admin/dashboard")} className="gap-1 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground">
+                  <Shield className="h-4 w-4" /> Admin
+                </Button>
+              )}
+            </nav>
+
+            {/* Right Actions */}
+            <div className="flex items-center gap-2">
+              {user ? (
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="hidden sm:flex gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                  className="hidden sm:flex gap-2"
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out
                 </Button>
-              </>
-            ) : (
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="hidden sm:flex gap-2"
-                onClick={handleSignIn}
-              >
-                <LogIn className="h-4 w-4" />
-                Sign In
-              </Button>
-            )}
-            <ThemeToggle />
-            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="hover:bg-primary/10 transition-colors">
-                  <Menu className="h-6 w-6" />
+              ) : (
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="hidden sm:flex gap-2"
+                  onClick={handleSignIn}
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign In
                 </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80 bg-background/95 backdrop-blur-xl overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-3">
-                  <DualLogo logoSize="h-8 w-8" />
-                </SheetTitle>
-              </SheetHeader>
-              <nav className="mt-6 space-y-1">
-                {visibleMenuItems.map((item, index) => {
-                  const Icon = item.icon;
-                  return (
-                    <Button
-                      key={index}
-                      variant="ghost"
-                      className="w-full justify-between group hover:bg-primary/10 transition-all duration-200"
-                      onClick={item.action}
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                        {item.label}
-                      </span>
-                      <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                    </Button>
-                  );
-                })}
-                {user && (
-                  <div className="flex items-center gap-3 px-3 py-3 mb-2 bg-primary/5 rounded-lg border border-primary/20">
-                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                      <User className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {user.user_metadata?.full_name || 'Welcome!'}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {user.email}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                <div className="pt-4 border-t space-y-2">
-                  <Button variant="outline" className="w-full justify-start gap-2 hover:bg-primary/10" onClick={startTour}>
-                    <BookOpenCheck className="h-4 w-4" />
-                    Take a Tour
+              )}
+              <ThemeToggle />
+              
+              {/* Mobile Menu */}
+              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="h-5 w-5" />
                   </Button>
-                  {user ? (
-                    <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleSignOut}>
-                      <LogOut className="h-4 w-4" />
-                      Sign Out
+                </SheetTrigger>
+                <SheetContent side="right" className="w-80 overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <DualLogo logoSize="h-8 w-8" />
+                    </SheetTitle>
+                  </SheetHeader>
+                  <nav className="mt-6 space-y-1">
+                    {user && (
+                      <div className="p-3 mb-4 bg-primary/5 rounded-lg border border-primary/20">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {user.user_metadata?.full_name || 'Welcome!'}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {user && (
+                      <>
+                        <p className="text-xs font-medium text-muted-foreground px-3 pt-2">MY ACCOUNT</p>
+                        <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/aspirant/dashboard"); }}>
+                          <User className="h-4 w-4" /> Aspirant Dashboard
+                        </Button>
+                        {isAdmin && (
+                          <Button variant="ghost" className="w-full justify-start gap-2 text-primary" onClick={() => { setIsMenuOpen(false); navigate("/admin/dashboard"); }}>
+                            <Shield className="h-4 w-4" /> Admin Dashboard
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    
+                    <p className="text-xs font-medium text-muted-foreground px-3 pt-2">ELECTION</p>
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/candidates"); }}>
+                      <Users className="h-4 w-4" /> Candidates
                     </Button>
-                  ) : (
-                    <Button variant="default" className="w-full justify-start gap-2" onClick={handleSignIn}>
-                      <LogIn className="h-4 w-4" />
-                      Sign In
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/committee"); }}>
+                      <Shield className="h-4 w-4" /> Committee
                     </Button>
-                  )}
-                </div>
-              </nav>
-            </SheetContent>
-          </Sheet>
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/results"); }}>
+                      <BarChart3 className="h-4 w-4" /> Results
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/rules"); }}>
+                      <BookOpen className="h-4 w-4" /> Rules
+                    </Button>
+                    
+                    <p className="text-xs font-medium text-muted-foreground px-3 pt-4">PORTALS</p>
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/cohssa-portal"); }}>
+                      <GraduationCap className="h-4 w-4" /> COHSSA Portal
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/portal"); }}>
+                      <ExternalLink className="h-4 w-4" /> Student Portal
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/editorial"); }}>
+                      <Newspaper className="h-4 w-4" /> Editorial
+                    </Button>
+                    
+                    <p className="text-xs font-medium text-muted-foreground px-3 pt-4">ABOUT</p>
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/about/cohssa"); }}>
+                      <Award className="h-4 w-4" /> About COHSSA
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/about/college"); }}>
+                      <GraduationCap className="h-4 w-4" /> The College
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/support"); }}>
+                      <HelpCircle className="h-4 w-4" /> Support
+                    </Button>
+                    
+                    <div className="pt-4 border-t space-y-2">
+                      <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setIsMenuOpen(false); navigate("/demo"); }}>
+                        <Eye className="h-4 w-4" /> Demo
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start gap-2" onClick={startTour}>
+                        <BookOpenCheck className="h-4 w-4" /> Take Tour
+                      </Button>
+                      {user ? (
+                        <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleSignOut}>
+                          <LogOut className="h-4 w-4" /> Sign Out
+                        </Button>
+                      ) : (
+                        <Button className="w-full justify-start gap-2" onClick={handleSignIn}>
+                          <LogIn className="h-4 w-4" /> Sign In
+                        </Button>
+                      )}
+                    </div>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Hero Section with Background Image */}
-      <section id="hero-section" className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-16">
-        {/* Background Image */}
+      {/* Hero Section - Simplified */}
+      <section id="hero-section" className="relative min-h-[80vh] flex items-center justify-center pt-20 pb-12 overflow-hidden">
+       {/* Background Image */}
         <div className="absolute inset-0">
           <img 
             src={heroStudents} 
@@ -499,64 +593,41 @@ const Index = () => {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,hsl(var(--background)/0.4)_100%)]" />
         </div>
 
-        {/* Animated Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-        </div>
-
-        {/* Content */}
-        <div className="container relative mx-auto px-4 py-20">
-          <div className="text-center space-y-8 max-w-4xl mx-auto">
-            {/* Dual Logo Display */}
-            <div className="flex justify-center gap-6 md:gap-10 animate-scale-in">
-              <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-primary/30 to-primary/10 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative p-4 bg-background/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-primary/20 transition-transform duration-300 hover:scale-105">
-                  <Logo className="h-20 w-20 md:h-28 md:w-28" />
-                  <p className="text-xs font-semibold text-primary mt-2">ISECO</p>
-                </div>
+        <div className="container relative mx-auto px-4">
+          <div className="text-center space-y-8 max-w-3xl mx-auto">
+            {/* Logos */}
+            <div className="flex justify-center gap-4 animate-fade-in">
+              <div className="p-3 bg-background/80 backdrop-blur-sm rounded-xl shadow-lg border border-primary/20">
+                <Logo className="h-16 w-16 md:h-20 md:w-20" />
               </div>
-              <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-accent/30 to-accent/10 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative p-4 bg-background/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-accent/20 transition-transform duration-300 hover:scale-105">
-                  <COHSSALogoImg className="h-20 w-20 md:h-28 md:w-28" />
-                  <p className="text-xs font-semibold text-accent mt-2">COHSSA</p>
-                </div>
-                <Sparkles className="absolute -top-2 -right-2 h-6 w-6 text-accent animate-pulse" />
+              <div className="p-3 bg-background/80 backdrop-blur-sm rounded-xl shadow-lg border border-accent/20 relative">
+                <COHSSALogoImg className="h-16 w-16 md:h-20 md:w-20" />
+                <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-accent animate-pulse" />
               </div>
             </div>
             
-            <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight">
-                <span className="bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent drop-shadow-sm">
-                  ISECO
+            {/* Welcome Text */}
+            <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <p className="text-sm font-medium text-primary uppercase tracking-widest">Welcome to</p>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight">
+                <span className="bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
+                  COHSSA Electoral System
                 </span>
               </h1>
-              <p className="text-xl md:text-2xl font-semibold text-foreground/90">
-                Independent Students Electoral Committee
+              <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto">
+                College of Health Sciences Students Association
               </p>
-            </div>
-
-            <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-              <p className="text-lg md:text-xl text-foreground/80 font-medium">
-                College of Health Sciences Students Association (COHSSA)
-              </p>
-              <p className="text-muted-foreground flex items-center justify-center gap-2">
+              <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
                 <GraduationCap className="h-4 w-4" />
-                Al-Hikmah University, Ilorin, Nigeria
+                Al-Hikmah University, Ilorin
               </p>
             </div>
 
-            <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              Your voice matters. Participate in transparent, fair, and democratic student elections.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap justify-center gap-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <Button 
                 size="lg" 
-                className="gap-2 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 bg-primary text-primary-foreground animate-pulse-glow"
+                className="gap-2 shadow-lg"
                 onClick={() => document.getElementById('action-cards')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Get Started
@@ -565,25 +636,18 @@ const Index = () => {
               <Button 
                 size="lg" 
                 variant="outline"
-                className="gap-2 bg-background/50 backdrop-blur-sm hover:bg-background/80 border-2"
+                className="gap-2"
                 onClick={startTour}
               >
                 <BookOpenCheck className="h-4 w-4" />
-                Take a Tour
+                Take Tour
               </Button>
             </div>
           </div>
         </div>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce-subtle">
-          <div className="w-6 h-10 border-2 border-foreground/30 rounded-full flex justify-center pt-2">
-            <div className="w-1.5 h-3 bg-foreground/50 rounded-full animate-pulse" />
-          </div>
-        </div>
       </section>
 
-      {/* Stats Section */}
+       {/* Stats Section */}
       <section className="py-12 bg-muted/30 border-y border-border/50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
@@ -694,73 +758,39 @@ const Index = () => {
           </CardContent>
         </Card>
       </section>
-
-      {/* Action Cards Section */}
-      <section id="action-cards" className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 animate-fade-in">Take Action</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            Participate in shaping your student government
-          </p>
+      {/* Action Cards */}
+      <section id="action-cards" className="container mx-auto px-4 py-12">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">Take Action</h2>
+          <p className="text-muted-foreground">Participate in shaping your student government</p>
         </div>
 
-        {visibleFeatures.length === 0 ? (
-          <Card className="max-w-2xl mx-auto p-8 animate-fade-in shadow-lg border-dashed border-2">
-            <CardContent className="space-y-6 text-center">
-              <div className="w-24 h-24 bg-muted rounded-2xl flex items-center justify-center mx-auto">
-                <Calendar className="h-12 w-12 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-xl font-medium text-foreground mb-2">No active election activities</p>
-                <p className="text-muted-foreground">Election stages will appear here when they become active.</p>
-              </div>
-              {timelineStages.length > 0 && (
-                <div className="mt-6 p-6 bg-muted/50 rounded-xl">
-                  <h4 className="font-semibold mb-4 text-foreground flex items-center justify-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Upcoming Stages
-                  </h4>
-                  <div className="space-y-3">
-                    {timelineStages.slice(0, 3).map((stage) => {
-                      const start = getStageStart(stage);
-                      return (
-                        <div key={stage.id} className="flex justify-between items-center p-3 bg-background rounded-lg border border-border/50">
-                          <span className="font-medium">{stage.stage_name || stage.title || 'Stage'}</span>
-                          <span className="text-sm text-muted-foreground">{start ? start.toLocaleDateString() : '-'}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </CardContent>
+        {visibleActions.length === 0 ? (
+          <Card className="max-w-lg mx-auto p-6 border-dashed border-2 text-center">
+            <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+            <p className="font-medium mb-2">No active election activities</p>
+            <p className="text-sm text-muted-foreground">Actions will appear when stages become active</p>
           </Card>
         ) : (
-          <div className={`grid grid-cols-1 md:grid-cols-2 ${visibleFeatures.length <= 2 ? 'lg:grid-cols-2 max-w-3xl' : 'lg:grid-cols-4 max-w-7xl'} gap-6 mx-auto`}>
-            {visibleFeatures.map((feature, index) => {
-              const Icon = feature.icon;
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            {visibleActions.map((action, index) => {
+              const Icon = action.icon;
               return (
                 <Card 
-                  key={feature.title}
-                  className="group cursor-pointer overflow-hidden border-2 border-transparent hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 animate-slide-up"
+                  key={action.title}
+                  className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in"
                   style={{ animationDelay: `${index * 100}ms` }}
-                  onClick={feature.action}
+                  onClick={action.action}
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                  <CardContent className="p-8 text-center space-y-6 relative">
-                    <div className="flex justify-center">
-                      <div className={`h-20 w-20 rounded-2xl ${feature.bgColor} flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
-                        <Icon className={`h-10 w-10 ${feature.iconColor}`} />
-                      </div>
+                  <CardContent className="p-6 flex items-center gap-4">
+                    <div className={`h-12 w-12 rounded-xl ${action.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                      <Icon className="h-6 w-6" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-xl mb-2 group-hover:text-primary transition-colors">{feature.title}</h3>
-                      <p className="text-muted-foreground">{feature.description}</p>
+                    <div className="flex-1">
+                      <h3 className="font-semibold group-hover:text-primary transition-colors">{action.title}</h3>
+                      <p className="text-sm text-muted-foreground">{action.description}</p>
                     </div>
-                    <Button className="w-full gap-2 transition-all" variant="secondary">
-                      Get Started
-                      <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </CardContent>
                 </Card>
               );
@@ -769,72 +799,50 @@ const Index = () => {
         )}
       </section>
 
-      {/* Information Links Section */}
-      <section id="info-section" className="container mx-auto px-4 py-16 bg-gradient-to-b from-transparent via-muted/20 to-transparent">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 animate-fade-in">Learn More</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            Everything you need to know about the election process
-          </p>
+      
+
+      {/* Quick Links */}
+      <section id="quick-links" className="container mx-auto px-4 py-12">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">Quick Links</h2>
+          <p className="text-muted-foreground">Access important information</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
-          {informationLinks.map((link, index) => {
+        <div className="flex flex-wrap justify-center gap-3 max-w-2xl mx-auto">
+          {quickLinks.map((link, index) => {
             const Icon = link.icon;
             return (
-              <Card
+              <Button
                 key={link.title}
-                className={`group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-slide-up overflow-hidden ${link.hoverBg}`}
-                style={{ animationDelay: `${index * 100}ms` }}
+                variant="outline"
+                className="gap-2 animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
                 onClick={link.action}
               >
-                <CardContent className="p-6 text-center space-y-3">
-                  <div className={`w-14 h-14 rounded-xl ${link.color} flex items-center justify-center mx-auto group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                    <Icon className="h-7 w-7" />
-                  </div>
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{link.title}</h3>
-                  <p className="text-xs text-muted-foreground">{link.description}</p>
-                </CardContent>
-              </Card>
+                <Icon className="h-4 w-4" />
+                {link.title}
+              </Button>
             );
           })}
+          <Button
+            variant="outline"
+            className="gap-2 animate-fade-in"
+            style={{ animationDelay: '200ms' }}
+            onClick={() => navigate("/cohssa-portal")}
+          >
+            <Library className="h-4 w-4" />
+            COHSSA Portal
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2 animate-fade-in"
+            style={{ animationDelay: '250ms' }}
+            onClick={() => navigate("/portal")}
+          >
+            <ExternalLink className="h-4 w-4" />
+            Student Portal
+          </Button>
         </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about-section" className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 animate-fade-in">About Us</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            Learn more about our organization and get support
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {aboutLinks.map((link, index) => {
-            const Icon = link.icon;
-            return (
-              <Card
-                key={link.title}
-                className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-2 animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-                onClick={link.action}
-              >
-                <CardContent className="p-8 text-center space-y-4">
-                  <div className={`w-16 h-16 rounded-2xl ${link.color} flex items-center justify-center mx-auto group-hover:scale-110 transition-transform`}>
-                    <Icon className="h-8 w-8" />
-                  </div>
-                  <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">{link.title}</h3>
-                  <p className="text-sm text-muted-foreground">{link.description}</p>
-                  <Button variant="ghost" className="gap-1 text-sm">
-                    Learn more <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Demo & Admin Links */}
+        {/* Demo & Admin Links */}
       <section id="admin-link" className="container mx-auto px-4 py-12">
         <div className="text-center space-y-4">
           <Card className="max-w-md mx-auto p-6 border-dashed border-2 hover:border-primary/50 transition-all cursor-pointer group" onClick={() => navigate("/demo")}>
@@ -859,38 +867,30 @@ const Index = () => {
           </Button>
         </div>
       </section>
+      </section>
+
+      
 
       {/* Footer */}
-      <footer className="bg-card border-t">
+      <footer className="bg-muted/30 border-t">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <DualLogo logoSize="h-8 w-8" />
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <DualLogo logoSize="h-7 w-7" />
+              <span className="text-sm text-muted-foreground">ISECO × COHSSA</span>
             </div>
             <div className="text-center text-sm text-muted-foreground">
-              <p>© {new Date().getFullYear()} Independent Students Electoral Committee</p>
-              <p className="mt-1 flex items-center justify-center gap-1">
-                <GraduationCap className="h-3 w-3" />
-                Al-Hikmah University, Ilorin, Nigeria
-              </p>
-              <div className="mt-2 flex items-center justify-center gap-3">
-                <Link to="/terms" className="hover:text-primary transition-colors inline-flex items-center gap-1">
-                  <FileText className="h-3 w-3" />
-                  Terms
-                </Link>
-                <span className="text-muted-foreground/30">•</span>
-                <Link to="/privacy" className="hover:text-primary transition-colors inline-flex items-center gap-1">
-                  <Shield className="h-3 w-3" />
-                  Privacy
-                </Link>
-              </div>
+              <p>© {new Date().getFullYear()} College of Health Sciences Students Association</p>
+              <p className="text-xs mt-1">Al-Hikmah University, Ilorin</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/support")} className="text-xs">Support</Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/rules")} className="text-xs">Rules</Button>
-              <Button variant="ghost" size="sm" onClick={startTour} className="text-xs gap-1">
-                <BookOpenCheck className="h-3 w-3" /> Tour
-              </Button>
+              <Link to="/terms" className="text-xs text-muted-foreground hover:text-primary transition-colors">Terms</Link>
+              <span className="text-muted-foreground/30">•</span>
+              <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">Privacy</Link>
+              <span className="text-muted-foreground/30">•</span>
+              <button onClick={startTour} className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                Tour
+              </button>
             </div>
           </div>
         </div>

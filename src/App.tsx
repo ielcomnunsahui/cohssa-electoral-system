@@ -35,6 +35,7 @@ import VoterDashboard from "./pages/VoterDashboard";
 import AspirantDashboard from "./pages/aspirant/AspirantDashboard";
 import ApplicationWizard from "./pages/aspirant/ApplicationWizard";
 import StudentPortal from "./pages/StudentPortal";
+import COHSSAPortal from "./pages/COHSSAPortal";
 import AboutCollege from "./pages/AboutCollege";
 import AboutCOHSSA from "./pages/AboutCOHSSA";
 import Editorial from "./pages/Editorial";
@@ -47,6 +48,15 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
+
+// Helper Component: Fixes the "stay at bottom" scroll bug on page changes
+const ScrollToTop = () => {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname, search]);
+  return null;
+};
 
 const App = () => (
   <HelmetProvider>
@@ -216,6 +226,7 @@ const App = () => (
               <Route path="/demo" element={<Demo />} />
               <Route path="/results" element={<Results />} />
               <Route path="/portal" element={<StudentPortal />} />
+              <Route path="/cohssa-portal" element={<COHSSAPortal />} />
               <Route path="/about/college" element={<AboutCollege />} />
               <Route path="/about/cohssa" element={<AboutCOHSSA />} />
               <Route path="/editorial" element={<Editorial />} />

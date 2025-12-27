@@ -12,7 +12,7 @@ interface RefereeStepProps {
   onUpdate: (data: any) => void;
 }
 
-const RefereeStep = ({ data, onUpdate }: RefereeStepProps) => {
+const RefereeStep = ({ data = {}, onUpdate }: RefereeStepProps) => {
   const [filePreview, setFilePreview] = useState<string>(data.referee_declaration_url || "");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
