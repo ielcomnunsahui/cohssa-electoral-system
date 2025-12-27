@@ -3,10 +3,121 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, ArrowLeft, Users, Crown, Scale, History, Phone, Mail, GraduationCap, Building } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Loader2, ArrowLeft, Users, Crown, Scale, History, Phone, Mail, 
+  GraduationCap, Building, Fingerprint, Database, Vote, Shield, 
+  Target, BookOpen, Heart, Sparkles, Calendar 
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo, DualLogo } from "@/components/NavLink";
 import { SEO } from "@/components/SEO";
+
+// COHSSA Departments
+const DEPARTMENTS = [
+  { name: "Medicine and Surgery (MBBS)", icon: "🩺" },
+  { name: "Nursing Science", icon: "💉" },
+  { name: "Medical Laboratory Science", icon: "🔬" },
+  { name: "Public Health", icon: "🏥" },
+  { name: "Human Anatomy", icon: "🦴" },
+  { name: "Physiology", icon: "❤️" }
+];
+
+// Administration History
+const ADMINISTRATIONS = [
+  {
+    number: 1,
+    title: "First Administration – RAFIU NAFIU (Pioneer)",
+    period: "2019",
+    president: "RAFIU NAFIU",
+    vicePresident: "ADAMU MURINANATU",
+    senateLeader: "HABEEB MUHAMMAD KUDU (Speaker)",
+    staffAdviser: "MR. AKEEM BUSARI",
+    highlights: [
+      "Foundation of the association's governance structure",
+      "Drafting and establishment of the first AHSS constitution",
+      "Pioneer President served two terms"
+    ]
+  },
+  {
+    number: 2,
+    title: "Second Administration – IBRAHIM MARINASARA",
+    president: "IBRAHIM MARINASARA",
+    senateLeader: "YAHAYA BILIKISU OWUNA (First Senate President)",
+    staffAdviser: "MR. AKEEM BUSARI",
+    highlights: [
+      "Formal institutionalization of Senate Presidency",
+      "Student population grew to approximately 500",
+      "Formation and representation in Council of Faculty Presidents",
+      "Architect of the Health Fest initiative"
+    ]
+  },
+  {
+    number: 3,
+    title: "Third Administration – KAMALDEEN MAHMOOD",
+    president: "KAMALDEEN MAHMOOD",
+    staffAdviser: "MR. SALAUDEEN FATAI",
+    highlights: [
+      "Student population expanded to over 1,000",
+      "Focus on continuity, consolidation, and institutional growth",
+      "Staff adviser changed to MR. SALAUDEEN FATAI",
+      "Preservation and strengthening of existing legacies"
+    ]
+  },
+  {
+    number: 4,
+    title: "Fourth Administration – ABDULQANIYU ABDULAZEEZ",
+    president: "ABDULQANIYU ABDULAZEEZ",
+    senateLeader: "ISMAEEL IBRAHEEM (First Elected Senate President)",
+    staffAdviser: "MR. I. A. LAWAL",
+    highlights: [
+      "Student population grew to approximately 2,000",
+      "First elected Senate President in AHSS history",
+      "First successful amendment of the AHSS constitution",
+      "Numerous impactful programs elevating faculty profile",
+      "Regarded as one of the most successful tenures"
+    ]
+  },
+  {
+    number: 5,
+    title: "Fifth Administration – OSHAFU SALEEM (Current)",
+    period: "2025",
+    president: "OSHAFU SALEEM",
+    senateLeader: "OYENIYI ABDULAZEEZ (Senate President)",
+    highlights: [
+      "Introduction of Medicine and Surgery (MBBS) programme",
+      "First inclusion of MBBS students",
+      "Faculty restructured to College under Prof. Enoch A. Afolayan",
+      "Constitutional name change from AHSS to COHSSA (December 2025)",
+      "Digital Revolution implementation"
+    ]
+  }
+];
+
+// Core Objectives
+const CORE_OBJECTIVES = [
+  {
+    title: "Advocacy",
+    description: "To represent the interests of health science students before the University Management.",
+    icon: Shield
+  },
+  {
+    title: "Professionalism",
+    description: "To instill the ethics of healthcare delivery in students through seminars, workshops, and the annual Health Fest.",
+    icon: BookOpen
+  },
+  {
+    title: "Unity",
+    description: "To bridge the gap between various medical and health disciplines, fostering a collaborative healthcare team mindset before graduation.",
+    icon: Heart
+  },
+  {
+    title: "Excellence",
+    description: "To reward and encourage academic and clinical brilliance among its members.",
+    icon: Target
+  }
+];
 
 const AboutCOHSSA = () => {
   const navigate = useNavigate();
@@ -21,7 +132,6 @@ const AboutCOHSSA = () => {
 
   const fetchData = async () => {
     try {
-      // Use public views that exclude sensitive contact information
       const [execRes, senateRes, alumniRes] = await Promise.all([
         supabase.from('cohssa_executives_public').select('*').order('display_order', { ascending: true }),
         supabase.from('cohssa_senate_public').select('*').order('display_order', { ascending: true }),
@@ -50,8 +160,8 @@ const AboutCOHSSA = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
       <SEO 
         title="About COHSSA" 
-        description="Learn about the College of Health Sciences Students Association (COHSSA) at Al-Hikmah University. Meet the executives, senate, and alumni."
-        keywords="COHSSA, College of Health Sciences, Al-Hikmah University, student association, executives, senate"
+        description="Learn about the College of Health Sciences Students Association (COHSSA) at Al-Hikmah University. The apex student regulatory body for health science students."
+        keywords="COHSSA, AHSS, College of Health Sciences, Al-Hikmah University, student association, Health First, ISECO"
       />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -74,35 +184,234 @@ const AboutCOHSSA = () => {
             <Crown className="h-12 w-12 text-primary" />
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            College of Health Sciences Students Association
+            College of Health Sciences Students' Association
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            COHSSA - The Voice of Health Science Students
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-4">
+            The apex student regulatory and representative body for all students within the College of Health Sciences at Al-Hikmah University, Ilorin.
           </p>
+          <Badge variant="outline" className="text-lg px-4 py-2 border-primary text-primary">
+            <Heart className="h-4 w-4 mr-2 inline" />
+            Motto: "Health First"
+          </Badge>
         </section>
 
-        {/* Historical Background */}
-        <section className="max-w-4xl mx-auto mb-16 animate-fade-in" style={{ animationDelay: '200ms' }}>
+        {/* Institutional Mandate Section */}
+        <section className="max-w-5xl mx-auto mb-16 animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <Card className="overflow-hidden">
+            <CardContent className="p-8 md:p-12">
+              <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Building className="h-6 w-6 text-primary" />
+                Institutional Mandate & Identity
+              </h3>
+              <p className="text-muted-foreground mb-6 text-lg">
+                COHSSA serves as the constitutionally recognized umbrella association for students across all departments within the College, operating under the authority of the University Administration and the College Provost.
+              </p>
+              
+              <h4 className="font-semibold mb-4 text-lg">Constituent Departments:</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {DEPARTMENTS.map((dept, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <span className="text-2xl">{dept.icon}</span>
+                    <span className="font-medium text-sm">{dept.name}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Chronicles of Evolution */}
+        <section className="max-w-5xl mx-auto mb-16 animate-fade-in" style={{ animationDelay: '300ms' }}>
           <Card className="overflow-hidden">
             <CardContent className="p-8 md:p-12">
               <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
                 <History className="h-6 w-6 text-primary" />
-                Historical Background
+                Chronicles of Evolution
               </h3>
-              <div className="prose prose-lg dark:prose-invert max-w-none space-y-4 text-muted-foreground">
-                <p>
-                  The College of Health Sciences Students Association (COHSSA) was established as the umbrella body 
-                  representing all students of the College of Health Sciences at Al-Hikmah University.
+              
+              {/* Foundation */}
+              <div className="mb-8 p-6 bg-primary/5 rounded-lg border-l-4 border-primary">
+                <h4 className="text-xl font-bold mb-2 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  The Foundation (2019)
+                </h4>
+                <p className="text-muted-foreground mb-4">
+                  The association was birthed in 2019 following the creation of the Faculty of Health Sciences. Originally established as the <strong>Faculty of Health Science Students (FHSS)</strong>, it began with a pioneer community of fewer than 100 students.
                 </p>
-                <p>
-                  Since its inception, COHSSA has been at the forefront of student advocacy, academic excellence, 
-                  and the promotion of unity among health science students. The association serves as a bridge 
-                  between students and the university administration, ensuring that student voices are heard.
-                </p>
-                <p>
-                  Through various programs, events, and initiatives, COHSSA continues to foster leadership, 
-                  academic excellence, and social responsibility among its members, preparing them to become 
-                  outstanding healthcare professionals.
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="p-3 bg-background rounded-lg">
+                    <span className="text-muted-foreground">Pioneer President:</span>
+                    <p className="font-semibold">RAFIU NAFIU</p>
+                  </div>
+                  <div className="p-3 bg-background rounded-lg">
+                    <span className="text-muted-foreground">Pioneer Vice President:</span>
+                    <p className="font-semibold">ADAMU MURINANATU</p>
+                  </div>
+                  <div className="p-3 bg-background rounded-lg">
+                    <span className="text-muted-foreground">Pioneer General Secretary:</span>
+                    <p className="font-semibold">BOLARINWA BADMUS KOREDE</p>
+                    <p className="text-xs text-muted-foreground">(Designer of original insignia)</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Administrations Accordion */}
+              <h4 className="text-xl font-bold mb-4">The AHSS Era & Institutionalization</h4>
+              <Accordion type="single" collapsible className="space-y-3">
+                {ADMINISTRATIONS.map((admin) => (
+                  <AccordionItem key={admin.number} value={`admin-${admin.number}`} className="border rounded-lg px-4">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="h-8 w-8 rounded-full flex items-center justify-center p-0">
+                          {admin.number}
+                        </Badge>
+                        <span className="font-semibold text-left">{admin.title}</span>
+                        {admin.number === 5 && (
+                          <Badge className="bg-primary text-primary-foreground ml-2">Current</Badge>
+                        )}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="space-y-2 text-sm">
+                          <p><span className="text-muted-foreground">President:</span> <strong>{admin.president}</strong></p>
+                          {admin.vicePresident && (
+                            <p><span className="text-muted-foreground">Vice President:</span> <strong>{admin.vicePresident}</strong></p>
+                          )}
+                          {admin.senateLeader && (
+                            <p><span className="text-muted-foreground">Senate Leader:</span> <strong>{admin.senateLeader}</strong></p>
+                          )}
+                          {admin.staffAdviser && (
+                            <p><span className="text-muted-foreground">Staff Adviser:</span> <strong>{admin.staffAdviser}</strong></p>
+                          )}
+                        </div>
+                      </div>
+                      <h5 className="font-semibold mb-2 text-sm">Key Highlights:</h5>
+                      <ul className="space-y-1">
+                        {admin.highlights.map((highlight, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                            {highlight}
+                          </li>
+                        ))}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Governance Structure */}
+        <section className="max-w-5xl mx-auto mb-16 animate-fade-in" style={{ animationDelay: '400ms' }}>
+          <Card className="overflow-hidden">
+            <CardContent className="p-8 md:p-12">
+              <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Scale className="h-6 w-6 text-primary" />
+                Governance Structure
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                COHSSA operates through a system of checks and balances designed to foster transparent leadership:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardContent className="p-6 text-center">
+                    <Crown className="h-10 w-10 text-primary mx-auto mb-4" />
+                    <h4 className="font-bold mb-2">The Executive Council</h4>
+                    <p className="text-sm text-muted-foreground">
+                      The administrative arm responsible for day-to-day running and implementation of student welfare programs.
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardContent className="p-6 text-center">
+                    <Scale className="h-10 w-10 text-primary mx-auto mb-4" />
+                    <h4 className="font-bold mb-2">HSSRC (The Senate)</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Health Sciences Students Representative Council – legislative arm for law-making, budgetary approvals, and oversight.
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardContent className="p-6 text-center">
+                    <Vote className="h-10 w-10 text-primary mx-auto mb-4" />
+                    <h4 className="font-bold mb-2">ISECO</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Independent Students Electoral Committee – autonomous body mandated to conduct free, fair, and credible elections.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Digital Transformation */}
+        <section className="max-w-5xl mx-auto mb-16 animate-fade-in" style={{ animationDelay: '500ms' }}>
+          <Card className="overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">
+            <CardContent className="p-8 md:p-12">
+              <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-primary" />
+                The Digital Transformation
+              </h3>
+              <p className="text-muted-foreground mb-6 text-lg">
+                In late 2025, under the leadership of ISECO Chairman <strong>AWWAL ABUBAKAR SADIK</strong>, the association embraced a "Digital Revolution." COHSSA became a pioneer in student governance by implementing:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex items-start gap-4 p-4 bg-background rounded-lg">
+                  <Fingerprint className="h-8 w-8 text-primary shrink-0" />
+                  <div>
+                    <h4 className="font-bold mb-1">Biometric Voter Verification</h4>
+                    <p className="text-sm text-muted-foreground">Ensuring the integrity of the "One Student, One Vote" principle.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-4 bg-background rounded-lg">
+                  <Database className="h-8 w-8 text-primary shrink-0" />
+                  <div>
+                    <h4 className="font-bold mb-1">Database Integration</h4>
+                    <p className="text-sm text-muted-foreground">Aligning electoral records directly with the College's official student database.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-4 bg-background rounded-lg">
+                  <Vote className="h-8 w-8 text-primary shrink-0" />
+                  <div>
+                    <h4 className="font-bold mb-1">Transparency Portals</h4>
+                    <p className="text-sm text-muted-foreground">Digital manifestation of candidate profiles and real-time result processing.</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Core Objectives */}
+        <section className="max-w-5xl mx-auto mb-16 animate-fade-in" style={{ animationDelay: '600ms' }}>
+          <Card className="overflow-hidden">
+            <CardContent className="p-8 md:p-12">
+              <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <Target className="h-6 w-6 text-primary" />
+                Core Objectives
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {CORE_OBJECTIVES.map((objective, index) => (
+                  <div key={index} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <objective.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold mb-1">{objective.title}</h4>
+                      <p className="text-sm text-muted-foreground">{objective.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-center p-6 bg-primary/10 rounded-lg">
+                <p className="text-2xl font-bold text-primary italic">
+                  "Health First, Leadership Always."
                 </p>
               </div>
             </CardContent>
@@ -110,7 +419,7 @@ const AboutCOHSSA = () => {
         </section>
 
         {/* Tabs for Council Members */}
-        <Tabs defaultValue="executives" className="mb-16 animate-fade-in" style={{ animationDelay: '300ms' }}>
+        <Tabs defaultValue="executives" className="mb-16 animate-fade-in" style={{ animationDelay: '700ms' }}>
           <TabsList className="grid w-full max-w-xl mx-auto grid-cols-3 mb-8">
             <TabsTrigger value="executives" className="gap-2">
               <Crown className="h-4 w-4" />
@@ -126,7 +435,6 @@ const AboutCOHSSA = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Executive Council */}
           <TabsContent value="executives">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold">Executive Council</h3>
@@ -135,16 +443,14 @@ const AboutCOHSSA = () => {
             <MemberGrid members={executives} type="executive" />
           </TabsContent>
 
-          {/* Senate Council */}
           <TabsContent value="senate">
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold">Senate Council</h3>
-              <p className="text-muted-foreground">The 10-member legislative body of COHSSA</p>
+              <h3 className="text-2xl font-bold">Senate Council (HSSRC)</h3>
+              <p className="text-muted-foreground">The Health Sciences Students Representative Council</p>
             </div>
             <MemberGrid members={senate} type="senate" />
           </TabsContent>
 
-          {/* Alumni */}
           <TabsContent value="alumni">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold">Alumni Presidents & Senate Leaders</h3>
@@ -162,6 +468,9 @@ const AboutCOHSSA = () => {
           </div>
           <p className="text-sm text-muted-foreground">
             Independent Students Electoral Committee • COHSSA
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Powering the Digital Revolution in Student Governance
           </p>
         </footer>
       </div>
@@ -221,12 +530,6 @@ const MemberGrid = ({ members, type }: { members: any[]; type: string }) => {
                   {member.level}
                 </p>
               )}
-              {member.contact && (
-                <p className="flex items-center gap-1">
-                  <Phone className="h-3 w-3" />
-                  {member.contact}
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -272,9 +575,9 @@ const AlumniGrid = ({ alumni }: { alumni: any[] }) => {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium mb-2">
+                <Badge variant="outline" className="mb-2">
                   {alum.administration_number}{getOrdinalSuffix(alum.administration_number)} Administration
-                </div>
+                </Badge>
                 <h4 className="font-bold text-foreground">{alum.name}</h4>
                 <p className="text-sm text-primary font-medium">{alum.position}</p>
               </div>
@@ -296,18 +599,6 @@ const AlumniGrid = ({ alumni }: { alumni: any[] }) => {
                 <p className="flex items-center gap-2">
                   <Building className="h-4 w-4 shrink-0" />
                   {alum.current_workplace}
-                </p>
-              )}
-              {alum.phone && (
-                <p className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 shrink-0" />
-                  {alum.phone}
-                </p>
-              )}
-              {alum.email && (
-                <p className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 shrink-0" />
-                  {alum.email}
                 </p>
               )}
             </div>

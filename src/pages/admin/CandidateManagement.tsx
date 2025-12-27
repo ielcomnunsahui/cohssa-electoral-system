@@ -33,30 +33,54 @@ const CandidateManagement = () => {
   const [formTab, setFormTab] = useState("basic");
 
   useEffect(() => {
-    loadCandidates();
-    loadPositions();
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([loadCandidates(), loadPositions()]);
+      setLoading(false);
+    };
+    init();
   }, []);
 
   const loadCandidates = async () => {
-    const { data, error } = await supabase
-      .from('candidates')
-      .select('*, positions(title)')
-      .order('name');
-    
-    if (!error && data) {
-      setCandidates(data);
+    try {
+      const { data, error } = await supabase
+        .from('candidates')
+        .select('*, positions(title)')
+        .order('name');
+      
+      if (error) {
+        console.error('Error loading candidates:', error);
+        toast.error('Failed to load candidates');
+        return;
+      }
+      
+      if (data) {
+        console.log('Loaded candidates:', data.length);
+        setCandidates(data);
+      }
+    } catch (err) {
+      console.error('Exception loading candidates:', err);
     }
   };
 
   const loadPositions = async () => {
-    const { data, error } = await supabase
-      .from('positions')
-      .select('*')
-      .eq('is_active', true)
-      .order('display_order');
-    
-    if (!error && data) {
-      setPositions(data);
+    try {
+      const { data, error } = await supabase
+        .from('positions')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+      
+      if (error) {
+        console.error('Error loading positions:', error);
+        return;
+      }
+      
+      if (data) {
+        setPositions(data);
+      }
+    } catch (err) {
+      console.error('Exception loading positions:', err);
     }
   };
 
