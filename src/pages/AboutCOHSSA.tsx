@@ -14,14 +14,37 @@ import { supabase } from "@/integrations/supabase/client";
 import { Logo, DualLogo } from "@/components/NavLink";
 import { SEO } from "@/components/SEO";
 
-// COHSSA Departments
-const DEPARTMENTS = [
-  { name: "Medicine and Surgery (MBBS)", icon: "🩺" },
-  { name: "Nursing Science", icon: "💉" },
-  { name: "Medical Laboratory Science", icon: "🔬" },
-  { name: "Public Health", icon: "🏥" },
-  { name: "Human Anatomy", icon: "🦴" },
-  { name: "Physiology", icon: "❤️" }
+// College Structure - Faculties and Departments
+const COLLEGE_STRUCTURE = [
+  {
+    faculty: "Faculty of Clinical Sciences",
+    icon: "🩺",
+    departments: [
+      { name: "Department of Medicine and Surgery", programs: ["MBBS Medicine and Surgery (300L-600L)"] }
+    ]
+  },
+  {
+    faculty: "Faculty of Nursing Sciences",
+    icon: "💉",
+    departments: [
+      { name: "Department of Medical Surgical Nursing", programs: [] },
+      { name: "Department of Maternal and Child Health Nursing", programs: [] },
+      { name: "Department of Mental Health and Psychiatric Nursing", programs: [] },
+      { name: "Department of Public Health Nursing", programs: [] },
+      { name: "Department of Education, Administration and Research", programs: [] }
+    ]
+  },
+  {
+    faculty: "Faculty of Basic Medical Sciences",
+    icon: "🔬",
+    departments: [
+      { name: "Department of Medicine and Surgery", programs: ["MBBS Medicine and Surgery (100L – 200L)"] },
+      { name: "Department of Medical Laboratory Science", programs: ["Medical Laboratory Science (BMLS)"] },
+      { name: "Department of Community Health", programs: ["B.Sc. Public Health", "PGD Public Health"] },
+      { name: "Department of Human Anatomy", programs: ["B.Sc. Anatomy"] },
+      { name: "Department of Human Physiology", programs: ["B.Sc. Physiology"] }
+    ]
+  }
 ];
 
 // Administration History
@@ -207,15 +230,34 @@ const AboutCOHSSA = () => {
                 COHSSA serves as the constitutionally recognized umbrella association for students across all departments within the College, operating under the authority of the University Administration and the College Provost.
               </p>
               
-              <h4 className="font-semibold mb-4 text-lg">Constituent Departments:</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {DEPARTMENTS.map((dept, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <span className="text-2xl">{dept.icon}</span>
-                    <span className="font-medium text-sm">{dept.name}</span>
+              <h4 className="font-semibold mb-4 text-lg">Structure of the College of Health Sciences:</h4>
+              <div className="space-y-6">
+                {COLLEGE_STRUCTURE.map((faculty, index) => (
+                  <div key={index} className="p-5 rounded-xl bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-3xl">{faculty.icon}</span>
+                      <h5 className="text-lg font-bold text-primary">{faculty.faculty}</h5>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
+                      {faculty.departments.map((dept, deptIndex) => (
+                        <div 
+                          key={deptIndex}
+                          className="p-3 rounded-lg bg-background border border-border/30 hover:border-primary/30 transition-colors"
+                        >
+                          <p className="font-medium text-sm mb-1">{dept.name}</p>
+                          {dept.programs.length > 0 && (
+                            <ul className="space-y-1">
+                              {dept.programs.map((program, pIndex) => (
+                                <li key={pIndex} className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
+                                  {program}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
