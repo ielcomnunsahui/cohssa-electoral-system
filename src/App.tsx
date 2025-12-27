@@ -35,6 +35,7 @@ import VoterDashboard from "./pages/VoterDashboard";
 import AspirantDashboard from "./pages/aspirant/AspirantDashboard";
 import ApplicationWizard from "./pages/aspirant/ApplicationWizard";
 import StudentPortal from "./pages/StudentPortal";
+import COHSSAPortal from "./pages/COHSSAPortal";
 import AboutCollege from "./pages/AboutCollege";
 import AboutCOHSSA from "./pages/AboutCOHSSA";
 import Editorial from "./pages/Editorial";
@@ -225,6 +226,7 @@ const App = () => (
               <Route path="/demo" element={<Demo />} />
               <Route path="/results" element={<Results />} />
               <Route path="/portal" element={<StudentPortal />} />
+              <Route path="/cohssa-portal" element={<COHSSAPortal />} />
               <Route path="/about/college" element={<AboutCollege />} />
               <Route path="/about/cohssa" element={<AboutCOHSSA />} />
               <Route path="/editorial" element={<Editorial />} />

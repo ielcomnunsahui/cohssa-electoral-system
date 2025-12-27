@@ -114,15 +114,15 @@ const PaymentStep = ({ data = {}, onUpdate }: PaymentStepProps) => {
             <>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Account Number:</span>
-                <span className="font-semibold">7081795658</span>
+                <span className="font-semibold">7033106335</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Bank:</span>
-                <span className="font-semibold">OPAY</span>
+                <span className="font-semibold">PALMPAY</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Account Name:</span>
-                <span className="font-semibold">Awwal Abubakar Sadik</span>
+                <span className="font-semibold">Mustapha Rahmatullah Ovayioza</span>
               </div>
             </>
           )}
