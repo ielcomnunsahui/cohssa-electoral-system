@@ -368,11 +368,13 @@ const AboutCollege = () => {
                         <CardContent className="p-4 text-center">
                           <h4 className="font-bold text-foreground mb-1">{leader.name}</h4>
                           <p className="text-sm text-primary font-medium">{leader.position}</p>
-                          {leader.faculty && (
-                            <p className="text-xs text-muted-foreground mt-1">{leader.faculty}</p>
-                          )}
+                          
                           {leader.department && (
                             <p className="text-xs text-muted-foreground mt-0.5">{leader.department}</p>
+                          )}
+                          
+                          {leader.faculty && (
+                            <p className="text-xs text-muted-foreground mt-1">{leader.faculty}</p>
                           )}
                         </CardContent>
                       </Card>

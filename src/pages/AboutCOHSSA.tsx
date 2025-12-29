@@ -54,7 +54,7 @@ const ADMINISTRATIONS = [
     title: "First Administration – RAFIU NAFIU (Pioneer)",
     period: "2019",
     president: "RAFIU NAFIU",
-    vicePresident: "ADAMU MURINANATU",
+    vicePresident: "ADAMU MURJANATU",
     senateLeader: "HABEEB MUHAMMAD KUDU (Speaker)",
     staffAdviser: "MR. AKEEM BUSARI",
     highlights: [
@@ -65,8 +65,8 @@ const ADMINISTRATIONS = [
   },
   {
     number: 2,
-    title: "Second Administration – IBRAHIM MARINASARA",
-    president: "IBRAHIM MARINASARA",
+    title: "Second Administration – IBRAHIM MAINASARA",
+    president: "IBRAHIM MAINASARA",
     senateLeader: "YAHAYA BILIKISU OWUNA (First Senate President)",
     staffAdviser: "MR. AKEEM BUSARI",
     highlights: [
@@ -90,10 +90,10 @@ const ADMINISTRATIONS = [
   },
   {
     number: 4,
-    title: "Fourth Administration – ABDULQANIYU ABDULAZEEZ",
-    president: "ABDULQANIYU ABDULAZEEZ",
+    title: "Fourth Administration – ABDULGANIYU ABDULAZEEZ",
+    president: "ABDULGANIYU ABDULAZEEZ",
     senateLeader: "ISMAEEL IBRAHEEM (First Elected Senate President)",
-    staffAdviser: "MR. I. A. LAWAL",
+    staffAdviser: "MRS L. F. OLADIMEJI, MR. I. A. LAWAL (Co-Advisers)",
     highlights: [
       "Student population grew to approximately 2,000",
       "First elected Senate President in AHSS history",
