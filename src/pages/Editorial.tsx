@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { 
   ArrowLeft, Newspaper, FileText, BookOpen, Feather, PenTool, Send,
   Loader2, Calendar, User, Plus, Eye, Upload, Image as ImageIcon,
-  Share2, Copy, MessageCircle // Added icons
+  Share2, Copy, MessageCircle, LogIn
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo, DualLogo } from "@/components/NavLink";
@@ -359,9 +359,34 @@ const Editorial = () => {
             <Newspaper className="h-10 w-10 text-primary" />
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-2">Student Publications</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
             Read the latest newsletters, articles, research papers, poems, and creative writings from COHSSA students.
           </p>
+          
+          {/* Sign In Card for Submissions */}
+          {!user && (
+            <Card className="max-w-md mx-auto border-dashed border-2 border-primary/30 bg-primary/5">
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Want to Submit Content?</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Sign in to submit your articles, poems, research papers and more for publication.
+                </p>
+                <Button onClick={async () => {
+                  const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: `${window.location.origin}/editorial` }
+                  });
+                  if (error) toast.error("Sign in failed. Please try again.");
+                }} className="gap-2">
+                  <LogIn className="h-4 w-4" />
+                  Sign In to Submit
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </section>
 
         {/* Tabs */}

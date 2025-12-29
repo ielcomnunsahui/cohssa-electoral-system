@@ -231,6 +231,60 @@ const AboutCOHSSA = () => {
               </p>
               
               <h4 className="font-semibold mb-4 text-lg">Structure of the College of Health Sciences:</h4>
+              
+              {/* Visual Organizational Chart */}
+              <div className="mb-8 p-6 bg-gradient-to-b from-primary/5 to-transparent rounded-xl border border-primary/20">
+                <h5 className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wide mb-6">Organizational Hierarchy</h5>
+                
+                {/* College Level */}
+                <div className="flex justify-center mb-4">
+                  <div className="px-6 py-4 bg-primary text-primary-foreground rounded-xl shadow-lg text-center">
+                    <Building className="h-6 w-6 mx-auto mb-2" />
+                    <p className="font-bold text-lg">College of Health Sciences</p>
+                    <p className="text-xs text-primary-foreground/80">Provost: Prof. Enoch A. Afolayan</p>
+                  </div>
+                </div>
+                
+                {/* Connecting Line */}
+                <div className="flex justify-center mb-4">
+                  <div className="w-0.5 h-8 bg-primary/40" />
+                </div>
+                
+                {/* Faculties Level */}
+                <div className="flex justify-center mb-4">
+                  <div className="flex flex-wrap justify-center gap-4 max-w-4xl">
+                    {COLLEGE_STRUCTURE.map((faculty, index) => (
+                      <div key={index} className="relative">
+                        {/* Connecting lines from top */}
+                        <div className="absolute -top-4 left-1/2 w-0.5 h-4 bg-primary/40 -translate-x-1/2" />
+                        <div className="px-4 py-3 bg-primary/20 border border-primary/30 rounded-lg text-center min-w-[200px]">
+                          <span className="text-2xl">{faculty.icon}</span>
+                          <p className="font-semibold text-sm mt-1">{faculty.faculty}</p>
+                          <p className="text-xs text-muted-foreground">{faculty.departments.length} Departments</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Legend */}
+                <div className="flex justify-center gap-4 mt-6 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded bg-primary"></span>
+                    College (Top Level)
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded bg-primary/20 border border-primary/30"></span>
+                    Faculties (3)
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded bg-background border border-border"></span>
+                    Departments (11)
+                  </span>
+                </div>
+              </div>
+              
+              {/* Detailed Faculty Structure */}
               <div className="space-y-6">
                 {COLLEGE_STRUCTURE.map((faculty, index) => (
                   <div key={index} className="p-5 rounded-xl bg-muted/30 border border-border/50">
