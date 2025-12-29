@@ -633,6 +633,17 @@ const Index = () => {
                 Get Started
                 <ArrowRight className="h-4 w-4" />
               </Button>
+              {!user ? (
+                <Button 
+                  size="lg" 
+                  variant="secondary"
+                  className="gap-2 shadow-md"
+                  onClick={handleSignIn}
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign In
+                </Button>
+              ) : null}
               <Button 
                 size="lg" 
                 variant="outline"
