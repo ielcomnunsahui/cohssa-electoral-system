@@ -193,8 +193,22 @@ const App = () => (
                 } 
               />
               <Route path="/committee" element={<Committee />} />
-              <Route path="/voter/register" element={<VoterRegister />} />
-              <Route path="/voter/login" element={<VoterLogin />} />
+              <Route 
+                path="/voter/register" 
+                element={
+                  <ProtectedRoute redirectTo="/">
+                    <VoterRegister />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/voter/login" 
+                element={
+                  <ProtectedRoute redirectTo="/">
+                    <VoterLogin />
+                  </ProtectedRoute>
+                } 
+              />
               <Route path="/voter/help" element={<VoterHelpDesk />} />
               <Route 
                 path="/voter/dashboard" 
