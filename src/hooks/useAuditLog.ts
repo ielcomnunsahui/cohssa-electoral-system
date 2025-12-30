@@ -37,7 +37,10 @@ export type AuditAction =
   | "event_delete"
   | "content_add"
   | "content_update"
-  | "content_delete";
+  | "content_delete"
+  | "committee_member_create"
+  | "committee_member_update"
+  | "committee_member_delete";
 
 interface AuditLogData {
   action: AuditAction;
