@@ -45,6 +45,7 @@ import ResourceManagement from "./pages/admin/ResourceManagement";
 import TextbookManagement from "./pages/admin/TextbookManagement";
 import EventsManagement from "./pages/admin/EventsManagement";
 import EditorialReview from "./pages/admin/EditorialReview";
+import ElectoralCommitteeManagement from "./pages/admin/ElectoralCommitteeManagement";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 
@@ -189,6 +190,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
                     <EditorialReview />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/electoral-committee" 
+                element={
+                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                    <ElectoralCommitteeManagement />
                   </ProtectedRoute>
                 } 
               />
