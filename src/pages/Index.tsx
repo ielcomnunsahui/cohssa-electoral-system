@@ -448,7 +448,7 @@ const Index = () => {
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
-              {user ? (
+              {user && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -457,16 +457,6 @@ const Index = () => {
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out
-                </Button>
-              ) : (
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="hidden sm:flex gap-2"
-                  onClick={handleSignIn}
-                >
-                  <LogIn className="h-4 w-4" />
-                  Sign In
                 </Button>
               )}
               <ThemeToggle />
@@ -558,13 +548,9 @@ const Index = () => {
                       <Button variant="outline" className="w-full justify-start gap-2" onClick={startTour}>
                         <BookOpenCheck className="h-4 w-4" /> Take Tour
                       </Button>
-                      {user ? (
+                      {user && (
                         <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleSignOut}>
                           <LogOut className="h-4 w-4" /> Sign Out
-                        </Button>
-                      ) : (
-                        <Button className="w-full justify-start gap-2" onClick={handleSignIn}>
-                          <LogIn className="h-4 w-4" /> Sign In
                         </Button>
                       )}
                     </div>
