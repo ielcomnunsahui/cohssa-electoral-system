@@ -243,23 +243,79 @@ const Editorial = () => {
                       <div className="space-y-2">
                         <h3 className="text-lg font-semibold">Welcome, Author!</h3>
                         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                          Sign in with your Google account to submit content for review and publication.
+                          Sign in to submit content for review and publication.
                         </p>
                       </div>
-                      <Button 
-                        size="lg"
-                        onClick={async () => {
-                          const { error } = await supabase.auth.signInWithOAuth({
-                            provider: 'google',
-                            options: { redirectTo: `${window.location.origin}/editorial` }
-                          });
-                          if (error) toast.error("Sign in failed. Please try again.");
-                        }} 
-                        className="gap-2"
-                      >
-                        <LogIn className="h-4 w-4" />
-                        Sign In with Google
-                      </Button>
+                      <div className="space-y-4 max-w-sm mx-auto">
+                        <Input
+                          type="email"
+                          placeholder="Email address"
+                          id="editorial-email"
+                          className="w-full"
+                        />
+                        <Input
+                          type="password"
+                          placeholder="Password"
+                          id="editorial-password"
+                          className="w-full"
+                        />
+                        <Button 
+                          size="lg"
+                          onClick={async () => {
+                            const email = (document.getElementById('editorial-email') as HTMLInputElement)?.value;
+                            const password = (document.getElementById('editorial-password') as HTMLInputElement)?.value;
+                            if (!email || !password) {
+                              toast.error("Please enter email and password");
+                              return;
+                            }
+                            const { error } = await supabase.auth.signInWithPassword({ email, password });
+                            if (error) {
+                              if (error.message.includes("Invalid login")) {
+                                toast.error("Invalid email or password");
+                              } else {
+                                toast.error(error.message);
+                              }
+                            } else {
+                              toast.success("Signed in successfully");
+                              checkUser();
+                            }
+                          }} 
+                          className="w-full gap-2"
+                        >
+                          <LogIn className="h-4 w-4" />
+                          Sign In
+                        </Button>
+                        <p className="text-xs text-muted-foreground">
+                          Don't have an account?{" "}
+                          <button
+                            className="text-primary hover:underline"
+                            onClick={async () => {
+                              const email = (document.getElementById('editorial-email') as HTMLInputElement)?.value;
+                              const password = (document.getElementById('editorial-password') as HTMLInputElement)?.value;
+                              if (!email || !password) {
+                                toast.error("Please enter email and password");
+                                return;
+                              }
+                              if (password.length < 6) {
+                                toast.error("Password must be at least 6 characters");
+                                return;
+                              }
+                              const { error } = await supabase.auth.signUp({ 
+                                email, 
+                                password,
+                                options: { emailRedirectTo: `${window.location.origin}/editorial` }
+                              });
+                              if (error) {
+                                toast.error(error.message);
+                              } else {
+                                toast.success("Account created! You can now sign in.");
+                              }
+                            }}
+                          >
+                            Sign up
+                          </button>
+                        </p>
+                      </div>
                     </div>
                   </>
                 ) : (
@@ -412,13 +468,7 @@ const Editorial = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Sign in to submit your articles, poems, research papers and more for publication.
                 </p>
-                <Button onClick={async () => {
-                  const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: { redirectTo: `${window.location.origin}/editorial` }
-                  });
-                  if (error) toast.error("Sign in failed. Please try again.");
-                }} className="gap-2">
+                <Button onClick={() => setSubmitDialogOpen(true)} className="gap-2">
                   <LogIn className="h-4 w-4" />
                   Sign In to Submit
                 </Button>

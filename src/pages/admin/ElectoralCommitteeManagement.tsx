@@ -8,10 +8,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, Users, Crown, Upload, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Crown, Loader2, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface CommitteeMember {
   id: string;
@@ -26,6 +43,75 @@ interface CommitteeMember {
   phone: string | null;
 }
 
+// Sortable row component
+const SortableRow = ({
+  member,
+  onEdit,
+  onDelete,
+  isStaff,
+}: {
+  member: CommitteeMember;
+  onEdit: (member: CommitteeMember) => void;
+  onDelete: (id: string, name: string) => void;
+  isStaff?: boolean;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: member.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell>
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </TableCell>
+      <TableCell>
+        <div className="w-10 h-10 rounded-full bg-muted overflow-hidden">
+          {member.photo_url ? (
+            <img src={member.photo_url} alt={member.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <Users className="h-4 w-4" />
+            </div>
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="font-medium">{member.name}</TableCell>
+      <TableCell>
+        <Badge variant={isStaff ? "secondary" : "outline"}>{member.position}</Badge>
+      </TableCell>
+      <TableCell>{isStaff ? member.department || "-" : member.level || "-"}</TableCell>
+      <TableCell>{member.display_order}</TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="icon" onClick={() => onEdit(member)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(member.id, member.name)}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
+
 const ElectoralCommitteeManagement = () => {
   const [members, setMembers] = useState<CommitteeMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +119,11 @@ const ElectoralCommitteeManagement = () => {
   const [editingMember, setEditingMember] = useState<CommitteeMember | null>(null);
   const [uploading, setUploading] = useState(false);
   const { logAction } = useAuditLog();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const [form, setForm] = useState({
     name: "",
@@ -223,6 +314,44 @@ const ElectoralCommitteeManagement = () => {
       loadMembers();
     } catch (error: any) {
       toast.error(error.message);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent, isStaff: boolean) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const items = isStaff ? staffAdvisers : committeeMembers;
+    const oldIndex = items.findIndex((m) => m.id === active.id);
+    const newIndex = items.findIndex((m) => m.id === over.id);
+
+    const reordered = arrayMove(items, oldIndex, newIndex);
+
+    // Update local state immediately for smooth UX
+    if (isStaff) {
+      setMembers([...reordered, ...committeeMembers]);
+    } else {
+      setMembers([...staffAdvisers, ...reordered]);
+    }
+
+    // Update display orders in database
+    try {
+      const updates = reordered.map((member, index) => ({
+        id: member.id,
+        display_order: index + 1 + (isStaff ? 0 : staffAdvisers.length),
+      }));
+
+      for (const update of updates) {
+        await supabase
+          .from("electoral_committee")
+          .update({ display_order: update.display_order })
+          .eq("id", update.id);
+      }
+
+      toast.success("Order updated");
+    } catch (error: any) {
+      toast.error("Failed to update order");
+      loadMembers(); // Reload on error
     }
   };
 
@@ -452,67 +581,47 @@ const ElectoralCommitteeManagement = () => {
               <CardTitle className="flex items-center gap-2">
                 <Crown className="h-5 w-5 text-yellow-500" />
                 Staff Advisers
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  (Drag to reorder)
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Photo</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Order</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {staffAdvisers.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        <div className="w-10 h-10 rounded-full bg-muted overflow-hidden">
-                          {member.photo_url ? (
-                            <img
-                              src={member.photo_url}
-                              alt={member.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                              <Users className="h-4 w-4" />
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{member.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{member.position}</Badge>
-                      </TableCell>
-                      <TableCell>{member.department || "-"}</TableCell>
-                      <TableCell>{member.display_order}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEdit(member)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(member.id, member.name)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(e) => handleDragEnd(e, true)}
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10"></TableHead>
+                      <TableHead>Photo</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Order</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    <SortableContext
+                      items={staffAdvisers.map((m) => m.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {staffAdvisers.map((member) => (
+                        <SortableRow
+                          key={member.id}
+                          member={member}
+                          onEdit={openEdit}
+                          onDelete={handleDelete}
+                          isStaff
+                        />
+                      ))}
+                    </SortableContext>
+                  </TableBody>
+                </Table>
+              </DndContext>
             </CardContent>
           </Card>
         )}
@@ -523,6 +632,9 @@ const ElectoralCommitteeManagement = () => {
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
               Committee Members
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                (Drag to reorder)
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -540,64 +652,40 @@ const ElectoralCommitteeManagement = () => {
                 </Button>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Photo</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead>Order</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {committeeMembers.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        <div className="w-10 h-10 rounded-full bg-muted overflow-hidden">
-                          {member.photo_url ? (
-                            <img
-                              src={member.photo_url}
-                              alt={member.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                              <Users className="h-4 w-4" />
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{member.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{member.position}</Badge>
-                      </TableCell>
-                      <TableCell>{member.level || "-"}</TableCell>
-                      <TableCell>{member.display_order}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEdit(member)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(member.id, member.name)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(e) => handleDragEnd(e, false)}
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10"></TableHead>
+                      <TableHead>Photo</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Level</TableHead>
+                      <TableHead>Order</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    <SortableContext
+                      items={committeeMembers.map((m) => m.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {committeeMembers.map((member) => (
+                        <SortableRow
+                          key={member.id}
+                          member={member}
+                          onEdit={openEdit}
+                          onDelete={handleDelete}
+                        />
+                      ))}
+                    </SortableContext>
+                  </TableBody>
+                </Table>
+              </DndContext>
             )}
           </CardContent>
         </Card>
