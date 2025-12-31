@@ -285,6 +285,26 @@ const Editorial = () => {
                           <LogIn className="h-4 w-4" />
                           Sign In
                         </Button>
+                        <button
+                          className="text-sm text-primary hover:underline"
+                          onClick={async () => {
+                            const email = (document.getElementById('editorial-email') as HTMLInputElement)?.value;
+                            if (!email) {
+                              toast.error("Please enter your email address first");
+                              return;
+                            }
+                            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                              redirectTo: `${window.location.origin}/editorial`
+                            });
+                            if (error) {
+                              toast.error(error.message);
+                            } else {
+                              toast.success("Password reset email sent! Check your inbox.");
+                            }
+                          }}
+                        >
+                          Forgot Password?
+                        </button>
                         <p className="text-xs text-muted-foreground">
                           Don't have an account?{" "}
                           <button

@@ -444,6 +444,11 @@ const Index = () => {
                   <Shield className="h-4 w-4" /> Admin
                 </Button>
               )}
+              {!user && (
+                <Button variant="ghost" size="sm" onClick={handleSignIn} className="gap-1">
+                  <LogIn className="h-4 w-4" /> Sign In
+                </Button>
+              )}
             </nav>
 
             {/* Right Actions */}
@@ -548,6 +553,11 @@ const Index = () => {
                       <Button variant="outline" className="w-full justify-start gap-2" onClick={startTour}>
                         <BookOpenCheck className="h-4 w-4" /> Take Tour
                       </Button>
+                      {!user && (
+                        <Button variant="default" className="w-full justify-start gap-2" onClick={handleSignIn}>
+                          <LogIn className="h-4 w-4" /> Sign In
+                        </Button>
+                      )}
                       {user && (
                         <Button variant="destructive" className="w-full justify-start gap-2" onClick={handleSignOut}>
                           <LogOut className="h-4 w-4" /> Sign Out
@@ -619,17 +629,6 @@ const Index = () => {
                 Get Started
                 <ArrowRight className="h-4 w-4" />
               </Button>
-              {!user ? (
-                <Button 
-                  size="lg" 
-                  variant="secondary"
-                  className="gap-2 shadow-md"
-                  onClick={handleSignIn}
-                >
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </Button>
-              ) : null}
               <Button 
                 size="lg" 
                 variant="outline"
