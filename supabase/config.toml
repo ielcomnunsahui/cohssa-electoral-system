@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.verify-otp]
 verify_jwt = false
+
+[functions.send-editorial-notification]
+verify_jwt = false

@@ -42,6 +42,10 @@ const Editorial = () => {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -52,7 +56,7 @@ const Editorial = () => {
     image_url: ""
   });
 
-    // Deep linking logic: Open content if ID is in URL
+  // Deep linking logic: Open content if ID is in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const contentId = params.get('id');
@@ -62,6 +66,16 @@ const Editorial = () => {
     }
   }, [content]);
 
+  // Check for password reset token in URL (from email link)
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const type = hashParams.get('type');
+    
+    if (accessToken && type === 'recovery') {
+      setShowPasswordReset(true);
+    }
+  }, []);
 
   useEffect(() => {
     fetchContent();
@@ -188,7 +202,35 @@ const Editorial = () => {
       console.error("Submit error:", error);
       toast.error("Failed to submit content. Please try again.");
     } finally {
-      setSubmitting(false);
+    setSubmitting(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    
+    setResettingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      
+      toast.success("Password updated successfully! You can now sign in.");
+      setShowPasswordReset(false);
+      setNewPassword("");
+      setConfirmPassword("");
+      // Clear URL hash
+      window.history.replaceState(null, '', window.location.pathname);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update password");
+    } finally {
+      setResettingPassword(false);
     }
   };
 
@@ -196,6 +238,75 @@ const Editorial = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Password Reset Form
+  if (showPasswordReset) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+        <SEO 
+          title="Reset Password - COHSSA Editorial" 
+          description="Reset your password for COHSSA Editorial."
+        />
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <User className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle>Reset Your Password</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Enter your new password below.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            <Button 
+              onClick={handlePasswordReset} 
+              disabled={resettingPassword}
+              className="w-full"
+            >
+              {resettingPassword ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update Password"
+              )}
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setShowPasswordReset(false);
+                window.history.replaceState(null, '', window.location.pathname);
+              }}
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
