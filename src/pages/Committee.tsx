@@ -1,12 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, Award, Crown, Loader2 } from "lucide-react";
+import { ArrowLeft, Users, Award, Crown, Loader2, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Logo, DualLogo } from "@/components/NavLink";
 import { SEO } from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const Committee = () => {
   const navigate = useNavigate();
 
@@ -38,6 +38,15 @@ const Committee = () => {
     if (position === "Secretary") return "bg-green-500/20 text-green-600 border-green-500/30";
     if (position === "Treasurer") return "bg-purple-500/20 text-purple-600 border-purple-500/30";
     return "bg-muted text-muted-foreground border-border";
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   if (isLoading) {
@@ -98,16 +107,16 @@ const Committee = () => {
                   <div className="flex flex-col items-center text-center">
                     <div className="relative mb-6">
                       <div className="w-44 h-44 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 p-1">
-                        <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                          <img 
-                            src={staffAdviser.photo_url || "https://via.placeholder.com/176x176?text=Staff+Adviser"} 
+                        <Avatar className="w-full h-full">
+                          <AvatarImage 
+                            src={staffAdviser.photo_url || undefined}
                             alt={staffAdviser.name || "Staff Adviser"}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            onError={(e) => {
-                              e.currentTarget.src = "https://via.placeholder.com/176x176?text=Staff+Adviser";
-                            }}
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
                           />
-                        </div>
+                          <AvatarFallback className="bg-primary/10 text-primary text-4xl font-bold">
+                            {getInitials(staffAdviser.name || "SA")}
+                          </AvatarFallback>
+                        </Avatar>
                       </div>
                       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
                         {staffAdviser.position}
@@ -150,16 +159,16 @@ const Committee = () => {
                     <div className="flex flex-col items-center text-center">
                       <div className="relative mb-4">
                         <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 p-1">
-                          <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                            <img 
-                              src={member.photo_url || `https://via.placeholder.com/128x128?text=${member.position}`} 
+                          <Avatar className="w-full h-full">
+                            <AvatarImage 
+                              src={member.photo_url || undefined}
                               alt={member.name || "Committee Member"}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                              onError={(e) => {
-                                e.currentTarget.src = `https://via.placeholder.com/128x128?text=${member.position}`;
-                              }}
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
                             />
-                          </div>
+                            <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                              {getInitials(member.name || "CM")}
+                            </AvatarFallback>
+                          </Avatar>
                         </div>
                       </div>
                       <h3 className="font-bold mb-2 group-hover:text-primary transition-colors">{member.name}</h3>

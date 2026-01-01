@@ -583,8 +583,10 @@ const Index = () => {
           />
           {/* Primary gradient overlay for text readability */}
           <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/95" />
+          {/* Enhanced COHSSA Electoral gradient overlay */}
+          <div className="absolute inset-0 gradient-electoral opacity-20" />
           {/* Secondary subtle color accent overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/15 via-transparent to-accent/15" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-accent/20" />
           {/* Dark vignette effect for depth */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,hsl(var(--background)/0.4)_100%)]" />
         </div>
@@ -606,7 +608,7 @@ const Index = () => {
             <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <p className="text-sm font-medium text-primary uppercase tracking-widest">Welcome to</p>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight">
-                <span className="bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
+                <span className="gradient-electoral bg-clip-text text-transparent" style={{ WebkitBackgroundClip: 'text', backgroundClip: 'text' }}>
                   COHSSA Electoral System
                 </span>
               </h1>
