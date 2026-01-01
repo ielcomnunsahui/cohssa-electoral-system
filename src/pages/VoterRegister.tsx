@@ -194,22 +194,12 @@ const VoterRegister = () => {
   const sendOTP = async () => {
     setLoading(true);
     try {
-      const { data, error: otpError } = await supabase.functions.invoke('send-otp', {
-        body: { email: email.toLowerCase(), type: 'verification' },
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-        }
+      const { error: otpError } = await supabase.functions.invoke('send-otp', {
+        body: { email: email.toLowerCase(), type: 'verification' }
       });
 
       if (otpError) {
-        console.error("OTP send error:", otpError);
         toast.error("Failed to send verification code. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      if (data?.error) {
-        toast.error(data.error);
         setLoading(false);
         return;
       }
@@ -217,7 +207,6 @@ const VoterRegister = () => {
       toast.success("Verification code sent to your email!");
       setCurrentStep('otp');
     } catch (error: any) {
-      console.error("OTP send exception:", error);
       toast.error("Failed to send verification code.");
     } finally {
       setLoading(false);
@@ -255,10 +244,7 @@ const VoterRegister = () => {
     try {
       // Verify OTP via edge function - pass type='registration' so it doesn't require voter profile
       const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { email: email.toLowerCase(), code: otp, type: 'registration' },
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-        }
+        body: { email: email.toLowerCase(), code: otp, type: 'registration' }
       });
 
       if (error || !data?.valid) {
@@ -365,15 +351,12 @@ const VoterRegister = () => {
   const handleResendOTP = async () => {
     setOtpLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { email: email.toLowerCase(), type: 'verification' },
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-        }
+      const { error } = await supabase.functions.invoke('send-otp', {
+        body: { email: email.toLowerCase(), type: 'verification' }
       });
 
-      if (error || data?.error) {
-        toast.error(data?.error || "Failed to resend code. Please try again.");
+      if (error) {
+        toast.error("Failed to resend code. Please try again.");
       } else {
         toast.success("New verification code sent!");
         setOtp("");
@@ -549,10 +532,369 @@ const VoterRegister = () => {
           </Card>
         )}
 
-        {/* Rest of the steps remain the same - only OTP sending functions were modified */}
-        {/* I'll include the key sections for brevity */}
-        
-        {/* ... (all other step components remain unchanged) ... */}
+        {/* Step: Matric Number */}
+        {currentStep === 'matric' && (
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <IdCard className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Enter Your Matric Number</CardTitle>
+              <CardDescription>We'll verify you're a registered student</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleMatricSubmit} className="space-y-6">
+                <Alert className="border-primary/30 bg-primary/5">
+                  <User className="h-4 w-4" />
+                  <AlertDescription>
+                    Enter your matric number exactly as on your student ID. Case doesn't matter (21/08NUS014 or 21/08nus014 both work).
+                  </AlertDescription>
+                </Alert>
+
+                <div className="space-y-2">
+                  <Label htmlFor="matric" className="text-base font-medium">Matric Number</Label>
+                  <Input
+                    id="matric"
+                    placeholder="e.g., 21/08NUS014"
+                    value={matric}
+                    onChange={(e) => {
+                      setMatric(e.target.value);
+                      validateMatricFormat(e.target.value);
+                    }}
+                    className={`h-14 text-lg text-center font-mono ${matricError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    required
+                  />
+                  {matricError && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      {matricError}
+                    </p>
+                  )}
+                </div>
+
+                <Button type="submit" className="w-full h-12 text-base gap-2" disabled={loading || !!matricError}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      Continue
+                      <ArrowRight className="h-5 w-5" />
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              <p className="text-sm text-center text-muted-foreground mt-6">
+                Already registered?{" "}
+                <button onClick={() => navigate("/voter/login")} className="text-primary hover:underline font-medium">
+                  Login here
+                </button>
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step: Email */}
+        {currentStep === 'email' && studentInfo && (
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Add Your Email</CardTitle>
+              <CardDescription>You'll use this to verify your account</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Student Info Card */}
+              <div className="mb-6 p-4 bg-muted/50 rounded-xl border">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{studentInfo.name}</p>
+                    <p className="text-sm text-muted-foreground">{studentInfo.matric} • {studentInfo.department}</p>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleEmailSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-base font-medium">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-14 text-lg"
+                    required
+                  />
+                </div>
+
+                <Button type="submit" className="w-full h-12 text-base gap-2" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Continue
+                      <ArrowRight className="h-5 w-5" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step: Verification Choice */}
+        {currentStep === 'verify_choice' && studentInfo && (
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Shield className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Choose Verification Method</CardTitle>
+              <CardDescription>How would you like to verify your account?</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Biometric Option - Primary if supported */}
+              {isSupported && (
+                <button
+                  onClick={handleChooseBiometric}
+                  className="w-full p-5 rounded-xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Fingerprint className="h-7 w-7 text-primary" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <p className="font-semibold text-lg flex items-center gap-2">
+                        Biometric Setup
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Recommended</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">Use fingerprint or face ID for quick, secure login</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  </div>
+                </button>
+              )}
+
+              {/* OTP Option */}
+              <button
+                onClick={handleChooseOTP}
+                disabled={loading}
+                className="w-full p-5 rounded-xl border-2 border-border hover:border-primary/30 hover:bg-muted/50 transition-all duration-300 group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Mail className="h-7 w-7 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="font-semibold text-lg">Email OTP Verification</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isSupported ? "Receive a 6-digit code via email" : "We'll send a verification code to your email"}
+                    </p>
+                  </div>
+                  {loading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  ) : (
+                    <ArrowRight className="h-5 w-5 text-muted-foreground opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  )}
+                </div>
+              </button>
+
+              {!isSupported && (
+                <Alert className="border-amber-500/30 bg-amber-500/5">
+                  <Smartphone className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-700">
+                    Biometric authentication is not available on this device. You can still register using email verification.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step: Biometric Setup */}
+        {currentStep === 'biometric' && (
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+                  <Fingerprint className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Set Up Biometric Login</CardTitle>
+              <CardDescription>Use fingerprint or face ID for secure access</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert className="border-primary/30 bg-primary/5">
+                <Fingerprint className="h-4 w-4" />
+                <AlertDescription>
+                  Setting up biometric login allows you to access your account quickly and securely without entering codes each time.
+                </AlertDescription>
+              </Alert>
+
+              <Button 
+                onClick={handleBiometricSetup} 
+                className="w-full h-16 text-lg gap-3"
+                disabled={webAuthnLoading || otpLoading}
+              >
+                {webAuthnLoading || otpLoading ? (
+                  <>
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    Setting up...
+                  </>
+                ) : (
+                  <>
+                    <Fingerprint className="h-6 w-6" />
+                    Set Up Biometric Now
+                  </>
+                )}
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-4 text-muted-foreground">Or</span>
+                </div>
+              </div>
+
+              <Button 
+                variant="outline" 
+                onClick={sendOTP}
+                className="w-full h-12 gap-2"
+                disabled={loading || otpLoading}
+              >
+                <Mail className="h-5 w-5" />
+                Use Email OTP Instead
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step: OTP Verification */}
+        {currentStep === 'otp' && (
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Shield className="h-10 w-10 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Verify Your Email</CardTitle>
+              <CardDescription>Enter the 6-digit code sent to {email}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex justify-center">
+                <InputOTP 
+                  maxLength={6} 
+                  value={otp} 
+                  onChange={setOtp}
+                  onComplete={handleVerifyOTP}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={1} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={2} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={3} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={4} className="w-12 h-14 text-xl" />
+                    <InputOTPSlot index={5} className="w-12 h-14 text-xl" />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              <p className="text-xs text-center text-muted-foreground">Code expires in 5 minutes</p>
+
+              <Button 
+                onClick={handleVerifyOTP}
+                className="w-full h-12 text-base gap-2"
+                disabled={otp.length !== 6 || otpLoading}
+              >
+                {otpLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    Verify & Complete
+                    <CheckCircle className="h-5 w-5" />
+                  </>
+                )}
+              </Button>
+
+              <p className="text-sm text-center text-muted-foreground">
+                Didn't receive the code?{" "}
+                <button 
+                  onClick={handleResendOTP}
+                  disabled={otpLoading}
+                  className="text-primary hover:underline font-medium disabled:opacity-50"
+                >
+                  Resend
+                </button>
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step: Success */}
+        {currentStep === 'success' && (
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-green-500/20 flex items-center justify-center animate-scale-in">
+                  <CheckCircle className="h-10 w-10 text-green-600" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl text-green-600">Registration Successful!</CardTitle>
+              <CardDescription>You're all set to participate in the elections</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 bg-muted/50 rounded-xl text-center">
+                <p className="text-sm text-muted-foreground mb-2">Registered as</p>
+                <p className="font-semibold text-lg">{studentInfo?.name}</p>
+                <p className="text-sm text-muted-foreground">{studentInfo?.matric}</p>
+                {biometricSetupDone && (
+                  <div className="mt-3 flex items-center justify-center gap-2 text-green-600">
+                    <Fingerprint className="h-4 w-4" />
+                    <span className="text-sm">Biometric enabled</span>
+                  </div>
+                )}
+              </div>
+
+              <Alert className="border-green-500/30 bg-green-500/5">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-700">
+                  Thank you for registering! Your voice matters. Return on election day to cast your vote and make a difference in shaping COHSSA's future.
+                </AlertDescription>
+              </Alert>
+
+              <Button 
+                onClick={() => navigate("/")}
+                className="w-full h-12 text-base gap-2"
+              >
+                Back to Homepage
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Footer */}
         <Footer />
