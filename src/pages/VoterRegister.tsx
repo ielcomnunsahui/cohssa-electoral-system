@@ -194,21 +194,12 @@ const VoterRegister = () => {
   const sendOTP = async () => {
     setLoading(true);
     try {
-      const { data, error: otpError } = await supabase.functions.invoke('send-otp', {
-        body: { email: email.toLowerCase(), type: 'verification' },
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-        }
+      const { error: otpError } = await supabase.functions.invoke('send-otp', {
+        body: { email: email.toLowerCase(), type: 'verification' }
       });
 
       if (otpError) {
-        console.error("OTP send error:", otpError);
         toast.error("Failed to send verification code. Please try again.");
-        setLoading(false);
-        return;
-      }
-      if (data?.error) {
-        toast.error(data.error);
         setLoading(false);
         return;
       }
@@ -216,7 +207,6 @@ const VoterRegister = () => {
       toast.success("Verification code sent to your email!");
       setCurrentStep('otp');
     } catch (error: any) {
-      console.error("OTP send exception:", error);
       toast.error("Failed to send verification code.");
     } finally {
       setLoading(false);
@@ -254,10 +244,7 @@ const VoterRegister = () => {
     try {
       // Verify OTP via edge function - pass type='registration' so it doesn't require voter profile
       const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { email: email.toLowerCase(), code: otp, type: 'registration' },
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-        }
+        body: { email: email.toLowerCase(), code: otp, type: 'registration' }
       });
 
       if (error || !data?.valid) {
@@ -364,14 +351,12 @@ const VoterRegister = () => {
   const handleResendOTP = async () => {
     setOtpLoading(true);
     try {
-      const {  data, error } = await supabase.functions.invoke('send-otp', {
-        body: { email: email.toLowerCase(), type: 'verification' },
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+      const { error } = await supabase.functions.invoke('send-otp', {
+        body: { email: email.toLowerCase(), type: 'verification' }
       });
 
-      if (error || data?.error) {
-        toast.error(data?.error || "Failed to resend code. Please try again.");
+      if (error) {
+        toast.error("Failed to resend code. Please try again.");
       } else {
         toast.success("New verification code sent!");
         setOtp("");
