@@ -99,16 +99,19 @@ const VoterLogin = () => {
     
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { email: voterInfo.email, type: 'login' }
+      // Use fetch directly to avoid Supabase client adding invalid JWT
+      const response = await fetch(`https://accpbvqoftsufyzvpczj.supabase.co/functions/v1/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: voterInfo.email, type: 'login' })
       });
 
-      if (error) {
-        throw error;
-      }
+      const data = await response.json();
 
-      if (data?.error) {
-        showFriendlyError(data.error);
+      if (!response.ok) {
+        showFriendlyError(data.error || "Failed to send login code");
         setLoading(false);
         return;
       }
@@ -164,12 +167,18 @@ const VoterLogin = () => {
     
     setLoading(true);
     try {
-      // Verify OTP via edge function
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { email: voterInfo.email, code: otp }
+      // Verify OTP via edge function using direct fetch
+      const response = await fetch(`https://accpbvqoftsufyzvpczj.supabase.co/functions/v1/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: voterInfo.email, code: otp, type: 'login' })
       });
 
-      if (error || !data?.valid) {
+      const data = await response.json();
+
+      if (!response.ok || !data?.valid) {
         showFriendlyError(data?.error || "Invalid or expired code");
         setLoading(false);
         return;
