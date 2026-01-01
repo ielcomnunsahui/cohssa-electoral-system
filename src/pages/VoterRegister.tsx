@@ -194,12 +194,23 @@ const VoterRegister = () => {
   const sendOTP = async () => {
     setLoading(true);
     try {
-      const { error: otpError } = await supabase.functions.invoke('send-otp', {
-        body: { email: email.toLowerCase(), type: 'verification' }
+      // Use fetch directly to avoid Supabase client adding invalid JWT
+      const response = await fetch(`https://accpbvqoftsufyzvpczj.supabase.co/functions/v1/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.toLowerCase(), type: 'verification' })
       });
 
-      if (otpError) {
-        toast.error("Failed to send verification code. Please try again.");
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (response.status === 429) {
+          toast.error(data.error || "Too many requests. Please wait before trying again.");
+        } else {
+          toast.error(data.error || "Failed to send verification code. Please try again.");
+        }
         setLoading(false);
         return;
       }
@@ -207,7 +218,8 @@ const VoterRegister = () => {
       toast.success("Verification code sent to your email!");
       setCurrentStep('otp');
     } catch (error: any) {
-      toast.error("Failed to send verification code.");
+      console.error("Send OTP error:", error);
+      toast.error("Network error. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -242,12 +254,18 @@ const VoterRegister = () => {
     
     setOtpLoading(true);
     try {
-      // Verify OTP via edge function - pass type='registration' so it doesn't require voter profile
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { email: email.toLowerCase(), code: otp, type: 'registration' }
+      // Verify OTP via edge function using direct fetch - pass type='registration' so it doesn't require voter profile
+      const response = await fetch(`https://accpbvqoftsufyzvpczj.supabase.co/functions/v1/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.toLowerCase(), code: otp, type: 'registration' })
       });
 
-      if (error || !data?.valid) {
+      const data = await response.json();
+
+      if (!response.ok || !data?.valid) {
         toast.error(data?.error || "Invalid or expired code. Please try again.");
         setOtpLoading(false);
         return;
@@ -257,7 +275,7 @@ const VoterRegister = () => {
       await completeRegistration(null);
     } catch (error: any) {
       console.error("OTP verification error:", error);
-      toast.error("Verification failed. Please try again.");
+      toast.error("Network error. Please check your connection and try again.");
     } finally {
       setOtpLoading(false);
     }
@@ -351,18 +369,29 @@ const VoterRegister = () => {
   const handleResendOTP = async () => {
     setOtpLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('send-otp', {
-        body: { email: email.toLowerCase(), type: 'verification' }
+      const response = await fetch(`https://accpbvqoftsufyzvpczj.supabase.co/functions/v1/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.toLowerCase(), type: 'verification' })
       });
 
-      if (error) {
-        toast.error("Failed to resend code. Please try again.");
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (response.status === 429) {
+          toast.error(data.error || "Too many requests. Please wait before trying again.");
+        } else {
+          toast.error(data.error || "Failed to resend code. Please try again.");
+        }
       } else {
         toast.success("New verification code sent!");
         setOtp("");
       }
     } catch (error) {
-      toast.error("Failed to resend code.");
+      console.error("Resend OTP error:", error);
+      toast.error("Network error. Please check your connection and try again.");
     } finally {
       setOtpLoading(false);
     }
