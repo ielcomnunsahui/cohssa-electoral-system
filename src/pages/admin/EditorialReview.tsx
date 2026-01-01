@@ -59,6 +59,33 @@ const EditorialReview = () => {
     setReviewDialogOpen(true);
   };
 
+  const sendNotification = async (content: any, status: 'published' | 'rejected') => {
+    if (!content.author_email) {
+      console.log("No author email, skipping notification");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('send-editorial-notification', {
+        body: {
+          email: content.author_email,
+          authorName: content.author_name || 'Author',
+          contentTitle: content.title,
+          contentType: content.content_type,
+          status: status,
+        },
+      });
+
+      if (error) {
+        console.error("Failed to send notification:", error);
+      } else {
+        console.log("Notification sent successfully");
+      }
+    } catch (err) {
+      console.error("Error invoking notification function:", err);
+    }
+  };
+
   const handleApprove = async () => {
     if (!selectedContent) return;
     
@@ -73,6 +100,9 @@ const EditorialReview = () => {
         .eq('id', selectedContent.id);
 
       if (error) throw error;
+      
+      // Send email notification
+      await sendNotification(selectedContent, 'published');
       
       toast.success("Content approved and published!");
       setReviewDialogOpen(false);
@@ -97,6 +127,9 @@ const EditorialReview = () => {
         .eq('id', selectedContent.id);
 
       if (error) throw error;
+      
+      // Send email notification
+      await sendNotification(selectedContent, 'rejected');
       
       toast.success("Content rejected");
       setReviewDialogOpen(false);
