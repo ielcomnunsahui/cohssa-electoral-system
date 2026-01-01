@@ -1,7 +1,6 @@
 import { NavLink as RouterNavLink, NavLinkProps } from "react-router-dom";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-import ISECOLogo from "@/assets/ISECO_LOGO.png";
 import COHSSALogo from "@/assets/COHSSA_LOGO.png";
 
 interface NavLinkCompatProps extends Omit<NavLinkProps, "className"> {
