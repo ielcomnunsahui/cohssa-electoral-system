@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GlobalAuthDialog } from "@/components/GlobalAuthDialog";
@@ -44,6 +45,7 @@ import ResourceManagement from "./pages/admin/ResourceManagement";
 import TextbookManagement from "./pages/admin/TextbookManagement";
 import EventsManagement from "./pages/admin/EventsManagement";
 import EditorialReview from "./pages/admin/EditorialReview";
+import ElectoralCommitteeManagement from "./pages/admin/ElectoralCommitteeManagement";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 
@@ -188,6 +190,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
                     <EditorialReview />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/electoral-committee" 
+                element={
+                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                    <ElectoralCommitteeManagement />
                   </ProtectedRoute>
                 } 
               />

@@ -92,6 +92,13 @@ const electionMenuItems = [
     badge: null,
   },
   {
+    title: "Electoral Committee",
+    icon: Users,
+    url: "/admin/electoral-committee",
+    color: "text-sky-500",
+    badge: null,
+  },
+  {
     title: "Timeline",
     icon: Calendar,
     url: "/admin/timeline",
