@@ -197,20 +197,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "candidates_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "approved_aspirants_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "candidates_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "aspirants"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "candidates_position_id_fkey"
             columns: ["position_id"]
             isOneToOne: false
@@ -1302,12 +1288,54 @@ export type Database = {
       }
     }
     Functions: {
+      check_device_fingerprint: {
+        Args: { p_fingerprint: string }
+        Returns: {
+          already_registered: boolean
+          voter_matric: string
+        }[]
+      }
+      get_approved_aspirants: {
+        Args: never
+        Returns: {
+          department: string
+          full_name: string
+          id: string
+          level: string
+          manifesto: string
+          name: string
+          photo_url: string
+          position_id: string
+          why_running: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      lookup_student_by_matric: {
+        Args: { p_matric_number: string }
+        Returns: {
+          department: string
+          email: string
+          id: string
+          level: string
+          name: string
+        }[]
+      }
+      lookup_voter_for_login: {
+        Args: { p_matric_number: string }
+        Returns: {
+          email: string
+          has_biometric: boolean
+          id: string
+          matric_number: string
+          name: string
+          verified: boolean
+        }[]
       }
     }
     Enums: {

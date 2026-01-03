@@ -17,6 +17,7 @@ import { SEO } from "@/components/SEO";
 import { showFriendlyError, showSuccessToast, showInfoToast } from "@/lib/errorMessages";
 import { toast } from "sonner";
 import { Footer } from "@/components/Footer";
+import { getDeviceFingerprint } from "@/hooks/useDeviceFingerprint";
 
 // Strict matric validation regex: XX/XXaaa000 (e.g., 21/08nus014)
 const MATRIC_REGEX = /^\d{2}\/\d{2}[A-Za-z]{3}\d{3}$/;
@@ -55,11 +56,17 @@ const VoterRegister = () => {
   const [otp, setOtp] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
   const [biometricSetupDone, setBiometricSetupDone] = useState(false);
+  const [deviceFingerprint, setDeviceFingerprint] = useState<string>("");
+  const [lookupAttempts, setLookupAttempts] = useState(0);
+  const [lookupLocked, setLookupLocked] = useState(false);
+  const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
   
   const { isSupported, isLoading: webAuthnLoading, checkSupport, registerCredential, saveCredential } = useWebAuthn();
 
   useEffect(() => {
     checkSupport();
+    // Generate device fingerprint on mount
+    setDeviceFingerprint(getDeviceFingerprint());
   }, [checkSupport]);
 
   const getStepIndex = (step: Step) => {
@@ -99,30 +106,56 @@ const VoterRegister = () => {
       toast.error("Please enter a valid matric number");
       return;
     }
+
+    // Rate limiting check - max 5 attempts per 15 minutes
+    if (lookupLocked) {
+      const remainingTime = lockoutEndTime ? Math.ceil((lockoutEndTime - Date.now()) / 60000) : 15;
+      toast.error(`Too many lookup attempts. Please wait ${remainingTime} minutes.`);
+      return;
+    }
     
     setLoading(true);
     const inputMatric = matric.trim();
 
     try {
-      // Check if matric already registered (case-insensitive using ILIKE)
-      const { data: existingProfile } = await supabase
-        .from("voters")
-        .select("id")
-        .ilike("matric_number", inputMatric)
-        .maybeSingle();
+      // Increment lookup attempts and check limit
+      const newAttempts = lookupAttempts + 1;
+      setLookupAttempts(newAttempts);
+      
+      if (newAttempts >= 5) {
+        const lockoutEnd = Date.now() + 15 * 60 * 1000; // 15 minutes
+        setLookupLocked(true);
+        setLockoutEndTime(lockoutEnd);
+        toast.error("Too many lookup attempts. Please wait 15 minutes.");
+        setLoading(false);
+        return;
+      }
 
-      if (existingProfile) {
+      // Check if this device has already registered a voter (one-phone-one-vote)
+      if (deviceFingerprint) {
+        const { data: existingDevice, error: deviceError } = await supabase
+          .rpc("check_device_fingerprint", { p_fingerprint: deviceFingerprint });
+
+        if (!deviceError && existingDevice?.[0]?.already_registered) {
+          toast.error("This device has already been used to register a voter account. One registration per device is allowed.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Check if matric already registered (case-insensitive using RPC)
+      const { data: existingVoters } = await supabase
+        .rpc("lookup_voter_for_login", { p_matric_number: inputMatric });
+
+      if (existingVoters && existingVoters.length > 0) {
         toast.error("This matric number is already registered. Please login instead.");
         setLoading(false);
         return;
       }
 
-      // Verify matric exists in student list (case-insensitive using ILIKE)
-      const { data: student, error: studentError } = await supabase
-        .from("students")
-        .select("*")
-        .ilike("matric_number", inputMatric)
-        .maybeSingle();
+      // Verify matric exists in student list using public RPC function
+      const { data: students, error: studentError } = await supabase
+        .rpc("lookup_student_by_matric", { p_matric_number: inputMatric.toLowerCase() });
 
       if (studentError) {
         console.error("Student lookup error:", studentError);
@@ -131,6 +164,7 @@ const VoterRegister = () => {
         return;
       }
 
+      const student = students?.[0];
       if (!student) {
         toast.error("Matric number not found in our records. Please ensure you're using the correct format or contact the electoral committee.");
         setLoading(false);
@@ -138,7 +172,7 @@ const VoterRegister = () => {
       }
 
       setStudentInfo({ 
-        matric: student.matric_number, 
+        matric: inputMatric, 
         name: student.name,
         department: student.department,
         level: student.level || '100L'
@@ -330,7 +364,8 @@ const VoterRegister = () => {
         level: studentInfo.level,
         email: email.toLowerCase(),
         verified: true, // Email verified through OTP/biometric process
-        has_voted: false
+        has_voted: false,
+        device_fingerprint: deviceFingerprint || null, // Store device fingerprint for one-phone-one-vote
       };
 
       // Save biometric credential if available

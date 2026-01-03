@@ -58,15 +58,20 @@ const VoterLogin = () => {
     const inputMatric = matric.trim();
 
     try {
-      // Find voter profile by matric (case-insensitive)
-      const { data: profile, error: profileError } = await supabase
-        .from('voters')
-        .select('*')
-        .ilike('matric_number', inputMatric)
-        .maybeSingle();
+      // Use public RPC function for voter lookup (bypasses RLS)
+      const { data: voters, error: lookupError } = await supabase
+        .rpc('lookup_voter_for_login', { p_matric_number: inputMatric });
 
-      if (profileError || !profile) {
-        showFriendlyError("Matric not found");
+      if (lookupError) {
+        console.error("Voter lookup error:", lookupError);
+        showFriendlyError("Error checking voter status. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      const profile = voters?.[0];
+      if (!profile) {
+        showFriendlyError("Matric not found. Please register first.");
         setLoading(false);
         return;
       }
@@ -80,7 +85,7 @@ const VoterLogin = () => {
       setVoterInfo({ name: profile.name, email: profile.email || '', matric: profile.matric_number });
 
       // Check if user has WebAuthn set up
-      if (isSupported && profile.webauthn_credential) {
+      if (isSupported && profile.has_biometric) {
         setHasWebAuthn(true);
       }
 
