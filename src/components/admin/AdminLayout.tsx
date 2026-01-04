@@ -19,6 +19,8 @@ import {
   Bell,
   Search,
   Newspaper,
+  Smartphone,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +70,20 @@ const electionMenuItems = [
     icon: Vote,
     url: "/admin/voters",
     color: "text-cyan-500",
+    badge: null,
+  },
+  {
+    title: "Device Management",
+    icon: Smartphone,
+    url: "/admin/devices",
+    color: "text-teal-500",
+    badge: null,
+  },
+  {
+    title: "Rate Limits",
+    icon: ShieldAlert,
+    url: "/admin/rate-limits",
+    color: "text-rose-500",
     badge: null,
   },
   {

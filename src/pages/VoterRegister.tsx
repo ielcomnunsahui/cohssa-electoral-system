@@ -30,7 +30,7 @@ const registrationSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
 
-type Step = 'consent' | 'matric' | 'email' | 'verify_choice' | 'biometric' | 'otp' | 'success';
+type Step = 'consent' | 'matric' | 'email' | 'aspirant_confirm' | 'verify_choice' | 'biometric' | 'otp' | 'success';
 
 const steps = [
   { id: 'consent', label: 'Consent', icon: FileText },
@@ -57,9 +57,12 @@ const VoterRegister = () => {
   const [otpLoading, setOtpLoading] = useState(false);
   const [biometricSetupDone, setBiometricSetupDone] = useState(false);
   const [deviceFingerprint, setDeviceFingerprint] = useState<string>("");
-  const [lookupAttempts, setLookupAttempts] = useState(0);
-  const [lookupLocked, setLookupLocked] = useState(false);
-  const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
+  const [aspirantInfo, setAspirantInfo] = useState<{
+    name: string;
+    matric: string;
+    department: string;
+    level: string;
+  } | null>(null);
   
   const { isSupported, isLoading: webAuthnLoading, checkSupport, registerCredential, saveCredential } = useWebAuthn();
 
@@ -106,27 +109,26 @@ const VoterRegister = () => {
       toast.error("Please enter a valid matric number");
       return;
     }
-
-    // Rate limiting check - max 5 attempts per 15 minutes
-    if (lookupLocked) {
-      const remainingTime = lockoutEndTime ? Math.ceil((lockoutEndTime - Date.now()) / 60000) : 15;
-      toast.error(`Too many lookup attempts. Please wait ${remainingTime} minutes.`);
-      return;
-    }
     
     setLoading(true);
     const inputMatric = matric.trim();
 
     try {
-      // Increment lookup attempts and check limit
-      const newAttempts = lookupAttempts + 1;
-      setLookupAttempts(newAttempts);
-      
-      if (newAttempts >= 5) {
-        const lockoutEnd = Date.now() + 15 * 60 * 1000; // 15 minutes
-        setLookupLocked(true);
-        setLockoutEndTime(lockoutEnd);
-        toast.error("Too many lookup attempts. Please wait 15 minutes.");
+      // Server-side rate limiting check
+      const { data: rateLimitResult, error: rateLimitError } = await supabase
+        .rpc("check_rate_limit", { 
+          p_identifier: deviceFingerprint || inputMatric.toLowerCase(),
+          p_action_type: "matric_lookup",
+          p_max_attempts: 5,
+          p_window_minutes: 15
+        });
+
+      if (rateLimitError) {
+        console.error("Rate limit check error:", rateLimitError);
+      } else if (rateLimitResult && rateLimitResult[0] && !rateLimitResult[0].allowed) {
+        const lockedUntil = rateLimitResult[0].locked_until;
+        const remainingTime = lockedUntil ? Math.ceil((new Date(lockedUntil).getTime() - Date.now()) / 60000) : 15;
+        toast.error(`Too many lookup attempts. Please wait ${remainingTime} minutes.`);
         setLoading(false);
         return;
       }
@@ -195,7 +197,7 @@ const VoterRegister = () => {
 
     setLoading(true);
     try {
-      // Check if email already registered
+      // Check if email already registered as voter
       const { data: existingEmail } = await supabase
         .from("voters")
         .select("id")
@@ -203,7 +205,24 @@ const VoterRegister = () => {
         .maybeSingle();
 
       if (existingEmail) {
-        toast.error("This email is already registered. Please use a different email.");
+        toast.error("This email is already registered as a voter. Please use a different email or login.");
+        setLoading(false);
+        return;
+      }
+
+      // Check if this email belongs to an aspirant
+      const { data: aspirantCheck, error: aspirantError } = await supabase
+        .rpc("check_aspirant_email", { p_email: email.toLowerCase() });
+
+      if (!aspirantError && aspirantCheck && aspirantCheck[0]?.is_aspirant) {
+        // This is an aspirant, show confirmation dialog
+        setAspirantInfo({
+          name: aspirantCheck[0].aspirant_name,
+          matric: aspirantCheck[0].aspirant_matric,
+          department: aspirantCheck[0].aspirant_department,
+          level: aspirantCheck[0].aspirant_level,
+        });
+        setCurrentStep('aspirant_confirm');
         setLoading(false);
         return;
       }
@@ -215,6 +234,11 @@ const VoterRegister = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAspirantConfirm = () => {
+    // Aspirant confirmed they want to also register as voter
+    setCurrentStep('verify_choice');
   };
 
   const handleChooseBiometric = async () => {
@@ -717,6 +741,68 @@ const VoterRegister = () => {
                   )}
                 </Button>
               </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step: Aspirant Confirmation */}
+        {currentStep === 'aspirant_confirm' && studentInfo && aspirantInfo && (
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-fade-in">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="h-20 w-20 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <AlertCircle className="h-10 w-10 text-amber-600" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl">Aspirant Account Detected</CardTitle>
+              <CardDescription>You've already registered as an aspirant with this email</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                    <User className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{aspirantInfo.name}</p>
+                    <p className="text-sm text-muted-foreground">{aspirantInfo.matric} • {aspirantInfo.department}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  This email is associated with your aspirant application. You can still register as a voter 
+                  using the same email to be able to vote in the election.
+                </p>
+              </div>
+
+              <Alert className="mb-6 border-primary/30 bg-primary/5">
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Important:</strong> As a candidate, you also have the right to vote. 
+                  Registering as a voter will create a separate voter account linked to your email.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleAspirantConfirm}
+                  className="w-full h-12 text-base gap-2"
+                >
+                  Yes, Register as Voter
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setEmail("");
+                    setAspirantInfo(null);
+                    setCurrentStep('email');
+                  }}
+                  className="w-full h-12 text-base"
+                >
+                  Use a Different Email
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

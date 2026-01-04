@@ -108,7 +108,7 @@ const PrivacyPolicy = () => {
               </p>
               <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li><strong>Electoral Committee:</strong> Authorized committee members for electoral administration.</li>
-                <li><strong>AHSS Leadership:</strong> For official association purposes as permitted by the constitution.</li>
+                <li><strong>COHSSA Leadership:</strong> For official association purposes as permitted by the constitution.</li>
                 <li><strong>Legal Requirements:</strong> When required by law or university regulations.</li>
                 <li><strong>Service Providers:</strong> Trusted third-party services that help operate the platform (under strict confidentiality agreements).</li>
               </ul>
@@ -163,7 +163,7 @@ const PrivacyPolicy = () => {
               <p className="text-muted-foreground leading-relaxed">
                 If you have questions about this Privacy Policy or wish to exercise your data rights, 
                 please contact the Electoral Committee through the ISECO Help Desk or via the official 
-                AHSS communication channels.
+                COHSSA communication channels.
               </p>
             </section>
 

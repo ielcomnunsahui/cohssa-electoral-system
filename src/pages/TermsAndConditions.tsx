@@ -11,7 +11,7 @@ const TermsAndConditions = () => {
     <div className="min-h-screen bg-background">
       <SEO 
         title="Terms and Conditions | ISECO" 
-        description="Read the terms and conditions governing the use of ISECO platform and AHSS electoral services."
+        description="Read the terms and conditions governing the use of ISECO platform and COHSSA electoral services."
       />
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -55,7 +55,7 @@ const TermsAndConditions = () => {
               </div>
               <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>You must be a registered student of the College of Health Sciences to participate in elections.</li>
-                <li>Voters must be verified members of the Allied Health Sciences Students' Association (AHSS).</li>
+                <li>Voters must be verified members of the Allied Health Sciences Students' Association (COHSSA).</li>
                 <li>Aspirants must meet all eligibility requirements as specified by the Electoral Committee.</li>
                 <li>Users must provide accurate and truthful information during registration.</li>
               </ul>
@@ -67,7 +67,7 @@ const TermsAndConditions = () => {
                 <h2 className="text-xl font-semibold m-0">3. Electoral Rules and Conduct</h2>
               </div>
               <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                <li>All users must abide by the AHSS Constitution and Electoral Guidelines.</li>
+                <li>All users must abide by the COHSSA Constitution and Electoral Guidelines.</li>
                 <li>Any form of electoral malpractice, including vote buying, intimidation, or multiple voting, is strictly prohibited.</li>
                 <li>Campaign activities must be conducted in accordance with the guidelines set by the Electoral Committee.</li>
                 <li>Decisions of the Electoral Committee are final and binding on all parties.</li>
@@ -104,7 +104,7 @@ const TermsAndConditions = () => {
             <section>
               <h2 className="text-xl font-semibold mb-3">6. Intellectual Property</h2>
               <p className="text-muted-foreground leading-relaxed">
-                All content, logos, and materials on this platform are the property of AHSS and ISECO. 
+                All content, logos, and materials on this platform are the property of COHSSA and ISECO. 
                 Users may not reproduce, distribute, or create derivative works without explicit permission.
               </p>
             </section>
@@ -112,7 +112,7 @@ const TermsAndConditions = () => {
             <section>
               <h2 className="text-xl font-semibold mb-3">7. Limitation of Liability</h2>
               <p className="text-muted-foreground leading-relaxed">
-                ISECO and AHSS shall not be liable for any indirect, incidental, special, or consequential 
+                ISECO and COHSSA shall not be liable for any indirect, incidental, special, or consequential 
                 damages arising from your use of the platform. We do not guarantee uninterrupted access to 
                 the platform and reserve the right to suspend services for maintenance or security purposes.
               </p>
@@ -129,7 +129,7 @@ const TermsAndConditions = () => {
             <section>
               <h2 className="text-xl font-semibold mb-3">9. Governing Law</h2>
               <p className="text-muted-foreground leading-relaxed">
-                These terms shall be governed by and construed in accordance with the AHSS Constitution 
+                These terms shall be governed by and construed in accordance with the COHSSA Constitution 
                 and the regulations of the College of Health Sciences, University of Ilorin.
               </p>
             </section>

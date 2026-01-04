@@ -46,6 +46,8 @@ import TextbookManagement from "./pages/admin/TextbookManagement";
 import EventsManagement from "./pages/admin/EventsManagement";
 import EditorialReview from "./pages/admin/EditorialReview";
 import ElectoralCommitteeManagement from "./pages/admin/ElectoralCommitteeManagement";
+import DeviceManagement from "./pages/admin/DeviceManagement";
+import RateLimitMonitoring from "./pages/admin/RateLimitMonitoring";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 
@@ -198,6 +200,22 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
                     <ElectoralCommitteeManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/devices" 
+                element={
+                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                    <DeviceManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/rate-limits" 
+                element={
+                  <ProtectedRoute requiredRole="admin" redirectTo="/admin/login">
+                    <RateLimitMonitoring />
                   </ProtectedRoute>
                 } 
               />

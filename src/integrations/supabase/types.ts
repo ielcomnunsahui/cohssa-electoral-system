@@ -1288,11 +1288,42 @@ export type Database = {
       }
     }
     Functions: {
+      admin_bulk_clear_fingerprints: {
+        Args: { p_voter_ids: string[] }
+        Returns: number
+      }
+      admin_clear_device_fingerprint: {
+        Args: { p_voter_id: string }
+        Returns: boolean
+      }
+      check_aspirant_email: {
+        Args: { p_email: string }
+        Returns: {
+          aspirant_department: string
+          aspirant_level: string
+          aspirant_matric: string
+          aspirant_name: string
+          is_aspirant: boolean
+        }[]
+      }
       check_device_fingerprint: {
         Args: { p_fingerprint: string }
         Returns: {
           already_registered: boolean
           voter_matric: string
+        }[]
+      }
+      check_rate_limit: {
+        Args: {
+          p_action_type: string
+          p_identifier: string
+          p_max_attempts?: number
+          p_window_minutes?: number
+        }
+        Returns: {
+          allowed: boolean
+          locked_until: string
+          remaining_attempts: number
         }[]
       }
       get_approved_aspirants: {

@@ -16,7 +16,7 @@ export const generateRefereeFormHTML = (data: RefereeFormData): string => {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>AHSS ISECO REFEREE FORM</title>
+<title>COHSSA ISECO REFEREE FORM</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -145,13 +145,13 @@ export const generateRefereeFormHTML = (data: RefereeFormData): string => {
 <body>
 <div class="document">
     <div class="header">
-        <img src="${ISECOLogo}" alt="AHSS ISECO Logo" class="logo" />
+        <img src="${ISECOLogo}" alt="COHSSA ISECO Logo" class="logo" />
         <div class="header-text">
-            <h1>AHSS ISECO</h1>
+            <h1>COHSSA ISECO</h1>
             <p>Al-Hikmah University Chapter</p>
         </div>
     </div>
-    <div class="title">AHSS ISECO REFEREE FORM</div>
+    <div class="title">COHSSA ISECO REFEREE FORM</div>
     <div class="section">
         <h2>1. PERSONAL INFORMATION</h2>
         <div class="field">

@@ -80,7 +80,7 @@ const handler = async (req: Request): Promise<Response> => {
               </p>
               
               ${isPublished ? `
-                <a href="https://cohssa-ahss.lovable.app/editorial" 
+                <a href="https://cohssahui.org/editorial" 
                    style="display: inline-block; background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 100%); color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; margin: 16px 0;">
                   View Published Content
                 </a>
@@ -90,7 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
               
               <p style="color: #9ca3af; font-size: 13px; margin: 0; text-align: center;">
                 College of Health Sciences Students Association<br>
-                Ahmadu Bello University, Zaria
+                Al-Hikmah University, Ilorin, Nigeria
               </p>
             </div>
           </div>

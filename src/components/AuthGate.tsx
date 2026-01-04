@@ -492,7 +492,7 @@ export const AuthGate = ({ children, requireAuth = false }: AuthGateProps) => {
           )}
 
           <p className="text-xs text-center text-muted-foreground mt-4">
-            By continuing, you agree to abide by AHSS rules and regulations.
+            By continuing, you agree to abide by COHSSA rules and regulations.
           </p>
         </DialogContent>
       </Dialog>

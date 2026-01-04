@@ -263,7 +263,7 @@ export const GlobalAuthDialog = () => {
                       Terms and Conditions
                       <ExternalLink className="h-3 w-3" />
                     </a>
-                    {" "}and AHSS rules and regulations.
+                    {" "}and COHSSA rules and regulations.
                   </Label>
                 </div>
               </div>
@@ -528,7 +528,7 @@ export const GlobalAuthDialog = () => {
         )}
 
         <p className="text-xs text-center text-muted-foreground mt-4">
-          By continuing, you agree to abide by AHSS rules and regulations.
+          By continuing, you agree to abide by COHSSA rules and regulations.
         </p>
       </DialogContent>
     </Dialog>

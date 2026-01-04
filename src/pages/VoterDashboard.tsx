@@ -296,7 +296,7 @@ const VoterDashboard = () => {
                 <Vote className="h-6 w-6 text-medical-600" />
                 Voter Dashboard
               </CardTitle>
-              <CardDescription>Welcome to the AHSS ISECO Election</CardDescription>
+              <CardDescription>Welcome to the COHSSA ISECO Election</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
