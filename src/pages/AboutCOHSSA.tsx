@@ -93,7 +93,7 @@ const ADMINISTRATIONS = [
     title: "Fourth Administration – ABDULGANIYU ABDULAZEEZ",
     president: "ABDULGANIYU ABDULAZEEZ",
     senateLeader: "ISMAEEL IBRAHEEM (First Elected Senate President)",
-    staffAdviser: "MRS L. F. OLADIMEJI, MR. I. A. LAWAL (Co-Advisers)",
+    staffAdviser: "MR. I. A. LAWAL, MRS L. F. OLADIMEJI",
     highlights: [
       "Student population grew to approximately 2,000",
       "First elected Senate President in AHSS history",
@@ -108,6 +108,7 @@ const ADMINISTRATIONS = [
     period: "2025",
     president: "OSHAFU SALEEM",
     senateLeader: "OYENIYI ABDULAZEEZ (Senate President)",
+    staffAdviser: "MR. I. A. LAWAL",
     highlights: [
       "Introduction of Medicine and Surgery (MBBS) programme",
       "First inclusion of MBBS students",
