@@ -676,13 +676,6 @@ const VoterRegister = () => {
                   )}
                 </Button>
               </form>
-
-              <p className="text-sm text-center text-muted-foreground mt-6">
-                Already registered?{" "}
-                <button onClick={() => navigate("/voter/login")} className="text-primary hover:underline font-medium">
-                  Login here
-                </button>
-              </p>
             </CardContent>
           </Card>
         )}
