@@ -93,6 +93,7 @@ const TermsAndConditions = () => {
             </section>
 
             <section>
+              
               <h2 className="text-xl font-semibold mb-3">5. Account Responsibilities</h2>
               <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                 <li>You are responsible for maintaining the confidentiality of your account credentials.</li>

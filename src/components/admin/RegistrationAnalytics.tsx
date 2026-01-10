@@ -73,7 +73,7 @@ export const RegistrationAnalytics = ({
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  label={({ device, percent }) => `${device} (${(percent * 100).toFixed(0)}%)`}
+                  label={({ device, percent }) => `${device} (${(typeof percent === 'number' ? (percent * 100).toFixed(0) : 0)}%)`}
                 >
                   {registrationsByDevice.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

@@ -419,7 +419,7 @@ const AspirantDashboard = () => {
                   {(application.cgpa && application.cgpa > 0) || (application.step_data as any)?.academic?.cgpa ? (
                     <div className="p-4 bg-primary/10 rounded-xl">
                       <span className="text-xs text-muted-foreground block mb-1">CGPA</span>
-                      <p className="font-bold text-2xl text-primary">{(application.cgpa || (application.step_data as any)?.academic?.cgpa)?.toFixed(2)}</p>
+                      <p className="font-bold text-2xl text-primary">{Number(application.cgpa || (application.step_data as any)?.academic?.cgpa || 0).toFixed(2)}</p>
                     </div>
                   ) : null}
                 </>
@@ -643,7 +643,7 @@ const AspirantDashboard = () => {
                       <div>
                         <span className="text-xs text-muted-foreground block">CGPA</span>
                         <p className="font-bold text-xl text-primary">
-                          {(application.cgpa || (application.step_data as any)?.academic?.cgpa)?.toFixed(2) || 'N/A'}
+                          {(application.cgpa || (application.step_data as any)?.academic?.cgpa) ? Number(application.cgpa || (application.step_data as any)?.academic?.cgpa).toFixed(2) : 'N/A'}
                         </p>
                       </div>
                     </div>
