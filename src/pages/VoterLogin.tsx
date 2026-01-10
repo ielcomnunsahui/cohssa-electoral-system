@@ -305,12 +305,7 @@ const VoterLogin = () => {
               </form>
 
               <div className="text-sm text-center text-muted-foreground mt-6 space-y-2">
-                <p>
-                  Not registered yet?{" "}
-                  <button onClick={() => navigate("/voter/register")} className="text-primary hover:underline font-medium">
-                    Register here
-                  </button>
-                </p>
+                
                 <p>
                   <Link to="/voter/help" className="text-muted-foreground hover:text-primary inline-flex items-center gap-1">
                     <HelpCircle className="h-3 w-3" />
