@@ -17,13 +17,6 @@ import { SEO } from "@/components/SEO";
 // College Structure - Faculties and Departments
 const COLLEGE_STRUCTURE = [
   {
-    faculty: "Faculty of Clinical Sciences",
-    icon: "🩺",
-    departments: [
-      { name: "Department of Medicine and Surgery", programs: ["MBBS Medicine and Surgery (300L-600L)"] }
-    ]
-  },
-  {
     faculty: "Faculty of Nursing Sciences",
     icon: "💉",
     departments: [
