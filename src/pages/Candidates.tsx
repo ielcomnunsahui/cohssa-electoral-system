@@ -215,9 +215,6 @@ const Candidates = () => {
                                   />
                                 </div>
                               </div>
-                              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-0.5 rounded-full text-xs font-medium">
-                                {candidate.matric}
-                              </div>
                             </div>
                             <h3 className="font-bold text-lg mb-1 group-hover:text-primary transition-colors">
                               {candidate.name}
