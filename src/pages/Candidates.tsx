@@ -148,7 +148,7 @@ const Candidates = () => {
           <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Meet the Candidates
           </h1>
-          <p className="text-xl text-muted-foreground">COHSSA Student Union Election 2025/2026</p>
+          <p className="text-xl text-muted-foreground">AHSS Student Union Election 2025/2026</p>
         </div>
 
         {/* Content */}
