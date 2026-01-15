@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, FileText, Users, Award, Pencil } from "lucide-react";
+import { Plus, Trash2, FileText, Users, Award, Pencil, Printer, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -232,6 +232,101 @@ const CandidateManagement = () => {
               <span className="font-bold text-lg">{candidates.length}</span>
               <span className="text-sm text-muted-foreground">Candidates</span>
             </div>
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={() => {
+                const printContent = `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <title>Candidates List - COHSSA Election</title>
+                    <style>
+                      body { font-family: Arial, sans-serif; padding: 20px; }
+                      h1 { text-align: center; margin-bottom: 10px; }
+                      .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+                      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                      th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                      th { background-color: #f5f5f5; font-weight: bold; }
+                      tr:nth-child(even) { background-color: #fafafa; }
+                      .photo { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+                      .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #888; }
+                      @media print { body { -webkit-print-color-adjust: exact; } }
+                    </style>
+                  </head>
+                  <body>
+                    <h1>COHSSA Election Candidates</h1>
+                    <p class="subtitle">Total Candidates: ${candidates.length} | Generated: ${new Date().toLocaleString()}</p>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Photo</th>
+                          <th>Name</th>
+                          <th>Position</th>
+                          <th>Department</th>
+                          <th>Has Manifesto</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${candidates.map((c, i) => `
+                          <tr>
+                            <td>${i + 1}</td>
+                            <td>${c.photo_url ? `<img src="${c.photo_url}" class="photo" />` : '-'}</td>
+                            <td><strong>${c.name}</strong></td>
+                            <td>${c.positions?.title || '-'}</td>
+                            <td>${c.department}</td>
+                            <td>${c.manifesto ? 'Yes' : 'No'}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                    <p class="footer">COHSSA ISECO Election Management System</p>
+                  </body>
+                  </html>
+                `;
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                  printWindow.document.write(printContent);
+                  printWindow.document.close();
+                  printWindow.print();
+                }
+              }}
+              disabled={candidates.length === 0}
+            >
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={() => {
+                const headers = ['#', 'Name', 'Matric', 'Position', 'Department', 'Has Manifesto'];
+                const csvRows = [
+                  headers.join(','),
+                  ...candidates.map((c, i) => [
+                    i + 1,
+                    `"${c.name?.replace(/"/g, '""') || ''}"`,
+                    `"${c.matric || ''}"`,
+                    `"${c.positions?.title?.replace(/"/g, '""') || ''}"`,
+                    `"${c.department?.replace(/"/g, '""') || ''}"`,
+                    c.manifesto ? 'Yes' : 'No'
+                  ].join(','))
+                ];
+                const csvContent = csvRows.join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `candidates_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+                toast.success('CSV exported successfully');
+              }}
+              disabled={candidates.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              CSV
+            </Button>
             <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
@@ -307,7 +402,6 @@ const CandidateManagement = () => {
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
                       <TableHead className="w-16">Photo</TableHead>
                       <TableHead>Candidate</TableHead>
-                      <TableHead>Matric</TableHead>
                       <TableHead>Position</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Manifesto</TableHead>
@@ -332,7 +426,6 @@ const CandidateManagement = () => {
                         <TableCell>
                           <p className="font-medium">{candidate.name}</p>
                         </TableCell>
-                        <TableCell className="font-mono text-sm">{candidate.matric}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-normal">
                             {candidate.positions?.title || '-'}
