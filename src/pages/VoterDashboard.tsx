@@ -16,7 +16,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, AlertCircle, Vote, LogOut, ArrowLeft, ClipboardList, MinusCircle, Pencil } from "lucide-react";
+import { CheckCircle, AlertCircle, Vote, LogOut, ArrowLeft, ClipboardList, MinusCircle, Pencil, Smartphone, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/NavLink";
@@ -296,7 +296,7 @@ const VoterDashboard = () => {
                 <Vote className="h-6 w-6 text-medical-600" />
                 Voter Dashboard
               </CardTitle>
-              <CardDescription>Welcome to the COHSSA ISECO Election</CardDescription>
+              <CardDescription>Welcome to the AHSS ISECO Election</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -321,6 +321,32 @@ const VoterDashboard = () => {
                   </Badge>
                 </div>
               </div>
+
+              {/* Device Fingerprint Indicator */}
+              {voterProfile?.device_fingerprint && (
+                <div className="p-4 bg-muted/50 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Smartphone className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        Device Linked
+                        <Shield className="h-3 w-3 text-green-600" />
+                      </p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        {voterProfile.device_fingerprint.substring(0, 16)}...
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                      Secure
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    One phone, one vote — your account is linked to this device for election integrity.
+                  </p>
+                </div>
+              )}
 
               {voterProfile?.has_voted ? (
                 <Alert>
