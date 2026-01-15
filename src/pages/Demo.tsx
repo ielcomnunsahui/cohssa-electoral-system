@@ -28,7 +28,8 @@ import {
   Lock,
   Zap,
   Smartphone,
-  Trophy
+  Trophy,
+  AlertTriangle
 } from "lucide-react";
 import { DualLogo } from "@/components/NavLink";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -48,6 +49,15 @@ const DemoVoterRegistration = () => {
   const [studentInfo, setStudentInfo] = useState<{ matric: string; name: string; department: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [biometricSetupDone, setBiometricSetupDone] = useState(false);
+  
+  // Rate limiting state
+  const [lookupAttempts, setLookupAttempts] = useState(0);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_SECONDS = 30;
+
+  const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(null);
 
   const steps = [
     { id: 'matric', label: 'Matric', icon: IdCard },
@@ -55,6 +65,36 @@ const DemoVoterRegistration = () => {
     { id: 'verify_choice', label: 'Verify', icon: Shield },
     { id: 'success', label: 'Done', icon: CheckCircle },
   ];
+
+  // Simulate device fingerprint generation
+  useEffect(() => {
+    const generateFingerprint = () => {
+      const components = [
+        window.screen.width,
+        window.screen.height,
+        navigator.language,
+        navigator.platform,
+        new Date().getTimezoneOffset()
+      ];
+      const hash = components.join('-').split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return `DEMO-${Math.abs(hash).toString(16).toUpperCase().substring(0, 8)}`;
+    };
+    setDeviceFingerprint(generateFingerprint());
+  }, []);
+
+  // Rate limit countdown timer
+  useEffect(() => {
+    if (rateLimitCountdown > 0) {
+      const timer = setTimeout(() => setRateLimitCountdown(rateLimitCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (isRateLimited && rateLimitCountdown === 0) {
+      setIsRateLimited(false);
+      setLookupAttempts(0);
+    }
+  }, [rateLimitCountdown, isRateLimited]);
 
   const getStepIndex = (step: Step) => {
     if (step === 'biometric' || step === 'otp') return 2;
@@ -86,6 +126,19 @@ const DemoVoterRegistration = () => {
           <p className="text-muted-foreground text-sm">
             {biometricSetupDone ? "Biometric enabled for quick login." : "Email verified successfully."} Your account is pending admin approval.
           </p>
+          
+          {/* Device Fingerprint Badge */}
+          <div className="p-3 bg-muted/50 rounded-lg border">
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Smartphone className="h-4 w-4" />
+              <span>Device Fingerprint:</span>
+              <code className="bg-background px-2 py-0.5 rounded font-mono text-primary">{deviceFingerprint}</code>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              One phone, one vote - this device is now linked to your account
+            </p>
+          </div>
+          
           <Button variant="outline" onClick={() => { setCurrentStep('matric'); setMatric(""); setEmail(""); setOtp(""); setStudentInfo(null); setBiometricSetupDone(false); }}>
             <Play className="mr-2 h-4 w-4" />
             Try Again
@@ -154,21 +207,92 @@ const DemoVoterRegistration = () => {
               />
               {matricError && <p className="text-sm text-destructive">{matricError}</p>}
             </div>
+            {/* Rate Limit Warning */}
+            {isRateLimited && (
+              <Alert className="border-destructive/50 bg-destructive/10">
+                <Lock className="h-4 w-4 text-destructive" />
+                <AlertDescription className="text-destructive">
+                  Too many attempts! Please wait <strong>{rateLimitCountdown}s</strong> before trying again.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Attempt Counter */}
+            {lookupAttempts > 0 && !isRateLimited && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Lookup attempts:</span>
+                <Badge variant={lookupAttempts >= MAX_ATTEMPTS - 1 ? "destructive" : "secondary"}>
+                  {lookupAttempts}/{MAX_ATTEMPTS}
+                </Badge>
+              </div>
+            )}
+
+            {/* Test Rate Limiting Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 border-amber-500/50 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+              onClick={() => {
+                // Simulate rapid failed attempts
+                let count = lookupAttempts;
+                const interval = setInterval(() => {
+                  count++;
+                  setLookupAttempts(count);
+                  if (count >= MAX_ATTEMPTS) {
+                    clearInterval(interval);
+                    setIsRateLimited(true);
+                    setRateLimitCountdown(LOCKOUT_SECONDS);
+                    toast.error(`Rate limit triggered! Locked for ${LOCKOUT_SECONDS}s`);
+                  } else {
+                    toast.error(`Failed attempt ${count}/${MAX_ATTEMPTS}`);
+                  }
+                }, 300);
+              }}
+              disabled={isRateLimited}
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Test Rate Limiting (Simulate {MAX_ATTEMPTS - lookupAttempts} Failed Attempts)
+            </Button>
+            
             <Button 
               className="w-full h-12 gap-2" 
               onClick={() => {
+                if (isRateLimited) {
+                  toast.error(`Rate limited. Wait ${rateLimitCountdown}s`);
+                  return;
+                }
+                
+                const newAttempts = lookupAttempts + 1;
+                setLookupAttempts(newAttempts);
+                
                 if (!MATRIC_REGEX.test(matric)) {
-                  toast.error("Please enter a valid matric number");
+                  if (newAttempts >= MAX_ATTEMPTS) {
+                    setIsRateLimited(true);
+                    setRateLimitCountdown(LOCKOUT_SECONDS);
+                    toast.error(`Too many failed attempts! Locked for ${LOCKOUT_SECONDS}s`);
+                  } else {
+                    toast.error(`Invalid matric. ${MAX_ATTEMPTS - newAttempts} attempts remaining`);
+                  }
                   return;
                 }
                 toast.success("Demo: Student verified!");
                 setStudentInfo({ matric, name: "Demo Student", department: "Medicine and Surgery" });
+                setLookupAttempts(0);
                 setCurrentStep('email');
               }}
-              disabled={!!matricError || !matric}
+              disabled={!!matricError || !matric || isRateLimited}
             >
-              Continue
-              <ArrowRight className="h-5 w-5" />
+              {isRateLimited ? (
+                <>
+                  <Lock className="h-5 w-5" />
+                  Locked ({rateLimitCountdown}s)
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="h-5 w-5" />
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -866,6 +990,12 @@ const Demo = () => {
       color: "bg-blue-500/10 text-blue-600 dark:text-blue-400"
     },
     {
+      icon: Smartphone,
+      title: "One Phone, One Vote",
+      description: "Device fingerprinting prevents duplicate registrations",
+      color: "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+    },
+    {
       icon: IdCard,
       title: "Matric Validation",
       description: "Case-insensitive validation against student records",
@@ -965,7 +1095,7 @@ const Demo = () => {
         {/* Features Grid */}
         <div className="mt-12">
           <h2 className="text-xl font-bold text-center mb-6">System Features</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
