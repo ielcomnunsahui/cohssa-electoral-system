@@ -220,7 +220,7 @@ const App = () => (
                 } 
               />
               <Route path="/committee" element={<Committee />} />
-              <Route path="/voter/register" element={<VoterRegister />} />
+              
               
               <Route path="/voter/help" element={<VoterHelpDesk />} />
               <Route 
