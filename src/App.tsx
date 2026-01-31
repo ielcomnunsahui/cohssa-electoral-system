@@ -221,12 +221,12 @@ const App = () => (
               />
               <Route path="/committee" element={<Committee />} />
               <Route path="/voter/register" element={<VoterRegister />} />
-              <Route path="/voter/login" element={<VoterLogin />} />
+              <Route path="/" element={<VoterLogin />} />
               <Route path="/voter/help" element={<VoterHelpDesk />} />
               <Route 
                 path="/voter/dashboard" 
                 element={
-                  <ProtectedRoute redirectTo="/voter/login">
+                  <ProtectedRoute redirectTo="/">
                     <VoterDashboard />
                   </ProtectedRoute>
                 } 
